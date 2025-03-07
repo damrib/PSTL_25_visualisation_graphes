@@ -7,7 +7,12 @@ import java.util.Map;
  * Classe représentant les propriétés d'un nœud.
  */
 public class NodeProperties {
-
+	public static final String LABEL = "label";
+    public static final String COLOR = "color";
+    public static final String SIZE = "size";
+    public static final String POSITION_X = "x";
+    public static final String POSITION_Y = "y";
+    
     private final Map<String, Object> attributes = new HashMap<>();
     private double x;  // Position x
     private double y;  // Position y

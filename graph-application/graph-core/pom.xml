@@ -38,4 +38,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>21</source> <!-- Set source compatibility to Java 21 -->
+                    <target>21</target> <!-- Set target compatibility to Java 21 -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

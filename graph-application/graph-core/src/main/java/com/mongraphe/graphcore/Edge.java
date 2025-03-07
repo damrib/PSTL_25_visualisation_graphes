@@ -1,73 +1,84 @@
 package com.mongraphe.graphcore;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import com.mongraphe.model.EdgeProperties;
 
 /**
- * Classe représentant une arête entre deux nœuds avec des attributs dynamiques.
+ * Classe représentant une arête dans un graphe.
  */
 public class Edge {
-    private final Node source;
-    private final Node target;
-    private final Map<String, Object> attributes;
-
+    
+    private Node source;  // Le nœud source de l'arête
+    private Node target;  // Le nœud cible de l'arête
+    private EdgeProperties properties;  // Les propriétés dynamiques de l'arête
+    
+    /**
+     * Constructeur de l'arête.
+     * @param source Le nœud source de l'arête.
+     * @param target Le nœud cible de l'arête.
+     */
     public Edge(Node source, Node target) {
         this.source = source;
         this.target = target;
-        this.attributes = new HashMap<>();
+        this.properties = new EdgeProperties(source, target);  // Initialisation des propriétés
     }
 
+    /**
+     * Récupère le nœud source de l'arête.
+     * @return Le nœud source.
+     */
     public Node getSource() {
         return source;
     }
 
+    /**
+     * Récupère le nœud cible de l'arête.
+     * @return Le nœud cible.
+     */
     public Node getTarget() {
         return target;
     }
 
     /**
-     * Ajoute ou met à jour un attribut.
-     * @param key Nom de l'attribut.
-     * @param value Valeur de l'attribut.
+     * Définit le nœud source de l'arête.
+     * @param source Le nœud source.
+     */
+    public void setSource(Node source) {
+        this.source = source;
+    }
+
+    /**
+     * Définit le nœud cible de l'arête.
+     * @param target Le nœud cible.
+     */
+    public void setTarget(Node target) {
+        this.target = target;
+    }
+
+    /**
+     * Ajoute un attribut à l'arête via les propriétés de l'arête.
+     * @param key Le nom de l'attribut.
+     * @param value La valeur de l'attribut.
      */
     public void setAttribute(String key, Object value) {
-        attributes.put(key, value);
+        properties.setAttribute(key, value);
     }
 
     /**
-     * Récupère la valeur d'un attribut.
-     * @param key Nom de l'attribut.
-     * @return Valeur de l'attribut ou null si non présent.
+     * Récupère un attribut de l'arête via les propriétés de l'arête.
+     * @param key Le nom de l'attribut.
+     * @return La valeur de l'attribut.
      */
     public Object getAttribute(String key) {
-        return attributes.get(key);
+        return properties.getAttribute(key);
     }
 
     /**
-     * Retourne tous les attributs de l'arête.
-     * @return Map des attributs.
+     * Récupère toutes les propriétés de l'arête sous forme de Map.
+     * @return Les propriétés de l'arête.
      */
-    public Map<String, Object> getAttributes() {
-        return attributes;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Edge edge = (Edge) obj;
-        return Objects.equals(source, edge.source) && Objects.equals(target, edge.target);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(source, target);
-    }
-
-    @Override
-    public String toString() {
-        return "Edge{source=" + source.getId() + ", target=" + target.getId() + ", attributes=" + attributes + "}";
+    public EdgeProperties getProperties() {
+        return properties;
     }
 }
+
 
