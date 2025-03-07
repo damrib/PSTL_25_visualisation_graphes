@@ -2,12 +2,17 @@ package com.mongraphe.graphui;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Hyperlink;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HomeScreenController {
 
@@ -24,37 +29,30 @@ public class HomeScreenController {
     private void handleOpenFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(
-        	    new FileChooser.ExtensionFilter("Graph Files", "*.csv", "*.gexf", "*.gml", "*.graphml")
-        	);
+            new FileChooser.ExtensionFilter("Fichiers CSV", "*.csv")
+        );
 
         Stage stage = (Stage) openFileLink.getScene().getWindow();
         File selectedFile = fileChooser.showOpenDialog(stage);
 
         if (selectedFile != null) {
-            System.out.println("Fichier sélectionné : " + selectedFile.getAbsolutePath());
-            openFenetreGraphe(selectedFile);
-        } else {
-            System.out.println("Aucun fichier sélectionné.");
+            ouvrirFenetreGraphe(selectedFile);
         }
     }
 
-    private void openFenetreGraphe(File file) {
+    private void ouvrirFenetreGraphe(File fichier) {
         try {
-            FXMLLoader loader =  new FXMLLoader(getClass().getResource("/fxml/FenetreGraphe.fxml"));
-            Scene scene = new Scene(loader.load());
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/FenetreGraphe.fxml"));
+            Parent root = loader.load();
 
-            // Récupérer le contrôleur et passer le fichier sélectionné
+            // Passer le fichier au contrôleur de la FenetreGraphe
             FenetreGrapheController controller = loader.getController();
-            controller.setFileName(file.getName());
+            controller.chargerCSV(fichier);
 
-            // Création d'une nouvelle fenêtre (Stage)
-            Stage fenetreGrapheStage = new Stage();
-            fenetreGrapheStage.setTitle("Résultat du graphe");
-            fenetreGrapheStage.setScene(scene);
-            controller.setStage(fenetreGrapheStage);
-
-            // Affichage de la nouvelle fenêtre
-            fenetreGrapheStage.show();
+            Stage newStage = new Stage();
+            newStage.setTitle("Fenetre Graphe");
+            newStage.setScene(new Scene(root));
+            newStage.show();
         } catch (IOException e) {
             e.printStackTrace();
         }

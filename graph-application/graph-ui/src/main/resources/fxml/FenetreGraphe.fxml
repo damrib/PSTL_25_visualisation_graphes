@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableView?>
 
 <VBox xmlns="http://javafx.com/javafx/8.0.171"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.mongraphe.graphui.FenetreGrapheController"
-      spacing="15" style="-fx-padding: 20px;">
-      
-    <Label fx:id="fileNameLabel" text="Aucun fichier sélectionné" style="-fx-font-size: 16px;"/>
-    <Button text="Fermer" onAction="#handleClose"/>
+      spacing="10" style="-fx-padding: 20px;">
+    
+    <TableView fx:id="tableView" prefHeight="300" prefWidth="500"/>
+    
 </VBox>
