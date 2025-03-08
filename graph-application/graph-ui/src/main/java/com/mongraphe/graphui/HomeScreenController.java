@@ -29,32 +29,31 @@ public class HomeScreenController {
     private void handleOpenFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Fichiers CSV", "*.csv")
+            new FileChooser.ExtensionFilter("Fichiers Graphiques", "*.csv", "*.dot")
         );
-
         Stage stage = (Stage) openFileLink.getScene().getWindow();
         File selectedFile = fileChooser.showOpenDialog(stage);
-
+        
         if (selectedFile != null) {
-            ouvrirFenetreGraphe(selectedFile);
+            ouvrirFenetreGraphe(stage, selectedFile);
         }
     }
 
-    private void ouvrirFenetreGraphe(File fichier) {
+    private void ouvrirFenetreGraphe(Stage stage, File fichier) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/FenetreGraphe.fxml"));
             Parent root = loader.load();
 
-            // Passer le fichier au contrôleur de la FenetreGraphe
+            // Passer le fichier au contrôleur de FenetreGraphe
             FenetreGrapheController controller = loader.getController();
-            controller.chargerCSV(fichier);
+            controller.setFichier(fichier);
 
-            Stage newStage = new Stage();
-            newStage.setTitle("Fenetre Graphe");
-            newStage.setScene(new Scene(root));
-            newStage.show();
+            Scene scene = new Scene(root, 500, 350);
+            stage.setScene(scene);
+            stage.show();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 }
