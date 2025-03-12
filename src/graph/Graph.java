@@ -27,9 +27,20 @@ public class Graph extends Application {
     public native float[][] getClusterColors();
     public native EdgeInterm[] getEdges();
     public native Vertex[] getPositions();
-    public native void startsProgram(String filename);
-    public native void freeAllocatedMemory();
 
+    /** read file with name filename and computes recommended threshold
+     * @param modeSimilitude : Correlation (0), Distance Cosine (1), Distance Euclidienne (2), Norme L1 (3), Norme Linf (4), KL divergence (5)
+     * @return Metadata containing the recommended thresholds and the number of nodes in the graph
+     */
+    public native Metadata startsProgram(String filename, int modeSimilitude);
+
+    /** Initialize the graph according 
+     * @param modeCommunity : Louvain (0), Louvain par composante (1) ou Leiden (2) ou Leiden CPM (3) ou couleurs speciales (4)
+     * @param threshold : threshold used to compute edges
+     * @param anti_threshold : threshold used to compute anti_edges
+     */
+    public native Metadata initiliazeGraph(int modeCommunity, double threshold, double anti_threshold);
+    public native void freeAllocatedMemory();
 
     public static final int WIDTH = 1500;
     public static final int HEIGHT = 800;
@@ -43,8 +54,11 @@ public class Graph extends Application {
         Pane root = new Pane();
 
         // Appeler startsProgram avant d'utiliser les données natives
-        startsProgram(filename);
+        // C'est à l'utilisateur de choisir le second argument
+        Metadata metadata = startsProgram(filename, 0);
 
+        // C'est à l'utilisateur de choisir les arguments
+        metadata = initiliazeGraph(0, metadata.edge_threshold, metadata.anti_threshold);
         // float[][] color = getClusterColors();
         // int[] communitites = getCommunitites();
 

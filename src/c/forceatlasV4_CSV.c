@@ -35,16 +35,13 @@
 
 // Variables globales pour stocker les données de la simulation
 char filename[1000];
-int ll;
 int modeA=0; //mode pour afficher des noeuds en fonction de classe
 float bez=0.2;
 double lambda=0.1;
 int num_components = 0;
 int saut=10;
 int nbValeurs;
-
 double amortissement = 0.999;
-double threshold;
 double Max_movementOld=0;
 int pause_simulation = 0;
 int iteration=0;
@@ -60,6 +57,7 @@ double correlation_threshold = 0.5; // Définir la valeur seuil pour l'affichage
 char delimiter[1] = "\0";
 
 short pause_updates = 0;
+int mode_similitude;
 struct Pool pool;
 
 typedef struct {
@@ -83,7 +81,7 @@ int component_sizes[MAX_NODES]; // Tableau pour stocker la taille de chaque comp
 void load_csv_data(const char *filename);
 void sample_rows(int **sampled_rows, int *sampled_num_rows);
 double calculate_mean_similitude(int num_samples,int);
-void calculate_similitude_and_edges(double threshold, double antiseuil);
+void calculate_similitude_and_edges(int mode_similitude, double threshold, double antiseuil);
 void random_point_in_plane(Point *p);
 void normalize(Point *p);
 void update_positions(void);
@@ -1267,7 +1265,7 @@ int compare_double(const void *a, const void *b) {
 }
 
 // Fonction par dichotomie pour trouver le threshold
-double calculate_threshold(int num_samples, int choice, int N) {
+double calculate_threshold(int num_samples, int choice, int N, double* threshold, double* anti_threshold) {
     double total_similarity = 0.0;
     int count = 0;
 
@@ -1319,31 +1317,27 @@ double calculate_threshold(int num_samples, int choice, int N) {
 
     // Tri des similarités pour la dichotomie
     qsort(similarities, num_samples, sizeof(double), compare_double);
-    printf("tri Ok\n");
-    fflush(stdout);
     // Utilisation de la dichotomie pour trouver le seuil
     double low = similarities[0];
     double high = similarities[num_samples - 1];
-    double threshold = 0.5 * (low + high);
-    //printf("%lf",threshold);
+    *threshold = 0.5 * (low + high);
+    // TODO Potentiel boucle infini ici
     while ((high-low) >= 0.000001) {
         // Réinitialiser le compteur d'arêtes pour le seuil actuel
         int current_edges = 0;
         for (int sample = 0; sample < num_samples; sample++) {
-            if ((similarities[sample]) >= threshold) {
+            if ((similarities[sample]) >= *threshold) {
                 current_edges++;
             }
         }
 
         // Comparer avec N et ajuster le seuil
         if (current_edges < N-100) {
-            low = threshold;
-            threshold = 0.5 * (threshold + high);
-//printf("%lf",threshold);  // Dichotomie vers le haut
+            low = *threshold;
+            *threshold = 0.5 * (*threshold + high);
         } else if (current_edges > N+100) {
-            high = threshold;
-//printf("%lf",threshold);
-            threshold = 0.5 * (low + threshold);  // Dichotomie vers le bas
+            high = *threshold;
+            *threshold = 0.5 * (low + *threshold);  // Dichotomie vers le bas
         } else { printf("seuil trouvé \n");
 	         fflush(stdout);
             break;  // On a trouvé le seuil exact
@@ -1352,36 +1346,31 @@ double calculate_threshold(int num_samples, int choice, int N) {
 
      low = similarities[0];
      high = similarities[num_samples - 1];
-     double antiseuil = 0.5 * (low + high);
-    //printf("%lf",antiseuil);
+     *anti_threshold = 0.5 * (low + high);
+    // TODO Potentiel boucle infini ici
     while ((high-low) >= 0.000001) {
         // Réinitialiser le compteur d'arêtes pour le seuil actuel
         int current_edges = 0;
         for (int sample = 0; sample < num_samples; sample++) {
-            if ((similarities[sample]) <= antiseuil) {
+            if ((similarities[sample]) <= *anti_threshold) {
                 current_edges++;
             }
         }
 
         // Comparer avec N et ajuster le seuil
         if (current_edges > N-100) {
-            low = antiseuil;
-            antiseuil = 0.5 * (antiseuil + high);
+            low = *anti_threshold;
+            *anti_threshold = 0.5 * (*anti_threshold + high);
 //printf("%lf",antiseuil);  // Dichotomie vers le haut
         } else if (current_edges < N+100) {
-            high = antiseuil;
+            high = *anti_threshold;
 //printf("%lf",antiseuil);
-            antiseuil = 0.5 * (low + antiseuil);  // Dichotomie vers le bas
-        } else { printf("antiseuil trouvé \n");
-	         fflush(stdout);
+            *anti_threshold = 0.5 * (low + *anti_threshold);  // Dichotomie vers le bas
+        } else {
+	        fflush(stdout);
             break;  // On a trouvé le seuil exact
         }
     }
-
-    // Afficher le seuil trouvé
-      printf("Threshold for %d edges for %d nodes: %.6f\n", N, num_nodes, threshold);
-
-    printf("AntiThreshold for %d edges for %d nodes: %.6f\n", N, num_nodes, antiseuil);
 
     free(similarities);  // Libérer la mémoire allouée
     return (count > 0) ? total_similarity / count : 0.0;
@@ -1554,28 +1543,8 @@ void similarity_job(void * args){
 
 
 // Fonction pour calculer la similitude en fonction du choix de l'utilisateur
-void calculate_similitude_and_edges(double threshold, double antiseuil) {
-    int choice;
-    
-    // Demander à l'utilisateur de choisir une mesure de similitude
-    printf("Choisissez la mesure de similarité à utiliser:\n");
-    printf("0: Corrélation\n");
-    printf("1: Distance Cosinus\n");
-    printf("2: Distance Euclidienne\n");
-    printf("3: Norme L1\n");
-    printf("4: Norme Linf\n");
-    printf("5: KL divergence\n");
-    scanf("%d", &choice);
-    
-    printf("Mean similitude: %.5lf\n",calculate_mean_similitude(5000,choice));
-calculate_threshold(num_nodes,choice,10*num_nodes);
-    printf("Enter up threshold: ");
-    scanf("%lf", &threshold);
-    while (getchar() != '\n');
-    printf("Enter down threshold (coeff_antiarete): ");
-    scanf("%lf", &antiseuil);
-    while (getchar() != '\n');
-    
+void calculate_similitude_and_edges(int md, double threshold, double antiseuil) {
+        
     num_edges = 0;
     num_antiedges = 0;
 
@@ -1584,7 +1553,7 @@ calculate_threshold(num_nodes,choice,10*num_nodes);
         s_args->threshold = threshold;
         s_args->antiseuil = antiseuil;
         s_args->row       = i;
-        s_args->choice    = choice;
+        s_args->choice    = md;
 
         struct Job task;
         task.j = similarity_job;
@@ -1594,10 +1563,6 @@ calculate_threshold(num_nodes,choice,10*num_nodes);
     }
     while ( GetOp(&pool) < num_rows ) {}
 
-
-    printf("Nombre de nœuds : %d\n", num_rows);
-    printf("Nombre d'arêtes : %d\n", num_edges);
-    printf("Nombre d'anti-arêtes : %d\n", num_antiedges);
 }
 
 // Normaliser un point
@@ -1733,8 +1698,8 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getPositions
     return result;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_startsProgram
-  (JNIEnv * env, jobject obj, jstring filepath)
+JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
+  (JNIEnv * env, jobject obj, jstring filepath, int modeSimilitude)
 {
     srand(time(NULL));
 
@@ -1749,44 +1714,50 @@ JNIEXPORT void JNICALL Java_graph_Graph_startsProgram
     sample_rows(&sampled_rows, &sampled_num_rows);
     num_rows = sampled_num_rows;
     num_nodes = num_rows;
+    
+    double threshold, antiseuil;
+    printf("Mean similitude: %.5lf\n",calculate_mean_similitude(5000, modeSimilitude));
+    mode_similitude = modeSimilitude;
+    calculate_threshold(num_nodes, modeSimilitude, 10*num_nodes, &threshold, &antiseuil);
+
+    jclass res_class = (*env)->FindClass(env, "graph/Metadata");
+    jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDD)V");
+    jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, threshold, antiseuil);
+
+    free(sampled_rows);
+
+    return res;
+}
+
+JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
+  (JNIEnv *env, jobject obj, jint md, jdouble thresh, jdouble anti_thresh)
+{
+
     #ifdef _DEBUG_
         struct chrono chr;
         chr_assign_log(&chr, "debug.csv");
         chr_start_clock(&chr);
-        calculate_similitude_and_edges(threshold, coeff_antiarete);
+        calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
         chr_stop(&chr);
         chr_close_log(&chr);
     #else
-        calculate_similitude_and_edges(threshold, coeff_antiarete);
+        calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
     #endif
 
-
-    
-    printf("Louvain (0), Louvain par composante (1) ou Leiden (2) ou Leiden CPM (3) ou couleurs speciales (4) \n");
-    scanf("%d", &ll);
-
-
-    if (ll == 0) {modeA=0;
+    modeA=0;
+    if (md == 0) {
         num_communities = louvain_method();
-        initialize_community_colors();
-        printf("Louvain fini \n");
-    } else if (ll == 1) {modeA=0;
+    } else if (md == 1) {
         num_communities = louvain_methodC();
-        initialize_community_colors();
-        printf("Louvain fini \n");
-    } else if (ll == 2) {modeA=0;
+    } else if (md == 2) {
         num_communities = leiden_method();
-        initialize_community_colors();
-        printf("Leiden fini \n");
-    } else if (ll == 3) {modeA=0;
+    } else if (md == 3) {
         num_communities = leiden_method_CPM();
-        initialize_community_colors();
-        printf("Leiden CPM fini \n");
-    } else if (ll == 4) {
+    } else if (md == 4) {
+        // TODO 
         //int nbValeurs;
         //int S[MAX_NODES]={0};
         num_communities = leiden_method_CPM();
-        initialize_community_colors();
         // Demander le chemin du fichier à l'utilisateur
         lireColonneCSV(S, &nbValeurs);
         // Afficher les valeurs lues
@@ -1796,9 +1767,18 @@ JNIEXPORT void JNICALL Java_graph_Graph_startsProgram
     } else {
         printf("Option invalide\n");
     }
+    initialize_community_colors();
+
+    #ifdef _DEBUG_
+        printf("Fin Calcul Communaute");
+    #endif
 
     compute_average_vectors();
-    printf("Vecteurs moyens fini \n");
+
+    #ifdef _DEBUG_
+        printf("Vecteurs moyens fini \n");
+    #endif
+
     for (int i = 0; i < num_nodes; i++) {
         random_point_in_center(&positions[i]);
         velocities[i].x = velocities[i].y = 0.0;
@@ -1809,7 +1789,12 @@ JNIEXPORT void JNICALL Java_graph_Graph_startsProgram
     assign_cluster_colors();
     calculate_node_degrees();
 
-    free(sampled_rows);
+    jclass res_class = (*env)->FindClass(env, "graph/Metadata");
+    jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDII)V");
+    jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, thresh, anti_thresh, num_edges, num_antiedges);
+
+    return res;   
+
 }
 
 JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory

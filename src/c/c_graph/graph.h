@@ -28,13 +28,14 @@ extern int node_degrees[MAX_NODES];
 
 extern _Atomic int num_edges;
 extern _Atomic int num_antiedges;
-extern double coeff_antiarete; // Facteur de répulsion des antiarêtes
 extern Edge antiedges[MAX_EDGES];  // Pour les anti-arêtes
 
 extern int num_nodes;
 extern double Lx, Ly;
 
 extern double friction;
+// TODO passer en argument a calculate_similitude dans la version de base
+extern double coeff_antiarete; // Facteur de répulsion des antiarêtes
 extern double attraction_coeff;
 extern double thresholdA;
 extern double seuilrep;
