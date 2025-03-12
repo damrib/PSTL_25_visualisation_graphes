@@ -10,39 +10,25 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Layout algorithms (e.g., Force Atlas, Fruchterman-Reingold) -->
+        <!-- JavaFX Controls -->
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-math3</artifactId>
-            <version>3.6.1</version>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>21</version> <!-- Mets la version correspondant à ton JDK -->
         </dependency>
 
-        <!-- Graph-core module -->
+        <!-- JavaFX FXML (si tu utilises FXML) -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>21</version>
+        </dependency>
+
+        <!-- Dépendance vers graph-core pour récupérer les données -->
         <dependency>
             <groupId>com.mongraphe</groupId>
             <artifactId>graph-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-
-        <!-- SLF4J for logging -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.32</version>
-        </dependency>
-
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.7.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.7.2</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
     

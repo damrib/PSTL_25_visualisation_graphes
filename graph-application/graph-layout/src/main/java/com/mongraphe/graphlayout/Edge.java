@@ -1,84 +1,35 @@
-package com.mongraphe.graphcore;
+package com.mongraphe.graphlayout;
 
-import com.mongraphe.model.EdgeProperties;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 
-/**
- * Classe représentant une arête dans un graphe.
- */
-public class Edge {
-    
-    private Node source;  // Le nœud source de l'arête
-    private Node target;  // Le nœud cible de l'arête
-    private EdgeProperties properties;  // Les propriétés dynamiques de l'arête
-    
-    /**
-     * Constructeur de l'arête.
-     * @param source Le nœud source de l'arête.
-     * @param target Le nœud cible de l'arête.
-     */
-    public Edge(Node source, Node target) {
-        this.source = source;
-        this.target = target;
-        this.properties = new EdgeProperties(source, target);  // Initialisation des propriétés
+public class Edge extends Line {
+    private final Vertex start, end;
+
+    public Edge(Vertex start, Vertex end) {
+        super(start.getX(), start.getY(), end.getX(), end.getY());
+        start.addEdge(this);
+        end.addEdge(this);
+
+        this.start = start;
+        this.end = end;
+        setStroke(Color.BLACK);
+        setStrokeWidth(0.5);
     }
 
-    /**
-     * Récupère le nœud source de l'arête.
-     * @return Le nœud source.
-     */
-    public Node getSource() {
-        return source;
+    public void update(Vertex vertex) {
+        if (vertex == start) {
+            setStartX(vertex.getX());
+            setStartY(vertex.getY());
+        } else if (vertex == end) {
+            setEndX(vertex.getX());
+            setEndY(vertex.getY());
+        }
+        //System.out.println("Mise à jour de l'arrête " + this);
     }
 
-    /**
-     * Récupère le nœud cible de l'arête.
-     * @return Le nœud cible.
-     */
-    public Node getTarget() {
-        return target;
+    public String toString() {
+        return start + " -> " + end;
     }
 
-    /**
-     * Définit le nœud source de l'arête.
-     * @param source Le nœud source.
-     */
-    public void setSource(Node source) {
-        this.source = source;
-    }
-
-    /**
-     * Définit le nœud cible de l'arête.
-     * @param target Le nœud cible.
-     */
-    public void setTarget(Node target) {
-        this.target = target;
-    }
-
-    /**
-     * Ajoute un attribut à l'arête via les propriétés de l'arête.
-     * @param key Le nom de l'attribut.
-     * @param value La valeur de l'attribut.
-     */
-    public void setAttribute(String key, Object value) {
-        properties.setAttribute(key, value);
-    }
-
-    /**
-     * Récupère un attribut de l'arête via les propriétés de l'arête.
-     * @param key Le nom de l'attribut.
-     * @return La valeur de l'attribut.
-     */
-    public Object getAttribute(String key) {
-        return properties.getAttribute(key);
-    }
-
-    /**
-     * Récupère toutes les propriétés de l'arête sous forme de Map.
-     * @return Les propriétés de l'arête.
-     */
-    public EdgeProperties getProperties() {
-        return properties;
-    }
 }
-
-
