@@ -28,8 +28,11 @@ extern int n_clusters;
 
 extern double epsilon;
 
+extern int espacement;
+
 // modifiable par utilisateur
 extern double repulsion_coeff;
+extern int saut;
 extern int mode;
 
 void update_clusters();

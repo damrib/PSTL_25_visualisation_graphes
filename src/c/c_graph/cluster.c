@@ -9,10 +9,11 @@ Cluster *cluster_nodes = NULL;  // Tableau de clusters
 int n_clusters;
 
 double epsilon = 0.1;
-
+int espacement = 1;
 
 // modifiable par utilisateur
 double repulsion_coeff = 1;
+int saut = 10;
 int mode = 0;
 
 // Assigner des noeuds aux clusters et mettre à jour les centres en utilisant l'algorithme k-means
@@ -139,31 +140,32 @@ void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY)
 // etape 4 dans update_positions
 void update_clusters()
 {
-    int centers_converged = 0;
+    if (iteration % (saut * (1+0*espacement)) == 0) {
+        int centers_converged = 0;
 
-    while (centers_converged == 0) {
-        double old_centers[MAX_NODES][2];
-        memcpy(old_centers, centers, sizeof(centers));
+        while (centers_converged == 0) {
+            double old_centers[MAX_NODES][2];
+            memcpy(old_centers, centers, sizeof(centers));
 
-        kmeans_iteration(positions, num_nodes, n_clusters, clusters, centers, Lx, Ly);
+            kmeans_iteration(positions, num_nodes, n_clusters, clusters, centers, Lx, Ly);
 
-        centers_converged = 1;
-        for (int i = 0; i < n_clusters; i++) {
-            double dx = centers[i][0] - old_centers[i][0];
-            double dy = centers[i][1] - old_centers[i][1];
-            if ((dx * dx + dy * dy) > epsilon) {
-                centers_converged = 0;
-                break;
+            centers_converged = 1;
+            for (int i = 0; i < n_clusters; i++) {
+                double dx = centers[i][0] - old_centers[i][0];
+                double dy = centers[i][1] - old_centers[i][1];
+                if ((dx * dx + dy * dy) > epsilon) {
+                    centers_converged = 0;
+                    break;
+                }
             }
         }
-    }
-    clear_clusters();
+        clear_clusters();
 
-    for (int i = 0; i < num_nodes; i++) {
-        int best_cluster = clusters[i];
-        add_node_to_cluster(best_cluster, i);
+        for (int i = 0; i < num_nodes; i++) {
+            int best_cluster = clusters[i];
+            add_node_to_cluster(best_cluster, i);
+        }
     }
-
 }
 
 void clear_clusters() {

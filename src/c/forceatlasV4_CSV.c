@@ -39,20 +39,13 @@ int modeA=0; //mode pour afficher des noeuds en fonction de classe
 float bez=0.2;
 double lambda=0.1;
 int num_components = 0;
-int saut=10;
 int nbValeurs;
 double amortissement = 0.999;
 double Max_movementOld=0;
 int pause_simulation = 0;
-int iteration=0;
-double thresholdS = 1;
 int max_iterations = 5000;
 double **data = NULL;  // Stocker les données CSV
 int num_rows = 0, num_columns = 0;
-int espacement = 1;
-double correlation_threshold = 0.5; // Définir la valeur seuil pour l'affichage de la corrélation
-    float initial_node_size=1.0;
-    float degree_scale_factor=0.2;
 
 char delimiter[1] = "\0";
 
@@ -1585,7 +1578,7 @@ void normalize(Point *p) {
  * 
  */
 
-JNIEXPORT void JNICALL Java_graph_Graph_updatePositions
+JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
  (JNIEnv * env, jobject obj)
 {
    double Max_movementOld = 0.0;
@@ -1617,12 +1610,17 @@ JNIEXPORT void JNICALL Java_graph_Graph_updatePositions
         }
            
         Max_movementOld=Max_movement;
+        friction *= amortissement;
    }
 
    if ((Max_movement < thresholdS && iteration > 50) || iteration > max_iterations-1 ) {
-        printf("program mis en pause");
+        // end state reached
         pause_updates = 1;
+
+        return 0;
    }
+
+   return 1;
 }
 
 JNIEXPORT jintArray JNICALL Java_graph_Graph_getCommunitites
@@ -1790,8 +1788,8 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
     calculate_node_degrees();
 
     jclass res_class = (*env)->FindClass(env, "graph/Metadata");
-    jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDII)V");
-    jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, thresh, anti_thresh, num_edges, num_antiedges);
+    jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDIII)V");
+    jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, thresh, anti_thresh, num_edges, num_antiedges, n_clusters);
 
     return res;   
 
@@ -1814,4 +1812,73 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
 
     FreePool(&pool);
 
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setSaut
+  (JNIEnv * env, jobject obj, jint s)
+{
+    saut = s;
+    espacement = 1;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setThresholdS
+  (JNIEnv * env, jobject obj, jdouble thresh)
+{
+    thresholdS = thresh;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setFriction
+  (JNIEnv * env, jobject obj, jdouble f)
+{
+    friction = f;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setModeRepulsion
+  (JNIEnv * env, jobject obj, jint modeRepulsion)
+{
+    mode = modeRepulsion;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setAntiRepulsion
+  (JNIEnv * env, jobject obj, jdouble repulsion)
+{
+    coeff_antiarete = repulsion;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setAttractionCoeff
+  (JNIEnv * env, jobject obj, jdouble coeff)
+{
+    attraction_coeff = coeff;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setThresholdA
+  (JNIEnv * env, jobject obj, jdouble thresh)
+{
+    thresholdA = thresh;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setSeuilRep
+  (JNIEnv * env, jobject obj, jdouble seuil)
+{
+    seuilrep = seuil;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setDimension
+  (JNIEnv * env, jobject obj, jdouble width, jdouble height)
+{
+    Lx = width;
+    Ly = height;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setAmortissement
+  (JNIEnv * env, jobject obj, jdouble amort)
+{
+    amortissement = amort;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setNodePosition
+  (JNIEnv * env, jobject obj, jint index, jdouble x, jdouble y)
+{
+    positions[index].x = x;
+    positions[index].y = y;
 }

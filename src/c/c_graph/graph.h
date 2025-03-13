@@ -33,12 +33,15 @@ extern Edge antiedges[MAX_EDGES];  // Pour les anti-arêtes
 extern int num_nodes;
 extern double Lx, Ly;
 
+extern int iteration;
+
 extern double friction;
 // TODO passer en argument a calculate_similitude dans la version de base
 extern double coeff_antiarete; // Facteur de répulsion des antiarêtes
 extern double attraction_coeff;
 extern double thresholdA;
 extern double seuilrep;
+extern double thresholdS;
 
 // Calculer un vecteur avec un enroulement toroïdal
 void toroidal_vector(Point *dir, Point p1, Point p2);
