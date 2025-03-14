@@ -57,9 +57,9 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
-//    	runMake("../");
-//    	String libnative = System.getProperty("user.dir") + "/out/libnative.so";
-//        System.load(libnative);
+    	runMake("../");
+    	String libnative = new File(System.getProperty("user.dir")).getParent() + "/out/libnative.so";
+    	System.load(libnative);
         launch(args);
     }
 }

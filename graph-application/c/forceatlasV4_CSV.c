@@ -19,7 +19,7 @@
     #include "../debug/debug_time.h"
 #endif
 
-#include "../out/graph_Graph.h"
+#include "../out/com_mongraphe_graphlayout_Graph.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb_image_write.h"

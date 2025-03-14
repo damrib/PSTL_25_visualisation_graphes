@@ -6,13 +6,14 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 
+import java.io.File;
 import java.util.List;
 
 public class Graph {
 
     static {
-        String libnative = System.getProperty("user.dir") + "/out/libnative.so";
-        System.load(libnative);
+    	String libnative = new File(System.getProperty("user.dir")).getParent() + "/out/libnative.so";
+    	System.load(libnative);
     }
 
     // Méthodes natives

@@ -1,9 +1,9 @@
-CC = gcc-14
+CC = gcc
 FLAGS = -Wall -g -lGL -lGLU -lglut -fPIC -lm -lc -shared
 JNI_FLAGS = -I/usr/lib/jvm/java-21-openjdk-amd64/include -I/usr/lib/jvm/java-21-openjdk-amd64/include/linux -fPIC
 
-SRC_DIR = src
-OUT_DIR = graph-layout/src/main/java/com/mongraphe/graphlayout
+SRC_DIR = graph-layout/src/main/java/com/mongraphe/graphlayout
+OUT_DIR = out
 
 JAVAFX_DIR = lib/javafx-sdk-23.0.2/lib
 JAVAFX_MODULES = javafx.controls,javafx.fxml
