@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #define MAX_NODES 50000
 #define MAX_EDGES 1000000
@@ -45,10 +46,14 @@ extern double thresholdS;
 
 // Calculer un vecteur avec un enroulement toroïdal
 void toroidal_vector(Point *dir, Point p1, Point p2);
+void calculate_node_degrees(void);
+void random_point_in_center(Point *p);
+void translate_positions(double dx, double dy);
+double toroidal_distance(Point p1, Point p2);
 
+// Fonction update_position
 void repulsion_edges(Point* forces);
 void repulsion_anti_edges(Point* forces);
 double update_position_forces(Point* forces, double PasMaxX, double PasMaxY, double Max_movement);
-
 
 #endif

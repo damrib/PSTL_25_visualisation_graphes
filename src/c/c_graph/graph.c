@@ -23,16 +23,48 @@ double thresholdA = 1;
 double seuilrep = 0;
 double thresholdS = 1;
 
-
-
-
-
-
 void toroidal_vector(Point *dir, Point p1, Point p2) {
     dir->x = p2.x - p1.x;
     dir->y = p2.y - p1.y;
     if (fabs(dir->x) > Lx / 2) dir->x -= copysign(Lx, dir->x);
     if (fabs(dir->y) > Ly / 2) dir->y -= copysign(Ly, dir->y);
+}
+
+// Calculer la distance toroïdale entre deux points
+double toroidal_distance(Point p1, Point p2) {
+    Point dir;
+    toroidal_vector(&dir, p1, p2);
+    return sqrt(dir.x * dir.x + dir.y * dir.y);
+}
+
+// Calculer les degrés de chaque noeud
+void calculate_node_degrees(void) {
+    for (int i = 0; i < num_nodes; i++) {
+        node_degrees[i] = 0;
+    }
+    for (int i = 0; i < num_edges; i++) {
+        node_degrees[edges[i].node1]++;
+        node_degrees[edges[i].node2]++;
+    }
+}
+
+// Générer un point aléatoire près du centre
+void random_point_in_center(Point *p) {
+    double center_width = Lx * 0.3;
+    double center_height = Ly * 0.3;
+    p->x = (rand() / (double)RAND_MAX) * center_width - center_width / 2;
+    p->y = (rand() / (double)RAND_MAX) * center_height - center_height / 2;
+}
+
+void translate_positions(double dx, double dy) {
+    for (int i = 0; i < num_nodes; i++) {
+        positions[i].x += dx;
+        positions[i].y += dy;
+        while (positions[i].x < -Lx/2) positions[i].x += Lx;
+            while (positions[i].x > Lx/2) positions[i].x -= Lx;
+            while (positions[i].y < -Ly/2) positions[i].y += Ly;
+            while (positions[i].y > Ly/2) positions[i].y -= Ly;
+    }
 }
 
 // probablement privé utilisée dans update_positions
@@ -118,4 +150,3 @@ double update_position_forces(Point* forces, double PasMaxX, double PasMaxY, dou
 
     return new_max_movement;
 }
-

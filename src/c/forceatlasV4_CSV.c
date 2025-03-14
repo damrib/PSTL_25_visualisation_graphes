@@ -1,6 +1,5 @@
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <float.h>
@@ -76,23 +75,15 @@ void load_csv_data(const char *filename);
 void sample_rows(int **sampled_rows, int *sampled_num_rows);
 double calculate_mean_similitude(int num_samples,int);
 void calculate_similitude_and_edges(int mode_similitude, double threshold, double antiseuil);
-void random_point_in_plane(Point *p);
 void normalize(Point *p);
-void update_positions(void);
 void kmeans_iteration(Point *points, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly);
-void display(void);
-void idle(void);
-void calculate_node_degrees(void);
-void save_image(const char *filename, int width, int height);
 void draw_bezier_curve(Point p0, Point p1, Point control, int segments);
 void add_edge_to_adjacency_list(int node, int neighbor, double weight);
 double calculate_gain_modularity(int node, int new_community, double total_graph_weight); 
 int louvain_method();
 void initialize_community_colors() ;
 void parse_dot_file(const char *filename);
-void render_text(float x, float y, const char *text);
 int get_node_index(const char *name);
-void translate_positions(double dx, double dy);
 void compute_average_vectors();
 int count_unique_communities(int *communities, int num_nodes);
 double compute_norm(double *vector, int length);
@@ -103,7 +94,6 @@ double euclidean_distance(int i, int j);
 double L1_norm(int i, int j);
 double Linf_norm(int i, int j);
 double correlation_similarity(int i, int j);
-int kbhit(void);
 void find_connected_components();
 void mark_component(int, int);
 void apply_louvain_to_component(int);
@@ -417,32 +407,6 @@ void mark_component(int node, int component) {
 }
 
 
-int kbhit(void) {
-    struct termios oldt, newt;
-    int ch;
-    int oldf;
-
-    tcgetattr(STDIN_FILENO, &oldt); // Sauvegarde des paramètres du terminal
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO); // Désactive la mise en buffer et l'écho
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt); // Applique les nouveaux paramètres
-    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK); // Met le mode non bloquant
-
-    ch = getchar();
-
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // Restaure les anciens paramètres
-    fcntl(STDIN_FILENO, F_SETFL, oldf); // Remet le mode bloquant
-
-    if (ch != EOF) {
-        ungetc(ch, stdin); // Remet le caractère dans le flux d'entrée
-        return 1;
-    }
-
-    return 0;
-}
-
-
 
 // Fonction pour calculer la divergence KL entre deux vecteurs normalisés
 double KL_divergence(int i, int j) {
@@ -727,19 +691,6 @@ void compute_average_vectors() {
     }
     free(community_sums);
     free(community_sizes);
-}
-
-
-
-void translate_positions(double dx, double dy) {
-    for (int i = 0; i < num_nodes; i++) {
-        positions[i].x += dx;
-        positions[i].y += dy;
-        while (positions[i].x < -Lx/2) positions[i].x += Lx;
-            while (positions[i].x > Lx/2) positions[i].x -= Lx;
-            while (positions[i].y < -Ly/2) positions[i].y += Ly;
-            while (positions[i].y > Ly/2) positions[i].y -= Ly;
-    }
 }
 
 
@@ -1127,34 +1078,6 @@ void sample_rows(int **sampled_rows, int *sampled_num_rows) {
         (*sampled_rows)[i] = rows[i];
     }
     free(rows);
-}
-
-// Calculer les degrés de chaque noeud
-void calculate_node_degrees(void) {
-    for (int i = 0; i < num_nodes; i++) {
-        node_degrees[i] = 0;
-    }
-    for (int i = 0; i < num_edges; i++) {
-        node_degrees[edges[i].node1]++;
-        node_degrees[edges[i].node2]++;
-    }
-}
-
-
-
-// Générer un point aléatoire près du centre
-void random_point_in_center(Point *p) {
-    double center_width = Lx * 0.3;
-    double center_height = Ly * 0.3;
-    p->x = (rand() / (double)RAND_MAX) * center_width - center_width / 2;
-    p->y = (rand() / (double)RAND_MAX) * center_height - center_height / 2;
-}
-
-// Calculer la distance toroïdale entre deux points
-double toroidal_distance(Point p1, Point p2) {
-    Point dir;
-    toroidal_vector(&dir, p1, p2);
-    return sqrt(dir.x * dir.x + dir.y * dir.y);
 }
 
 // chargement Data
