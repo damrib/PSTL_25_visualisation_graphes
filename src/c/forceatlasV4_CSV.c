@@ -15,6 +15,7 @@
 #include "c_graph/cluster.h"
 #include "c_graph/graph.h"
 #include "../concurrent/Pool.h"
+#include "../concurrent/Barrier.h"
 
 #ifdef _DEBUG_
     #include "../debug/debug_time.h"
@@ -1466,6 +1467,7 @@ struct similarity_args {
     double antiseuil;
     int row;
     int choice;
+    Barrier barrier;
 };
 
 int incr_or_max(_Atomic int* n)
@@ -1530,6 +1532,8 @@ void similarity_job(void * args){
         }
 
     }
+
+    decrement_barrier(data->barrier, 1);
 }
 
 /////////////////////////////////////
@@ -1540,6 +1544,8 @@ void calculate_similitude_and_edges(int md, double threshold, double antiseuil) 
         
     num_edges = 0;
     num_antiedges = 0;
+    struct barrier bar;
+    new_barrier(&bar, num_rows);
 
     for (int i = 0; i < num_rows; i++) {
         struct similarity_args* s_args = (struct similarity_args*) malloc(sizeof(struct similarity_args));
@@ -1547,6 +1553,7 @@ void calculate_similitude_and_edges(int md, double threshold, double antiseuil) 
         s_args->antiseuil = antiseuil;
         s_args->row       = i;
         s_args->choice    = md;
+        s_args->barrier   = &bar;
 
         struct Job task;
         task.j = similarity_job;
@@ -1554,7 +1561,8 @@ void calculate_similitude_and_edges(int md, double threshold, double antiseuil) 
 
         submit(&pool, task);
     }
-    while ( GetOp(&pool) < num_rows ) {}
+    // main thread wait for the thread to finish processing the previous calculation
+    wait_barrier(&bar);
 
 }
 
