@@ -1697,14 +1697,33 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getPositions
 }
 
 JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
-  (JNIEnv * env, jobject obj, jstring filepath, int modeSimilitude)
+  (JNIEnv * env, jobject obj, jstring filepath)
 {
     srand(time(NULL));
 
     const char* str = (*env)->GetStringUTFChars(env, filepath, JNI_FALSE);
 
     load_csv_data(str);
-    
+
+    jclass obj_class = (*env)->FindClass(env, "[D");
+    jobjectArray result = (*env)->NewObjectArray(env, num_rows, obj_class, 0);
+
+    for (int i = 0; i < num_rows; ++i)
+    {
+        jdoubleArray double_array = (*env)->NewDoubleArray(env, num_columns);
+        (*env)->SetDoubleArrayRegion(env, double_array, 0, num_columns, data[i]);
+
+        (*env)->SetObjectArrayElement(env, result, i, double_array);
+    }
+
+    return result;
+
+}
+
+JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
+  (JNIEnv * env, jobject obj, jint modeSimilitude)
+{
+
     InitPool(&pool, 1000, 8);
 
     int *sampled_rows = NULL;
@@ -1725,7 +1744,9 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
     free(sampled_rows);
 
     return res;
+
 }
+
 
 JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
   (JNIEnv *env, jobject obj, jint md, jdouble thresh, jdouble anti_thresh)

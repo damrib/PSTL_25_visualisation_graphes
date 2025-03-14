@@ -31,12 +31,17 @@ public class Graph extends Application {
     public native EdgeInterm[] getEdges();
     public native Vertex[] getPositions();
 
-    /** read file with name filename and computes recommended threshold
-     * @param filename       : name of csv file to process
+    /** read file with name filename
+     * @param filename : name of csv file to process
+     * @return double[][] array containing data of csv file
+     */
+    public native double[][] startsProgram(String filename);
+
+    /* computes recommended threshold
      * @param modeSimilitude : Correlation (0), Distance Cosine (1), Distance Euclidienne (2), Norme L1 (3), Norme Linf (4), KL divergence (5)
      * @return Metadata containing the recommended thresholds and the number of nodes in the graph
      */
-    public native Metadata startsProgram(String filename, int modeSimilitude);
+    public native Metadata computeThreshold(int modeSimilitude);
 
     /** Initialize the graph according 
      * @param modeCommunity : Louvain (0), Louvain par composante (1) ou Leiden (2) ou Leiden CPM (3) ou couleurs speciales (4)
@@ -119,7 +124,9 @@ public class Graph extends Application {
 
         // Appeler startsProgram avant d'utiliser les données natives
         // C'est à l'utilisateur de choisir le second argument
-        Metadata metadata = startsProgram(filename, 0);
+        double[][] data  = startsProgram(filename);
+
+        Metadata metadata = computeThreshold(0);
 
         // C'est à l'utilisateur de choisir les arguments
         metadata = initiliazeGraph(0, metadata.edge_threshold, metadata.anti_threshold);
