@@ -8,8 +8,6 @@ import javafx.util.Duration;
 
 import java.util.List;
 
-import com.mongraphe.graphcore.EdgeInterm;
-
 public class Graph {
 
     static {

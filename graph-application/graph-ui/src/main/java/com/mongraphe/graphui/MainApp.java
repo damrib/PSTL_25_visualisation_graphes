@@ -12,27 +12,36 @@ import javafx.stage.Stage;
 public class MainApp extends Application {
 	
 	public static void runMake(String directory) {
-        try {
-            // Initialisation du ProcessBuilder
-            ProcessBuilder builder = new ProcessBuilder("make");
+	    try {
+	        File dir = new File(directory);
+	        System.out.println("Exécution de make dans : " + dir.getAbsolutePath());
 
-            // Définir le répertoire où exécuter la commande
-            builder.directory(new File(directory));
+	        // Vérifier si un Makefile est présent
+	        File makefile = new File(dir, "Makefile");
+	        if (!makefile.exists()) {
+	            System.err.println("Avertissement : Aucun Makefile trouvé dans " + dir.getAbsolutePath());
+	        }
 
-            // Rediriger les flux de sortie et d'erreur pour voir les logs
-            builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+	        // Initialisation du ProcessBuilder
+	        ProcessBuilder builder = new ProcessBuilder("make");
 
-            // Lancer le processus
-            Process process = builder.start();
+	        // Définir le répertoire où exécuter la commande
+	        builder.directory(dir);
 
-            // Attendre la fin de l'exécution
-            int exitCode = process.waitFor();
-            System.out.println("Make terminé avec le code : " + exitCode);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+	        // Rediriger les flux de sortie et d'erreur pour voir les logs
+	        builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+	        builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+	        // Lancer le processus
+	        Process process = builder.start();
+
+	        // Attendre la fin de l'exécution
+	        int exitCode = process.waitFor();
+	        System.out.println("Make terminé avec le code : " + exitCode);
+	    } catch (IOException | InterruptedException e) {
+	        e.printStackTrace();
+	    }
+	}
 
     @Override
     public void start(Stage primaryStage) {
@@ -48,9 +57,9 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
-    	runMake("./");
-    	String libnative = System.getProperty("user.dir") + "/out/libnative.so";
-        System.load(libnative);
+//    	runMake("../");
+//    	String libnative = System.getProperty("user.dir") + "/out/libnative.so";
+//        System.load(libnative);
         launch(args);
     }
 }

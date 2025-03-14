@@ -1,4 +1,4 @@
-package com.mongraphe.graphcore;
+package com.mongraphe.graphlayout;
 
 public class EdgeInterm {
     private int start;
