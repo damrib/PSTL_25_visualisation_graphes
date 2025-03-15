@@ -1468,15 +1468,15 @@ struct mean_similitude_args {
     double *res;
     int *cpt;
     int *histogram;
-    pthread_mutex_t *hist_mutex;
+    int **thread_histograms;
 };
 
 void mean_similitude_job(void *args) {
     struct mean_similitude_args *data = (struct mean_similitude_args*) args;
     double somme = 0.0;
     int count = 0;
-    int local_histogram[NUM_BINS] = {0};
-
+    int *local_histogram = data->thread_histograms[data->thread_id];
+    printf("Thread %d row %d à %d\n", data->thread_id, data->start_row, data->end_row);
     for (int i = data->start_row; i < data->end_row; i++) {
         for (int j = i + 1; j < num_rows; j++) {
             double similarity = 0.0;
@@ -1504,12 +1504,15 @@ void mean_similitude_job(void *args) {
                     similarity = 0.0;
                     break; 
             }
-            somme += similarity;
+            if(!isnan(similarity)){
+                somme += similarity;
+            }
             count++;
 
             double scaled_similarity = (data->choice == 0 || data->choice == 1) 
                 ? (similarity + 1.0) / 2.0 
                 : similarity;
+
             int bin_index = (int)(scaled_similarity * NUM_BINS);
             if (bin_index >= NUM_BINS) bin_index = NUM_BINS - 1;
             if (bin_index < 0) bin_index = 0;
@@ -1519,12 +1522,7 @@ void mean_similitude_job(void *args) {
 
     data->res[data->thread_id] = somme;
     data->cpt[data->thread_id] = count;
-
-    pthread_mutex_lock(data->hist_mutex);
-    for (int bin = 0; bin < NUM_BINS; bin++) {
-        data->histogram[bin] += local_histogram[bin];
-    }
-    pthread_mutex_unlock(data->hist_mutex);
+    printf("Thread %d somme = %f count = %d\n", data->thread_id, somme, count);
 }
 
 double calculate_mean_similitude_paralel(int choice) {
@@ -1532,8 +1530,11 @@ double calculate_mean_similitude_paralel(int choice) {
     double *res = calloc(num_threads, sizeof(double));
     int *cpt = calloc(num_threads, sizeof(int));
     int histogram[NUM_BINS] = {0};
-    pthread_mutex_t hist_mutex;
-    pthread_mutex_init(&hist_mutex, NULL);
+
+    int **thread_histograms = calloc(num_threads, sizeof(int *));
+    for (int t = 0; t < num_threads; t++) {
+        thread_histograms[t] = calloc(NUM_BINS, sizeof(int));
+    }
 
     int rows_per_thread = num_rows / num_threads;
     int remaining_rows = num_rows % num_threads;
@@ -1547,7 +1548,7 @@ double calculate_mean_similitude_paralel(int choice) {
         args->res = res;
         args->cpt = cpt;
         args->histogram = histogram;
-        args->hist_mutex = &hist_mutex;
+        args->thread_histograms = thread_histograms;
 
         if (t == num_threads - 1) {
             args->end_row += remaining_rows;
@@ -1561,15 +1562,20 @@ double calculate_mean_similitude_paralel(int choice) {
 
     while (GetOp(&pool) < num_threads) {}
 
+    for (int t = 0; t < num_threads; t++) {
+        for (int bin = 0; bin < NUM_BINS; bin++) {
+            histogram[bin] += thread_histograms[t][bin];
+        }
+    }
+
+
     double somme = 0.0;
     int count = 0;
     for (int t = 0; t < num_threads; t++) {
         somme += res[t];
         count += cpt[t];
     }
-    free(res);
-    free(cpt);
-    pthread_mutex_destroy(&hist_mutex);
+
 
     printf("Histogram of Similarities (Normalized):\n");
     for (int bin = 0; bin < NUM_BINS; bin++) {
@@ -1854,7 +1860,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
     num_nodes = num_rows;
     
     double threshold, antiseuil;
-    printf("Mean similitude: %.5lf\n",calculate_mean_similitude(5000, modeSimilitude));
+    printf("Mean similitude: %.5lf\n",calculate_mean_similitude_paralel(modeSimilitude));
     mode_similitude = modeSimilitude;
     calculate_threshold(num_nodes, modeSimilitude, 10*num_nodes, &threshold, &antiseuil);
 
