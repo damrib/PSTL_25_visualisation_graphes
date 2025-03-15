@@ -1384,6 +1384,127 @@ double calculate_mean_similitude(int num_samples, int choice) {
     return (count > 0) ? total_similarity / count : 0.0;
 }
 
+struct mean_similitude_args {
+    int choice;
+    int thread_id;
+    int start_row;
+    int end_row;
+    double *res;
+    int *cpt;
+    int *histogram;
+    pthread_mutex_t *hist_mutex;
+};
+
+void mean_similitude_job(void *args) {
+    struct mean_similitude_args *data = (struct mean_similitude_args*) args;
+    double somme = 0.0;
+    int count = 0;
+    int local_histogram[NUM_BINS] = {0};
+
+    for (int i = data->start_row; i < data->end_row; i++) {
+        for (int j = i + 1; j < num_rows; j++) {
+            double similarity = 0.0;
+            switch (data->choice) {
+                case 0:  // Corrélation
+                    similarity = correlation_similarity(i, j);
+                    break;
+                case 1:  // Distance Cosinus
+                    similarity = cosine_similarity(i, j);
+                    break;
+                case 2:  // Distance Euclidienne
+                    similarity = euclidean_distance(i, j);
+                    break;
+                case 3:  // Norme L1
+                    similarity = L1_norm(i, j);
+                    break;
+                case 4:  // Norme Linf
+                    similarity = Linf_norm(i, j);
+                    break;
+                case 5:  // KL Div
+                    similarity = KL_divergence(i, j);
+                    break;
+                default:
+                    printf("Choix non valide.\n");
+                    similarity = 0.0;
+                    break; 
+            }
+            somme += similarity;
+            count++;
+
+            double scaled_similarity = (data->choice == 0 || data->choice == 1) 
+                ? (similarity + 1.0) / 2.0 
+                : similarity;
+            int bin_index = (int)(scaled_similarity * NUM_BINS);
+            if (bin_index >= NUM_BINS) bin_index = NUM_BINS - 1;
+            if (bin_index < 0) bin_index = 0;
+            local_histogram[bin_index]++;
+        }
+    }
+
+    data->res[data->thread_id] = somme;
+    data->cpt[data->thread_id] = count;
+
+    pthread_mutex_lock(data->hist_mutex);
+    for (int bin = 0; bin < NUM_BINS; bin++) {
+        data->histogram[bin] += local_histogram[bin];
+    }
+    pthread_mutex_unlock(data->hist_mutex);
+}
+
+double calculate_mean_similitude_paralel(int choice) {
+    int num_threads = pool.nb_threads;
+    double *res = calloc(num_threads, sizeof(double));
+    int *cpt = calloc(num_threads, sizeof(int));
+    int histogram[NUM_BINS] = {0};
+    pthread_mutex_t hist_mutex;
+    pthread_mutex_init(&hist_mutex, NULL);
+
+    int rows_per_thread = num_rows / num_threads;
+    int remaining_rows = num_rows % num_threads;
+
+    for (int t = 0; t < num_threads; t++) {
+        struct mean_similitude_args *args = malloc(sizeof(struct mean_similitude_args));
+        args->choice = choice;
+        args->thread_id = t;
+        args->start_row = t * rows_per_thread;
+        args->end_row = (t + 1) * rows_per_thread;
+        args->res = res;
+        args->cpt = cpt;
+        args->histogram = histogram;
+        args->hist_mutex = &hist_mutex;
+
+        if (t == num_threads - 1) {
+            args->end_row += remaining_rows;
+        }
+
+        struct Job task;
+        task.j = mean_similitude_job;
+        task.args = args;
+        submit(&pool, task);
+    }
+
+    while (GetOp(&pool) < num_threads) {}
+
+    double somme = 0.0;
+    int count = 0;
+    for (int t = 0; t < num_threads; t++) {
+        somme += res[t];
+        count += cpt[t];
+    }
+    free(res);
+    free(cpt);
+    pthread_mutex_destroy(&hist_mutex);
+
+    printf("Histogram of Similarities (Normalized):\n");
+    for (int bin = 0; bin < NUM_BINS; bin++) {
+        double bin_start = (choice == 0 || choice == 1) ? -1.0 + (2.0 * bin) / NUM_BINS : (double)bin / NUM_BINS;
+        double bin_end = (choice == 0 || choice == 1) ? -1.0 + (2.0 * (bin + 1)) / NUM_BINS : (double)(bin + 1) / NUM_BINS;
+        printf("Bin [%.2f, %.2f): %d\n", bin_start, bin_end, histogram[bin]);
+    }
+
+    return (count > 0) ? somme / count : 0.0;
+}
+
 /////////////////////////////////////
 struct similarity_args {
     double threshold;
