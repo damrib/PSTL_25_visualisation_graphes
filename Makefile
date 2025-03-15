@@ -43,7 +43,7 @@ $(CONCURRENT_DIR)/%.o: $(CONCURRENT_SRC) $(CONCURRENT_DEPS)
 	$(CC) -c -o $@ $< $(FLAGS)
 
 $(GRAPH_C_DIR)/%.o: $(GRAPH_C_SRC) $(GRAPH_C_DEPS)
-			$(CC) -c -o $@ $< $(FLAGS)
+			$(CC) -c -o $@ $< $(FLAGS) $(JNI_FLAGS)
 
 all: $(CONCURRENT) $(GRAPH_C)
 	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) -d $(OUT_DIR) $(GRAPH_JAVA)

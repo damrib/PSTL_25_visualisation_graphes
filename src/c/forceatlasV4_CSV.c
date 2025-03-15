@@ -1528,11 +1528,11 @@ JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
    static Point forces[MAX_NODES] = {0};
 
    if ( pause_updates == 0 ){
-        repulsion_edges(forces);
-        repulsion_intra_clusters(forces, FMaxX, FMaxY);
-        repulsion_anti_edges(forces);
-        Max_movement = update_position_forces(forces, PasMaxX, PasMaxY, Max_movement);
-        update_clusters();
+        repulsion_edges(env, forces);
+        repulsion_intra_clusters(env, forces, FMaxX, FMaxY);
+        repulsion_anti_edges(env, forces);
+        Max_movement = update_position_forces(env,forces, PasMaxX, PasMaxY, Max_movement);
+        update_clusters(env);
 
         ++iteration;
 
@@ -1607,24 +1607,7 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getEdges
 JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getPositions
   (JNIEnv * env, jobject obj)
 {
-    // remplacer "backendinterface/Point" par "[packageName]/[nomClasse]"
-    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
-    jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
-    jobject initial_elem = (*env)->NewObject(env, obj_class, point_constructor, 0., 0.);
-
-    jobjectArray result = (*env)->NewObjectArray(env, num_nodes, obj_class, initial_elem);
-
-    for (int i = 0; i < num_nodes; ++i)
-    {
-        double x = positions[i].x;
-        double y = positions[i].y;
-
-        jobject point = (*env)->NewObject(env, obj_class, point_constructor, x, y);
-
-        (*env)->SetObjectArrayElement(env, result, i, point);
-    }
-
-    return result;
+    return vertices;
 }
 
 JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
@@ -1662,7 +1645,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
     sample_rows(&sampled_rows, &sampled_num_rows);
     num_rows = sampled_num_rows;
     num_nodes = num_rows;
-    
+
     double threshold, antiseuil;
     printf("Mean similitude: %.5lf\n",calculate_mean_similitude(5000, modeSimilitude));
     mode_similitude = modeSimilitude;
@@ -1729,8 +1712,9 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
         printf("Vecteurs moyens fini \n");
     #endif
 
+    initialize_vertices(env);
     for (int i = 0; i < num_nodes; i++) {
-        random_point_in_center(&positions[i]);
+        random_point_in_center(env, i);
         velocities[i].x = velocities[i].y = 0.0;
     }
     n_clusters = (int)sqrt(num_nodes);
@@ -1764,6 +1748,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
 
     FreePool(&pool);
 
+    (*env)->DeleteGlobalRef(env, vertices);
 }
 
 JNIEXPORT void JNICALL Java_graph_Graph_setSaut
@@ -1831,6 +1816,5 @@ JNIEXPORT void JNICALL Java_graph_Graph_setAmortissement
 JNIEXPORT void JNICALL Java_graph_Graph_setNodePosition
   (JNIEnv * env, jobject obj, jint index, jdouble x, jdouble y)
 {
-    positions[index].x = x;
-    positions[index].y = y;
+    setVertex(env, index, x, y);
 }

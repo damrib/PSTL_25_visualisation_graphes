@@ -135,7 +135,7 @@ public class Graph extends Application {
 
         // Récupérer les sommets
         List<Vertex> vertices = List.of(getPositions());
-
+        System.out.println("LENGTH: " + getPositions().length);
         // Récupérer les arêtes
         EdgeInterm[] edgesInterm = getEdges();
         for (int i = 0; i < edgesInterm.length; i++) {
