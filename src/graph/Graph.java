@@ -135,42 +135,41 @@ public class Graph extends Application {
 
         // Récupérer les sommets
         List<Vertex> vertices = List.of(getPositions());
-        System.out.println("LENGTH: " + getPositions().length);
+
         // Récupérer les arêtes
         EdgeInterm[] edgesInterm = getEdges();
         for (int i = 0; i < edgesInterm.length; i++) {
             Edge e = new Edge(vertices.get(edgesInterm[i].getStart()), vertices.get(edgesInterm[i].getEnd()));
             root.getChildren().add(e);
         }
-
+        
         // Ajouter les sommets
         root.getChildren().addAll(vertices);
-
+        
         // Création de la Timeline pour mettre à jour le graphe
         timeline = new Timeline();
         KeyFrame keyFrame = new KeyFrame(Duration.seconds(0.05), event -> {
-            // Met à jour les positions du graphe
-            updatePositions();
+        // Met à jour les positions du graphe
+        updatePositions();
+        
+        // Récupère les nouvelles positions et les met à jour
+        
+        // Efface les anciennes positions (les sommets et les arêtes)
+        root.getChildren().clear();
+        resetCount();
+        
+        // Ajoute les nouveaux sommets
+        //List<Vertex> updatedVertices = List.of(getPositions());
+        
+        // Récupérer les arêtes
+        EdgeInterm[] updatedEdgesInterm = getEdges();
+        for (int i = 0; i < updatedEdgesInterm.length; i++) {
+            Edge e = new Edge(vertices.get(updatedEdgesInterm[i].getStart()), vertices.get(updatedEdgesInterm[i].getEnd()));
+            root.getChildren().add(e);
+        }
 
-            // Récupère les nouvelles positions et les met à jour
-
-            // Efface les anciennes positions (les sommets et les arêtes)
-            root.getChildren().clear();
-            resetCount();
-
-            // Ajoute les nouveaux sommets
-            List<Vertex> updatedVertices = List.of(getPositions());
-
-            // Récupérer les arêtes
-            EdgeInterm[] updatedEdgesInterm = getEdges();
-            for (int i = 0; i < updatedEdgesInterm.length; i++) {
-                Edge e = new Edge(updatedVertices.get(updatedEdgesInterm[i].getStart()), updatedVertices.get(updatedEdgesInterm[i].getEnd()));
-                root.getChildren().add(e);
-            }
-
-            root.getChildren().addAll(updatedVertices);
+            root.getChildren().addAll(vertices);
         });
-
         // Définir la fréquence de mise à jour (ici toutes les 0.05 secondes)
         timeline.getKeyFrames().add(keyFrame);
         timeline.setCycleCount(Timeline.INDEFINITE);

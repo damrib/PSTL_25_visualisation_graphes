@@ -11,7 +11,7 @@ import static graph.Graph.WIDTH;
 public class Vertex extends Circle {
     public static int count = 0;
 
-    protected double x, y;
+    public double x, y;
     private final int id = ++count;
 
     private static final int ratio = 15;

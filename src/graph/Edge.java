@@ -19,11 +19,11 @@ public class Edge extends Line {
 
     public void update(Vertex vertex) {
         if (vertex == start) {
-            setStartX(vertex.getX());
-            setStartY(vertex.getY());
+            setStartX(vertex.getCenterX());
+            setStartY(vertex.getCenterY());
         } else if (vertex == end) {
-            setEndX(vertex.getX());
-            setEndY(vertex.getY());
+            setEndX(vertex.getCenterX());
+            setEndY(vertex.getCenterY());
         }
         //System.out.println("Mise à jour de l'arrête " + this);
     }
