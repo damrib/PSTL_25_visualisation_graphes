@@ -55,7 +55,7 @@ void random_point_in_center(JNIEnv* env, int index) {
     double x = (rand() / (double)RAND_MAX) * center_width - center_width / 2;
     double y = (rand() / (double)RAND_MAX) * center_height - center_height / 2;
 
-    setVertex(env, index, x, y);
+    setNewVertex(env, index, x, y);
 }
 
 void translate_positions(JNIEnv* env, double dx, double dy) {
@@ -180,12 +180,11 @@ void setNewVertex(JNIEnv* env, int index, double x, double y){
     jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
 
     jobject point = (*env)->NewObject(env, obj_class, point_constructor, x, y);
-    
-    (*env)->SetObjectArrayElement(env, vertices, index, point);
+    jobject global_point = (*env)->NewGlobalRef(env, point);
+
+    (*env)->SetObjectArrayElement(env, vertices, index, global_point);
     
     (*env)->DeleteLocalRef(env, point);
-    
-    printf("%lf %lf \t %lf %lf\n", getVertex_x(env, index), getVertex_y(env, index), x, y);
 
 }
 
@@ -197,8 +196,6 @@ void setVertex(JNIEnv* env, int index, double x, double y){
     (*env)->CallVoidMethod(env, vertex, update_method, x, y);
     
     (*env)->DeleteLocalRef(env, vertex);
-
-    printf("%lf %lf \t %lf %lf\n", getVertex_x(env, index), getVertex_y(env, index), x, y);
 }
 
 jdouble getVertex_x(JNIEnv* env, int index){
@@ -229,6 +226,6 @@ Point getVertex(JNIEnv* env, int index){
     Point res;
     res.x = getVertex_x(env, index);
     res.y = getVertex_y(env, index);
-    //printf("GetVertex: %lf, %lf\n", res.x, res.y);
+
     return res;  
 }

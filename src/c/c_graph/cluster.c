@@ -18,12 +18,15 @@ int mode = 0;
 
 // Assigner des noeuds aux clusters et mettre à jour les centres en utilisant l'algorithme k-means
 void kmeans_iteration(JNIEnv* env, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly) {
-    int counts[MAX_NODES] = {0};
 
     // Modification pour utiliser moins de memoire et eviter un seg fault
+    int counts[num_nodes];
     double ** new_centers = (double**) malloc(sizeof(double*) * num_clusters);  // Stocker les nouveaux centres calculés
     // TODO
 
+    for (int i = 0; i < num_nodes; ++i){
+        counts[i] = 0;
+    } 
 
     for (int i = 0; i < num_clusters; ++i)
     {
