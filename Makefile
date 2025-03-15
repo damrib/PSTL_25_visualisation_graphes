@@ -24,7 +24,7 @@ DEBUG_DEPS = $(DEBUG_DIR)/%.h
 CONCURRENT_DIR  = $(SRC_DIR)/concurrent
 CONCURRENT_DEPS = $(CONCURRENT_DIR)/%.h
 CONCURRENT_SRC  = $(CONCURRENT_DIR)/%.c
-CONCURRENT_OBJ  = Pool.o
+CONCURRENT_OBJ  = Pool.o Barrier.o
 CONCURRENT = $(patsubst %,$(CONCURRENT_DIR)/%,$(CONCURRENT_OBJ))
 
 FORCE_ATLAS = $(SRC_DIR)/c/forceatlasV4_CSV.c
@@ -43,7 +43,7 @@ $(CONCURRENT_DIR)/%.o: $(CONCURRENT_SRC) $(CONCURRENT_DEPS)
 	$(CC) -c -o $@ $< $(FLAGS)
 
 $(GRAPH_C_DIR)/%.o: $(GRAPH_C_SRC) $(GRAPH_C_DEPS)
-			$(CC) -c -o $@ $< $(FLAGS)
+			$(CC) -c -o $@ $< $(FLAGS) $(JNI_FLAGS)
 
 all: $(CONCURRENT) $(GRAPH_C)
 	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) -d $(OUT_DIR) $(GRAPH_JAVA)

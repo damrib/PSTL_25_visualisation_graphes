@@ -17,13 +17,16 @@ int saut = 10;
 int mode = 0;
 
 // Assigner des noeuds aux clusters et mettre à jour les centres en utilisant l'algorithme k-means
-void kmeans_iteration(Point *points, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly) {
-    int counts[MAX_NODES] = {0};
+void kmeans_iteration(JNIEnv* env, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly) {
 
     // Modification pour utiliser moins de memoire et eviter un seg fault
+    int counts[num_nodes];
     double ** new_centers = (double**) malloc(sizeof(double*) * num_clusters);  // Stocker les nouveaux centres calculés
     // TODO
 
+    for (int i = 0; i < num_nodes; ++i){
+        counts[i] = 0;
+    } 
 
     for (int i = 0; i < num_clusters; ++i)
     {
@@ -39,7 +42,7 @@ void kmeans_iteration(Point *points, int num_points, int num_clusters, int *labe
 
         for (int j = 0; j < num_clusters; j++) {
             Point dir;
-            toroidal_vector(&dir, points[i], (Point){centers[j][0], centers[j][1]});
+            toroidal_vector(&dir, getVertex(env, i), (Point){centers[j][0], centers[j][1]});
             double dist = (dir.x * dir.x + dir.y * dir.y);
 
             if (dist < min_dist) {
@@ -51,8 +54,8 @@ void kmeans_iteration(Point *points, int num_points, int num_clusters, int *labe
         labels[i] = best_cluster;
 
         // Ajuster les coordonnées du point pour qu'elles soient proches du centre du cluster
-        double adjusted_x = points[i].x;
-        double adjusted_y = points[i].y;
+        double adjusted_x = getVertex_x(env, i);
+        double adjusted_y = getVertex_y(env, i);
 
         while (adjusted_x - centers[best_cluster][0] > Lx / 2) adjusted_x -= Lx;
         while (centers[best_cluster][0] - adjusted_x > Lx / 2) adjusted_x += Lx;
@@ -87,7 +90,7 @@ void kmeans_iteration(Point *points, int num_points, int num_clusters, int *labe
 
 // probablement privé utilisée dans update_positions
 // Étape 2 : Forces de répulsion intra-cluster
-void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY)
+void repulsion_intra_clusters(JNIEnv* env, Point* forces, double FMaxX, double FMaxY)
 {
 
     for (int cluster = 0; cluster < n_clusters; cluster++) {
@@ -95,11 +98,11 @@ void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY)
         for (int i = 0; i < size; i++) {
             int node_i = cluster_nodes[cluster].nodes[i];
     
-            Point pi = positions[node_i];
+            Point pi = getVertex(env, node_i);
             for (int j = i + 1; j < size; j++) {
                 int node_j = cluster_nodes[cluster].nodes[j];
                 Point dir;
-                toroidal_vector(&dir, pi, positions[node_j]);
+                toroidal_vector(&dir, pi, getVertex(env, node_j));
     
                 double dist_squared = dir.x * dir.x + dir.y * dir.y;
                 if (dist_squared > seuilrep) { // Assume a minimum distance to avoid division by zero
@@ -138,7 +141,7 @@ void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY)
 }
 
 // etape 4 dans update_positions
-void update_clusters()
+void update_clusters(JNIEnv* env)
 {
     if (iteration % (saut * (1+0*espacement)) == 0) {
         int centers_converged = 0;
@@ -147,7 +150,7 @@ void update_clusters()
             double old_centers[MAX_NODES][2];
             memcpy(old_centers, centers, sizeof(centers));
 
-            kmeans_iteration(positions, num_nodes, n_clusters, clusters, centers, Lx, Ly);
+            kmeans_iteration(env, num_nodes, n_clusters, clusters, centers, Lx, Ly);
 
             centers_converged = 1;
             for (int i = 0; i < n_clusters; i++) {

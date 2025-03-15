@@ -3,6 +3,8 @@
 
 #include <math.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <jni.h>
 
 #define MAX_NODES 50000
 #define MAX_EDGES 1000000
@@ -22,7 +24,7 @@ typedef struct {
 extern Edge edges[MAX_EDGES]; // Pour les arêtes normales
 extern char *node_names[MAX_NODES]; // Array to store node names as strings      
 extern int S[MAX_NODES];
-extern Point positions[MAX_NODES];
+extern jobjectArray vertices;
 extern Point velocities[MAX_NODES];
 extern int node_degrees[MAX_NODES];
 
@@ -43,12 +45,24 @@ extern double thresholdA;
 extern double seuilrep;
 extern double thresholdS;
 
+
+void initialize_vertices(JNIEnv* env);
+void setNewVertex(JNIEnv* env, int index, double x, double y);
+void setVertex(JNIEnv* env, int index, double x, double y);
+jdouble getVertex_x(JNIEnv* env, int index);
+jdouble getVertex_y(JNIEnv* env, int index);
+Point getVertex(JNIEnv* env, int index);
+
 // Calculer un vecteur avec un enroulement toroïdal
 void toroidal_vector(Point *dir, Point p1, Point p2);
+void calculate_node_degrees(void);
+void random_point_in_center(JNIEnv* env, int index);
+void translate_positions(JNIEnv* env, double dx, double dy);
+double toroidal_distance(Point p1, Point p2);
 
-void repulsion_edges(Point* forces);
-void repulsion_anti_edges(Point* forces);
-double update_position_forces(Point* forces, double PasMaxX, double PasMaxY, double Max_movement);
-
+// Fonction update_position
+void repulsion_edges(JNIEnv* env, Point* forces);
+void repulsion_anti_edges(JNIEnv* env, Point* forces);
+double update_position_forces(JNIEnv* env, Point* forces, double PasMaxX, double PasMaxY, double Max_movement);
 
 #endif

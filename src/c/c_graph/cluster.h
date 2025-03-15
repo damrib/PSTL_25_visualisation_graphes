@@ -35,8 +35,8 @@ extern double repulsion_coeff;
 extern int saut;
 extern int mode;
 
-void update_clusters();
-void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY);
+void update_clusters(JNIEnv* env);
+void repulsion_intra_clusters(JNIEnv* env, Point* forces, double FMaxX, double FMaxY);
 
 // Fonction pour initialiser les centres de clusters de manière aléatoire
 void initialize_centers();
