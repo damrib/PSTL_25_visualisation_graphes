@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.TextField?>
+
+<VBox xmlns="http://javafx.com/javafx/8.0.171"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mongraphe.graphui.ChoixSimilitudeController"
+      spacing="10" style="-fx-padding: 20px;">
+    
+    <TableView fx:id="tableView" prefHeight="300" prefWidth="500"/>
+    
+    <!-- TextField pour donner une instruction à l'utilisateur -->
+    <TextField text="Choisir une mesure de similarité à utiliser:" 
+               editable="false" 
+               style="-fx-background-color: transparent; -fx-font-weight: bold; -fx-padding: 5px;"/>
+    
+    <!-- ComboBox pour la sélection de la mesure de similarité -->
+    <ComboBox fx:id="similarityMeasureComboBox" promptText="Mesure de similarité à utiliser:" />
+    
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button text="Next" fx:id="continuerButton" onAction="#handleContinuer"/>
+        <Button text="Annuler" fx:id="annulerButton" onAction="#handleAnnuler"/>
+    </HBox>
+</VBox>

@@ -49,7 +49,7 @@ public class MainApp extends Application {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/HomeScreen.fxml"));
             Parent root = loader.load();
             primaryStage.setTitle("Accueil");
-            primaryStage.setScene(new Scene(root, 500, 350));
+            primaryStage.setScene(new Scene(root, 1000, 700));
             primaryStage.show();
         } catch (Exception e) {
             e.printStackTrace();

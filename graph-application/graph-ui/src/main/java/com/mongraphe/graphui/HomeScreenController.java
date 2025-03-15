@@ -41,14 +41,15 @@ public class HomeScreenController {
 
     private void ouvrirFenetreGraphe(Stage stage, File fichier) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/FenetreGraphe.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ChoixSimilitude.fxml"));
             Parent root = loader.load();
 
             // Passer le fichier au contrôleur de FenetreGraphe
-            FenetreGrapheController controller = loader.getController();
+            ChoixSimilitudeController controller = loader.getController();
             controller.setFichier(fichier);
 
-            Scene scene = new Scene(root, 500, 350);
+            Scene scene = new Scene(root, 1000, 700);
+            stage.setTitle("Mesure de similarité");
             stage.setScene(scene);
             stage.show();
         } catch (IOException e) {
