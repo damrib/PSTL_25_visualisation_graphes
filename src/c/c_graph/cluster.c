@@ -20,7 +20,7 @@ int mode = 0;
 void kmeans_iteration(JNIEnv* env, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly) {
 
     // Modification pour utiliser moins de memoire et eviter un seg fault
-    int counts[num_nodes];
+    int* counts = (int*) malloc(sizeof(int) * num_nodes);
     double ** new_centers = (double**) malloc(sizeof(double*) * num_clusters);  // Stocker les nouveaux centres calculés
     // TODO
 
@@ -86,6 +86,7 @@ void kmeans_iteration(JNIEnv* env, int num_points, int num_clusters, int *labels
         free(new_centers[i]);
     }
     free(new_centers);
+    free(counts);
 }
 
 // probablement privé utilisée dans update_positions

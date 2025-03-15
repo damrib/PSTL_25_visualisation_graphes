@@ -1099,7 +1099,7 @@ void load_csv_data(const char *filename) {
 
         // Compter les colonnes uniquement à la première ligne
         if (num_columns == 0) {
-            int count = 1;  // Commence à 1 car il y a toujours une colonne avant la première virgule
+            int count = 0;  // Commence à 1 car il y a toujours une colonne avant la première virgule
             for (int i = 0; line[i] != '\0'; i++) {
                 if (delimiter[0] == '\0' || line[i] == ',' || line[i] == ';' || line[i] == '|' || line[i] == ' ' || line[i] == '\t') {
                     delimiter[0] = line[i];
@@ -1108,6 +1108,7 @@ void load_csv_data(const char *filename) {
                     count++;
                 }
             }
+
             num_columns = count;
         }
     }
@@ -1767,10 +1768,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
 
     InitPool(&pool, 1000, 8);
 
-    int *sampled_rows = NULL;
-    int sampled_num_rows = 0;
-    sample_rows(&sampled_rows, &sampled_num_rows);
-    num_rows = sampled_num_rows;
     num_nodes = num_rows;
 
     double threshold, antiseuil;
@@ -1781,8 +1778,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
     jclass res_class = (*env)->FindClass(env, "graph/Metadata");
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDD)V");
     jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, threshold, antiseuil);
-
-    free(sampled_rows);
 
     return res;
 
