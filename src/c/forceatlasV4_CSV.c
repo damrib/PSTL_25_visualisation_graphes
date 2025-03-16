@@ -1652,7 +1652,7 @@ JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
    double PasMaxX = Lx / 10.;
    double PasMaxY = Ly / 10.;
 
-   static int iteration = 0;
+   iteration = 0;
    static Point forces[MAX_NODES] = {0};
 
    if ( pause_updates == 0 ){
@@ -1962,5 +1962,8 @@ JNIEXPORT void JNICALL Java_graph_Graph_setNodePosition
 JNIEXPORT void JNICALL Java_graph_Graph_unpauseGraph
   (JNIEnv * env, jobject obj)
 {
-    pause_updates = 0;
+    if ( pause_updates == 1 ) {
+        iteration = 0;
+        pause_updates = 0;
+    }
 }
