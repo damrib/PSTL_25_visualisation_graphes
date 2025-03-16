@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 
 <GridPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-          hgap="10" vgap="10" style="-fx-padding: 10px;">
+          fx:controller="com.mongraphe.graphui.VisualisationController">
     <!-- Définir les proportions des colonnes et des lignes -->
     <columnConstraints>
         <!-- Colonne 0 : En haut à gauche et en bas à gauche (20% de la largeur) -->
@@ -24,6 +24,7 @@
     <!-- En haut à gauche : Aspect des nœuds -->
     <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" GridPane.rowIndex="0" GridPane.columnIndex="0">
         <!-- Contenu pour l'aspect des nœuds -->
+            <Button text="Démarrer" onAction="#handleStartButton" />
     </AnchorPane>
 
     <!-- En bas à gauche : Options de personnalisation -->

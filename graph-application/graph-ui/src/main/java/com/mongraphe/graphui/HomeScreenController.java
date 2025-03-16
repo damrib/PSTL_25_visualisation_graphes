@@ -14,28 +14,36 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mongraphe.graphlayout.Graph;
+
 public class HomeScreenController {
 
     @FXML private Hyperlink newProjectLink;
     @FXML private Hyperlink openFileLink;
     
     @FXML
-    private void handleNewProject() { 
-    	try {
+    private void handleNewProject() {
+        try {
+            // Créer une instance de la classe Graph
+            Graph graph = new Graph();
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Visualisation.fxml"));
-        Parent root = loader.load();
+            // Définir le fichier à utiliser
+            File file = new File("/home/ronald/Documents/STL-S2/PSTL/PSTL_25_visualisation_graphes/graph-application/samples/iris.csv");
+            if (!file.exists()) {
+                System.err.println("Le fichier spécifié n'existe pas : " + file.getAbsolutePath());
+                return;
+            }
+            graph.setFilename(file.getAbsolutePath());
 
-        // Récupérer le contrôleur suivant et lui passer les données
-        VisualisationController controller = loader.getController();
+            // Créer une nouvelle fenêtre (Stage)
+            Stage graphStage = new Stage();
+            graphStage.setTitle("Visualisation du Graphe");
 
-        Stage stage = (Stage) newProjectLink.getScene().getWindow();
-        stage.setScene(new Scene(root, 1000, 700));
-        stage.setTitle("Visualisation");
-        stage.show();
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
+            // Lancer la fenêtre de visualisation
+            graph.start(graphStage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML

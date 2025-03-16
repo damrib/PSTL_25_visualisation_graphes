@@ -2579,7 +2579,7 @@ void idle() {
  * 
  */
 
- JNIEXPORT void JNICALL Java_graph_Graph_updatePositions
+ JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_updatePositions
  (JNIEnv * env, jobject obj)
 {
    //int iteration;
@@ -2733,7 +2733,7 @@ void idle() {
 
 }
 
-JNIEXPORT jintArray JNICALL Java_graph_Graph_getCommunitites
+JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphlayout_Graph_getCommunitites
   (JNIEnv * env, jobject obj)
 {
     jintArray result = (*env)->NewIntArray(env, MAX_NODES);
@@ -2743,7 +2743,7 @@ JNIEXPORT jintArray JNICALL Java_graph_Graph_getCommunitites
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getClusterColors
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getClusterColors
   (JNIEnv * env, jobject obj)
 {
     jclass obj_class = (*env)->FindClass(env, "[F");
@@ -2760,7 +2760,7 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getClusterColors
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getEdges
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getEdges
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Edge" par "[packageName]/[nomClasse]"
@@ -2783,7 +2783,7 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getEdges
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getPositions
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getPositions
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Point" par "[packageName]/[nomClasse]"
@@ -2806,7 +2806,7 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getPositions
     return result;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_startsProgram
+JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_startsProgram
   (JNIEnv * env, jobject obj, jstring filepath)
 {
     srand(time(NULL));
@@ -2885,7 +2885,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_startsProgram
     free(sampled_rows);
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
+JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_freeAllocatedMemory
   (JNIEnv * env, jobject obj)
 {
 

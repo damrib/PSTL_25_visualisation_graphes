@@ -35,6 +35,11 @@
             <artifactId>graph-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+        	<groupId>com.mongraphe</groupId>
+        	<artifactId>graph-layout</artifactId>
+        	<version>0.0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -52,7 +57,12 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.mongraphe.graphui.MainApp</mainClass> <!-- Remplace par le nom de ta classe principale -->
+                    <mainClass>com.mongraphe.graphui.MainApp</mainClass>
+        <executable>java</executable>
+        <options>
+            <option>-Xmx2G</option>
+            <option>-Xms1G</option>
+        </options>
                 </configuration>
             </plugin>
 

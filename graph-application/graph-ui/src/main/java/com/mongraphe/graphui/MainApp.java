@@ -60,6 +60,7 @@ public class MainApp extends Application {
     	runMake("../");
     	String libnative = new File(System.getProperty("user.dir")).getParent() + "/out/libnative.so";
     	System.load(libnative);
+    	System.out.println("Chemin de la bibliothèque native : " + libnative);
         launch(args);
     }
 }
