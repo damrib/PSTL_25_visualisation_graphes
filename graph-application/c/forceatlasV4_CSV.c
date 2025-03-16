@@ -2764,7 +2764,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getEdges
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Edge" par "[packageName]/[nomClasse]"
-    jclass obj_class = (*env)->FindClass(env, "graph/EdgeInterm");
+    jclass obj_class = (*env)->FindClass(env, "com/mongraphe/graphelayout/EdgeInterm");
     jmethodID edge_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(IID)V");
     jobject initial_elem = (*env)->NewObject(env, obj_class, edge_constructor, 0, 0, 0.);
     
@@ -2787,7 +2787,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getPositions
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Point" par "[packageName]/[nomClasse]"
-    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
+    jclass obj_class = (*env)->FindClass(env, "com/mongraphe/graphelayout/Vertex");
     jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
     jobject initial_elem = (*env)->NewObject(env, obj_class, point_constructor, 0., 0.);
 
@@ -2810,6 +2810,7 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_startsProgram
   (JNIEnv * env, jobject obj, jstring filepath)
 {
     srand(time(NULL));
+    
 
     const char* str = (*env)->GetStringUTFChars(env, filepath, JNI_FALSE);
 
@@ -2881,9 +2882,11 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_startsProgram
     initialize_centers();
     assign_cluster_colors();
     calculate_node_degrees();
-
+	
     free(sampled_rows);
 }
+
+
 
 JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_freeAllocatedMemory
   (JNIEnv * env, jobject obj)

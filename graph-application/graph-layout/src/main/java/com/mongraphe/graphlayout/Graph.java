@@ -17,7 +17,9 @@ import static com.mongraphe.graphlayout.Vertex.resetCount;
 public class Graph extends Application {
 
 	static {
-    	String libnative = new File(System.getProperty("user.dir")).getParent() + "/out/libnative.so";
+    	String libnative = new File(System.getProperty("user.dir")) + "/out/libnative.so";
+    	System.out.println("Jennnnnnntttttre1");
+        System.out.println("Loading native library from: " + libnative); // Debugging line
     	System.load(libnative);
     }
 
@@ -35,7 +37,7 @@ public class Graph extends Application {
     public static final int WIDTH = 1500;
     public static final int HEIGHT = 800;
 
-    private static String filename;
+    private static String filename = "/home/ronald/Documents/STL-S2/PSTL/PSTL_25_visualisation_graphes/graph-application/samples/iris.csv";
     private Timeline timeline;
     
     public void setFilename(String f) {
@@ -45,6 +47,8 @@ public class Graph extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+    	System.out.println("Jennnnnnntttttre");
+    	System.out.printf(filename);
         Pane root = new Pane();
 
         // Appeler startsProgram avant d'utiliser les données natives
