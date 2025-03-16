@@ -190,7 +190,7 @@ void setNewVertex(JNIEnv* env, int index, double x, double y){
 
 void setVertex(JNIEnv* env, int index, double x, double y){
     jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
-    jmethodID update_method = (*env)->GetMethodID(env, obj_class, "update", "(DD)V");
+    jmethodID update_method = (*env)->GetMethodID(env, obj_class, "updatePosition", "(DD)V");
     jobject vertex = (*env)->GetObjectArrayElement(env, vertices, index);
     
     (*env)->CallVoidMethod(env, vertex, update_method, x, y);
