@@ -20,9 +20,22 @@ public class HomeScreenController {
     @FXML private Hyperlink openFileLink;
     
     @FXML
-    private void handleNewProject() {
-        System.out.println("Nouveau projet créé!");
-        // Ajouter ici le chargement d'une nouvelle scène pour un nouveau projet
+    private void handleNewProject() { 
+    	try {
+
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Visualisation.fxml"));
+        Parent root = loader.load();
+
+        // Récupérer le contrôleur suivant et lui passer les données
+        VisualisationController controller = loader.getController();
+
+        Stage stage = (Stage) newProjectLink.getScene().getWindow();
+        stage.setScene(new Scene(root, 1000, 700));
+        stage.setTitle("Visualisation");
+        stage.show();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
     }
 
     @FXML

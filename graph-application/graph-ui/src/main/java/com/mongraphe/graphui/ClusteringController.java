@@ -86,23 +86,23 @@ public class ClusteringController {
 
     @FXML
     private void handleNext() {
-//        try {
-//            String selectedMethod = clusteringComboBox.getValue();
-//            int methodCode = getMethodeCode(selectedMethod);
-//
-//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Visualisation.fxml"));
-//            Parent root = loader.load();
-//
-//            // Récupérer le contrôleur suivant et lui passer les données
-//            VisualisationController controller = loader.getController();
-//            controller.initData(fichier, measureCode, upThreshold, downThreshold, methodCode);
-//
-//            Stage stage = (Stage) nextButton.getScene().getWindow();
-//            stage.setScene(new Scene(root, 1000, 700));
-//            stage.show();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            String selectedMethod = clusteringComboBox.getValue();
+            int methodCode = getMethodeCode(selectedMethod);
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Visualisation.fxml"));
+            Parent root = loader.load();
+
+            // Récupérer le contrôleur suivant et lui passer les données
+            VisualisationController controller = loader.getController();
+            controller.initData(fichier, measureCode, upThreshold, downThreshold, methodCode);
+
+            Stage stage = (Stage) nextButton.getScene().getWindow();
+            stage.setScene(new Scene(root, 1000, 700));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
