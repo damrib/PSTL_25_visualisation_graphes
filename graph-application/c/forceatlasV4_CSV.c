@@ -2764,7 +2764,9 @@ JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getEdges
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Edge" par "[packageName]/[nomClasse]"
-    jclass obj_class = (*env)->FindClass(env, "com/mongraphe/graphelayout/EdgeInterm");
+    jclass obj_class = (*env)->FindClass(env, "Lcom/mongraphe/graphlayout/EdgeInterm;");
+    if ( obj_class == NULL )
+        printf("Nope");
     jmethodID edge_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(IID)V");
     jobject initial_elem = (*env)->NewObject(env, obj_class, edge_constructor, 0, 0, 0.);
     
@@ -2787,7 +2789,9 @@ JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getPositions
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Point" par "[packageName]/[nomClasse]"
-    jclass obj_class = (*env)->FindClass(env, "com/mongraphe/graphelayout/Vertex");
+    jclass obj_class = (*env)->FindClass(env, "Lcom/mongraphe/graphlayout/Vertex;");
+    if ( obj_class == NULL )
+        printf("Nope");
     jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
     jobject initial_elem = (*env)->NewObject(env, obj_class, point_constructor, 0., 0.);
 

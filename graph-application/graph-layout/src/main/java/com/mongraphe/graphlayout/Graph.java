@@ -37,7 +37,7 @@ public class Graph extends Application {
     public static final int WIDTH = 1500;
     public static final int HEIGHT = 800;
 
-    private static String filename = "/home/ronald/Documents/STL-S2/PSTL/PSTL_25_visualisation_graphes/graph-application/samples/iris.csv";
+    private static String filename = new File(System.getProperty("user.dir")) + "/samples/iris.csv";
     private Timeline timeline;
     
     public void setFilename(String f) {
