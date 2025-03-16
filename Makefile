@@ -20,6 +20,9 @@ GRAPH_C	   = $(patsubst %, $(GRAPH_C_DIR)/%,$(GRAPH_C_OBJ))
 
 DEBUG_DIR  = $(SRC_DIR)/debug
 DEBUG_DEPS = $(DEBUG_DIR)/%.h
+DEBUG_SRC = $(DEBUG_DIR)/%.c
+DEBUG_OBJ = debug_time.o
+DEBUG = $(patsubst %, $(DEBUG_DIR)/%,$(DEBUG_OBJ))
 
 CONCURRENT_DIR  = $(SRC_DIR)/concurrent
 CONCURRENT_DEPS = $(CONCURRENT_DIR)/%.h
@@ -51,6 +54,15 @@ all: $(CONCURRENT) $(GRAPH_C)
 
 	$(CC) $(JNI_FLAGS) -c $(FORCE_ATLAS) -o $(FORCE_ATLAS_OUT)
 	$(CC) $(FORCE_ATLAS_OUT) $(CONCURRENT) $(GRAPH_C) -o $(LIBNATIVE_OUT) $(FLAGS)
+
+	java -Djava.library.path=. --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) $(GRAPH_JAVA_OUT) $(DIR_SAMPLE)
+
+debug: $(DEBUG) $(CONCURRENT) $(GRAPH_C)
+	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) -d $(OUT_DIR) $(GRAPH_JAVA)
+	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) -h $(OUT_DIR) -d $(OUT_DIR) $(GRAPH_JAVA)
+
+	$(CC) $(JNI_FLAGS) -c $(FORCE_ATLAS) -D_DEBUG_ -o $(FORCE_ATLAS_OUT)
+	$(CC) $(FORCE_ATLAS_OUT) $(CONCURRENT) $(GRAPH_C) $(DEBUG) -o $(LIBNATIVE_OUT) $(FLAGS)
 
 	java -Djava.library.path=. --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) $(GRAPH_JAVA_OUT) $(DIR_SAMPLE)
 

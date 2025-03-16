@@ -1758,6 +1758,8 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
         (*env)->SetObjectArrayElement(env, result, i, double_array);
     }
 
+    (*env)->ReleaseStringUTFChars(env, filepath, str); 
+
     return result;
 
 }
@@ -1766,18 +1768,32 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
   (JNIEnv * env, jobject obj, jint modeSimilitude)
 {
 
-    InitPool(&pool, 1000, 8);
+    InitPool(&pool, 1000, 2);
 
     num_nodes = num_rows;
 
     double threshold, antiseuil;
-    printf("Mean similitude: %.5lf\n",calculate_mean_similitude_paralel(modeSimilitude));
     mode_similitude = modeSimilitude;
+    
+    #ifdef _DEBUG_
+        printf("debut log");
+        struct chrono chr;
+        chr_assign_log(&chr, "similitude.csv");
+        chr_start_clock(&chr);
+        double means_similitude = calculate_mean_similitude_paralel(modeSimilitude);
+        chr_stop(&chr);
+        chr_close_log(&chr);
+        printf("fin log");
+    #else
+        double means_similitude = calculate_mean_similitude_paralel(modeSimilitude);
+    #endif
+
     calculate_threshold(num_nodes, modeSimilitude, 10*num_nodes, &threshold, &antiseuil);
 
+    
     jclass res_class = (*env)->FindClass(env, "graph/Metadata");
-    jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDD)V");
-    jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, threshold, antiseuil);
+    jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDD)V");
+    jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, threshold, antiseuil, means_similitude);
 
     return res;
 
@@ -1789,12 +1805,14 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
 {
 
     #ifdef _DEBUG_
+        printf("debut log");
         struct chrono chr;
-        chr_assign_log(&chr, "debug.csv");
+        chr_assign_log(&chr, "edges.csv");
         chr_start_clock(&chr);
         calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
         chr_stop(&chr);
         chr_close_log(&chr);
+        printf("fin log");
     #else
         calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
     #endif
@@ -1939,4 +1957,10 @@ JNIEXPORT void JNICALL Java_graph_Graph_setNodePosition
   (JNIEnv * env, jobject obj, jint index, jdouble x, jdouble y)
 {
     setVertex(env, index, x, y);
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_unpauseGraph
+  (JNIEnv * env, jobject obj)
+{
+    pause_updates = 0;
 }

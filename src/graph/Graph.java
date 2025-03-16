@@ -106,6 +106,11 @@ public class Graph extends Application {
      * @param y second coordinate of the point
      */
     public native void setNodePosition(int index, double x, double y);
+
+    /** allows to restart the graph after it pause */
+    public native void unpauseGraph();
+
+    
     /****************************************************************************************************/
     
     
