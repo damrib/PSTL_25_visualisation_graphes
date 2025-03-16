@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="728.0" prefWidth="1200.0" style="-fx-padding: 5px;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <MenuBar prefHeight="17.0" prefWidth="990.0">
+              <menus>
+                <Menu mnemonicParsing="false" style="-fx-background-color: none; -fx-padding: 0 10px;" text="Fichier">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="Close" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" style="-fx-background-color: none; -fx-padding: 0 10px;" text="Espace de travail">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="Delete" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" style="-fx-background-color: none; -fx-padding: 0 10px;" text="Vue">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="About" />
+                  </items>
+                </Menu>
+                  <Menu mnemonicParsing="false" style="-fx-background-color: none; -fx-padding: 0 10px;" text="Outils">
+                     <items>
+                        <MenuItem mnemonicParsing="false" text="About" />
+                     </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" style="-fx-background-color: none; -fx-padding: 0 10px;" text="Fenetre">
+                     <items>
+                        <MenuItem mnemonicParsing="false" text="About" />
+                     </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" style="-fx-background-color: none; -fx-padding: 0 10px;" text="Aide">
+                     <items>
+                        <MenuItem mnemonicParsing="false" text="About" />
+                     </items>
+                  </Menu>
+              </menus>
+            </MenuBar>
+            <AnchorPane prefHeight="704.0" prefWidth="990.0">
+               <children>
+                  <TabPane prefHeight="698.0" prefWidth="990.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <tabs>
+                      <Tab style="-fx-padding: 0 5; -fx-background-color: none; -fx-border-color: grey; -fx-border-radius: 5%; -fx-margin: 20px;" text="Vue d'ensemble">
+                           <content>
+                              <AnchorPane prefHeight="200.0" prefWidth="200.0">
+                                 <children>
+                                    <SplitPane dividerPositions="0.21052631578947367" layoutX="369.0" layoutY="187.0" prefHeight="160.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                      <items>
+                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                                             <children>
+                                                <SplitPane dividerPositions="0.4909365558912387" orientation="VERTICAL" prefHeight="664.0" prefWidth="374.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                  <items>
+                                                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="299.0" prefWidth="191.0">
+                                                         <children>
+                                                            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                              <tabs>
+                                                                <Tab style="-fx-padding: -4 5; -fx-font-size: 10px; -fx-height: 10px;" text="Aspect">
+                                                                  <content>
+                                                                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                                                           <children>
+                                                                              <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                                <tabs>
+                                                                                  <Tab style="-fx-padding: -4 5; -fx-font-size: 10px; -fx-height: 10px;" text="Noeuds">
+                                                                                    <content>
+                                                                                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                                                                             <children>
+                                                                                                <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                                                  <tabs>
+                                                                                                    <Tab style="-fx-padding: -4 5; -fx-font-size: 10px; -fx-height: 10px;" text="Unique">
+                                                                                                      <content>
+                                                                                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                                                                                      </content>
+                                                                                                    </Tab>
+                                                                                                      <Tab style="-fx-padding: -4 5; -fx-font-size: 10px; -fx-height: 10px;" text="Partition">
+                                                                                                         <content>
+                                                                                                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                                                                                         </content>
+                                                                                                      </Tab>
+                                                                                                      <Tab style="-fx-padding: -4 5; -fx-font-size: 10px; -fx-height: 10px;" text="Classement">
+                                                                                                         <content>
+                                                                                                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                                                                                         </content>
+                                                                                                      </Tab>
+                                                                                                  </tabs>
+                                                                                                </TabPane>
+                                                                                             </children>
+                                                                                          </AnchorPane>
+                                                                                    </content>
+                                                                                  </Tab>
+                                                                                </tabs>
+                                                                              </TabPane>
+                                                                           </children>
+                                                                        </AnchorPane>
+                                                                  </content>
+                                                                </Tab>
+                                                              </tabs>
+                                                            </TabPane>
+                                                         </children></AnchorPane>
+                                                      <AnchorPane layoutX="10.0" layoutY="10.0" minHeight="0.0" minWidth="0.0" prefHeight="299.0" prefWidth="191.0">
+                                                         <children>
+                                                            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                               <tabs>
+                                                                  <Tab style="-fx-padding: -4 5; -fx-font-size: 10px; -fx-height: 10px;" text="Affichage">
+                                                                     <content>
+                                                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                                                     </content>
+                                                                  </Tab>
+                                                               </tabs>
+                                                            </TabPane>
+                                                         </children>
+                                                      </AnchorPane>
+                                                  </items>
+                                                </SplitPane>
+                                             </children>
+                                          </AnchorPane>
+                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="662.0" prefWidth="758.0">
+                                             <children>
+                                                <SplitPane dividerPositions="0.761118170266836" layoutX="-3.0" prefHeight="664.0" prefWidth="611.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="-3.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                  <items>
+                                                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="660.0" prefWidth="581.0" />
+                                                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                                                         <children>
+                                                            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
+                                                               <tabs>
+                                                                  <Tab style="-fx-padding: -4 5; -fx-font-size: 10px; -fx-height: 10px;" text="Statistiques">
+                                                                     <content>
+                                                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                                                     </content>
+                                                                  </Tab>
+                                                               </tabs>
+                                                            </TabPane>
+                                                         </children></AnchorPane>
+                                                  </items>
+                                                </SplitPane>
+                                             </children>
+                                          </AnchorPane>
+                                      </items>
+                                    </SplitPane>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </Tab>
+                        <Tab style="-fx-padding: 0 5; -fx-background-color: none; -fx-border-color: grey; -fx-border-radius: 5%; -fx-margin: 20px;" text="Prévisualisation">
+                           <content>
+                              <AnchorPane prefHeight="200.0" prefWidth="200.0" />
+                           </content>
+                        </Tab>
+                    </tabs>
+                  </TabPane>
+               </children>
+            </AnchorPane>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

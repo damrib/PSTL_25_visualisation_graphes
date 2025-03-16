@@ -1,8 +1,12 @@
 package com.mongraphe.graphui;
 
 import java.io.File;
+import java.io.IOException;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -39,16 +43,48 @@ public class EchantillonageController {
                              "\n\nVeuillez entrer les seuils pour l'échantillonnage.");
     }
 
-    @FXML
-    private void handleNext() {
-        System.out.println("Next clicked.");
-        // Implémenter la logique pour passer à l'étape suivante
-    }
 
     @FXML
     private void handleBack() {
-        System.out.println("Back clicked.");
-        // Implémenter la logique pour revenir en arrière
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ChoixSimilitude.fxml"));
+            Parent root = loader.load();
+
+            // Récupérer le contrôleur et lui passer les données
+            ChoixSimilitudeController controller = loader.getController();
+            controller.setFichier(fichier); // Renvoyer le fichier pour éviter de le perdre
+
+            Stage stage = (Stage) backButton.getScene().getWindow();
+            stage.setTitle("Mesure de similarité");
+            stage.setScene(new Scene(root, 1000, 700));
+            stage.show(); 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleNext() {
+        try {
+            double upThreshold = Double.parseDouble(upThresholdField.getText());
+            double downThreshold = Double.parseDouble(downThresholdField.getText());
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Clustering.fxml"));
+            Parent root = loader.load();
+
+            // Récupérer le contrôleur et lui passer les informations
+            ClusteringController controller = loader.getController();
+            controller.initData(fichier, measureCode, upThreshold, downThreshold);
+
+            Stage stage = (Stage) nextButton.getScene().getWindow();
+            stage.setTitle("Clustering");
+            stage.setScene(new Scene(root, 1000, 700));
+            stage.show();
+        } catch (NumberFormatException e) {
+            infoTextArea.appendText("\n\nErreur: Veuillez entrer des valeurs numériques valides.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
