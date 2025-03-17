@@ -12,6 +12,11 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 
+import com.mongraphe.graphlayout.Graph;
+import com.mongraphe.graphlayout.GraphData;
+import com.mongraphe.graphlayout.GraphData.NodeCommunity;
+import com.mongraphe.graphlayout.GraphData.SimilitudeMode;
+
 public class ClusteringController {
 
     @FXML
@@ -30,9 +35,10 @@ public class ClusteringController {
     private Button cancelButton;
 
     private File fichier;
-    private int measureCode;
+    private SimilitudeMode measureCode;
     private double upThreshold;
     private double downThreshold;
+    Graph contenuVisuel;
 
     @FXML
     private void initialize() {
@@ -53,7 +59,7 @@ public class ClusteringController {
     /**
      * Initialise les données provenant de EchantillonageController.
      */
-    public void initData(File fichier, int measureCode, double upThreshold, double downThreshold) {
+    public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold) {
         this.fichier = fichier;
         this.measureCode = measureCode;
         this.upThreshold = upThreshold;
@@ -88,18 +94,23 @@ public class ClusteringController {
     private void handleNext() {
         try {
             String selectedMethod = clusteringComboBox.getValue();
-            int methodCode = getMethodeCode(selectedMethod);
+            NodeCommunity methodCode = getMethodeCode(selectedMethod);
 
+            // Charger la vue de visualisation
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Visualisation.fxml"));
             Parent root = loader.load();
 
-            // Récupérer le contrôleur suivant et lui passer les données
+            // Récupérer le contrôleur de la vue de visualisation
             VisualisationController controller = loader.getController();
+
+            // Passer les données au contrôleur
             controller.initData(fichier, measureCode, upThreshold, downThreshold, methodCode);
 
+            // Afficher la nouvelle vue
             Stage stage = (Stage) nextButton.getScene().getWindow();
             stage.setScene(new Scene(root, 1000, 700));
             stage.show();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -115,14 +126,14 @@ public class ClusteringController {
     /**
      * Convertit le nom de la méthode sélectionnée en un code numérique.
      */
-    private int getMethodeCode(String method) {
+    private GraphData.NodeCommunity getMethodeCode(String method) {
         return switch (method) {
-            case "Louvain" -> 0;
-            case "Louvain par composantes" -> 1;
-            case "Leiden" -> 2;
-            case "Leiden CPM" -> 3;
-            case "Couleurs spéciales" -> 4;
-            default -> -1; // Valeur par défaut en cas d'erreur
+            case "Louvain" -> GraphData.NodeCommunity.LOUVAIN;
+            case "Louvain par composantes" -> GraphData.NodeCommunity.LOUVAIN_PAR_COMPOSANTE;
+            case "Leiden" -> GraphData.NodeCommunity.LEIDEN;
+            case "Leiden CPM" -> GraphData.NodeCommunity.LEIDEN_CPM;
+            case "Couleurs spéciales" -> GraphData.NodeCommunity.COULEURS_SPECIALES;
+            default -> null; // Valeur par défaut en cas d'erreur
         };
     }
 }

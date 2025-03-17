@@ -1,5 +1,3 @@
-#include <GL/glut.h>
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,20 +11,21 @@
 #include <ctype.h>
 
 #include <stdatomic.h>
+
+#include "c_graph/cluster.h"
+#include "c_graph/graph.h"
 #include "../concurrent/Pool.h"
 
 #ifdef _DEBUG_
     #include "../debug/debug_time.h"
 #endif
 
-#include "../out/com_mongraphe_graphlayout_Graph.h"
+#include "../../out/graph_Graph.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../lib/stb_image_write.h"
+#include "../../lib/stb_image_write.h"
 
 #define MAX_LINE_LENGTH 10000  // Longueur maximale d'une ligne dans le fichier
-#define MAX_NODES 50000
-#define MAX_EDGES 1000000
 #define IMAGE_SIZE 15000
 #define NUM_BINS 100  // Nombre de bins pour l'histogramme
 #define MAX_SAMPLES 120000  // Maximum number of rows to sample
@@ -34,83 +33,25 @@
 // Define the number of segments to approximate the circle (the higher the number, the smoother the circle)
 #define NUM_SEGMENTS 50
 
-// Structures de données pour représenter les arêtes, points, et clusters
-typedef struct {
-    int node1;
-    int node2;
-    double weight;
-} Edge;
-
-
-
-typedef struct {
-    double x;
-    double y;
-} Point;
-
-typedef struct {
-    int *nodes;  // Tableau dynamique de noeuds dans le cluster
-    int size;    // Nombre de noeuds actuels dans le cluster
-    int capacity; // Capacité actuelle du tableau
-} Cluster;
-
 // Variables globales pour stocker les données de la simulation
 char filename[1000];
-int ll;
 int modeA=0; //mode pour afficher des noeuds en fonction de classe
 float bez=0.2;
 double lambda=0.1;
 int num_components = 0;
-int saut=10;
-int mode=0;
-int num_nodes = 0;
 int nbValeurs;
-Edge edges[MAX_EDGES]; // Pour les arêtes normales
-char *node_names[MAX_NODES]; // Array to store node names as strings      
-Edge antiedges[MAX_EDGES];  // Pour les anti-arêtes
-_Atomic int num_edges = 0;
-_Atomic int num_antiedges = 0;
-int S[MAX_NODES]={0};
-Point positions[MAX_NODES];
-Point velocities[MAX_NODES];
-double centers[MAX_NODES][2];
-int clusters[MAX_NODES];
-Cluster *cluster_nodes = NULL;  // Tableau de clusters
-double Lx = 300, Ly = 300;
-int n_clusters;
-double friction = 0.1;
 double amortissement = 0.999;
-double repulsion_coeff = 1;
-double attraction_coeff = 100;
-double coeff_antiarete = 100; // Facteur de répulsion des antiarêtes
-double threshold;
 double Max_movementOld=0;
 int pause_simulation = 0;
-int iteration=0;
-double thresholdS = 1;
-double thresholdA = 1;
 int max_iterations = 5000;
-int node_degrees[MAX_NODES];
-float cluster_colors[MAX_NODES][3];
 double **data = NULL;  // Stocker les données CSV
 int num_rows = 0, num_columns = 0;
-double epsilon = 0.1;
-int centers_converged = 0;
-int espacement = 1;
-double seuilrep =0;
-double correlation_threshold = 0.5; // Définir la valeur seuil pour l'affichage de la corrélation
-    float initial_node_size=1.0;
-    float degree_scale_factor=0.2;
 
+char delimiter[1] = "\0";
+
+short pause_updates = 0;
+int mode_similitude;
 struct Pool pool;
-
-// Structures utilisées dans la méthode de Louvain
-int communities[MAX_NODES]; // Stocke les communautés détectées par Louvain
-typedef struct Neighbor {
-    int node;
-    double weight;
-    struct Neighbor* next;
-} Neighbor;
 
 typedef struct {
     Neighbor* head;
@@ -133,24 +74,16 @@ int component_sizes[MAX_NODES]; // Tableau pour stocker la taille de chaque comp
 void load_csv_data(const char *filename);
 void sample_rows(int **sampled_rows, int *sampled_num_rows);
 double calculate_mean_similitude(int num_samples,int);
-void calculate_similitude_and_edges(double threshold, double antiseuil);
+void calculate_similitude_and_edges(int mode_similitude, double threshold, double antiseuil);
 void random_point_in_plane(Point *p);
 void normalize(Point *p);
-void initialize_centers(void);
 void update_positions(void);
 void kmeans_iteration(Point *points, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly);
 void display(void);
 void idle(void);
-void assign_cluster_colors(void);
 void calculate_node_degrees(void);
 void save_image(const char *filename, int width, int height);
-void save_image_opengl(int width, int height);
 void draw_bezier_curve(Point p0, Point p1, Point control, int segments);
-void init_clusters(int num_clusters);
-void reinitialize_clusters(int new_num_clusters);
-void free_clusters(void);
-void add_node_to_cluster(int cluster_id, int node);
-void clear_clusters(void);
 void add_edge_to_adjacency_list(int node, int neighbor, double weight);
 double calculate_gain_modularity(int node, int new_community, double total_graph_weight); 
 int louvain_method();
@@ -177,11 +110,27 @@ int louvain_methodC();
 void initialize_adjacency_list();
 void lireColonneCSV(int *, int*);
 void compute_ratio_S(int *);
+short str_is_number(char* line);
 
+short str_is_number(char* line)
+{
+    if ( *line == '-' ) {
+        ++line;
+    } else if ( *line == '\0' ) {
+        return 0;
+    }
 
+    short pt = 0;
+    while ( (*line >= 48 && *line <= 57) || (*line == 46 && ! pt) || *line == 101 ) {
+        if (*line == 46)
+            pt = 1;
+        else if (*line == 101)
+            return str_is_number(++line);
+        ++line;
+    }
 
-
-
+    return *line == '\0';
+}
 
 
 // Fonction pour lire les valeurs de la première colonne d'un fichier CSV S[MAX_NODES]
@@ -202,18 +151,25 @@ void lireColonneCSV(int *S,int *nbValeurs) {
     // Lecture de chaque ligne du fichier
     while (fgets(ligne, sizeof(ligne), fichier) != NULL) {
         // Séparer la première colonne en utilisant le point-virgule comme délimiteur
-        char *token = strtok(ligne, ";");
-        if (token != NULL) {
+        char *token = strtok(ligne, delimiter);
+        if ( token != NULL && str_is_number(token) ) {
             // Vérifier si le tableau S n'est pas plein
             if (*nbValeurs < MAX_NODES) {
                 // Convertir la chaîne en entier et stocker dans le tableau S
-                S[*nbValeurs] = atoi(token);
+                if (str_is_number(token)) {
+                    S[*nbValeurs] = atoi(token);
+                } else {
+                    S[*nbValeurs] = 0;
+                }
                 //printf("S[%d]=%d ",*nbValeurs,S[*nbValeurs]);
                 (*nbValeurs)++;
             } else {
                 printf("Nombre maximum de valeurs atteint.\n");
                 break;
             }
+        } else {
+            
+            printf("Missing values in csv file");
         }
     }
     // Afficher les trois premières lignes
@@ -222,19 +178,6 @@ void lireColonneCSV(int *S,int *nbValeurs) {
             printf("%d \n", S[i]);
     }
     fclose(fichier);
-}
-
-
-void draw_circle(float cx, float cy, float radius) {
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex2f(cx, cy);  // Center of circle
-    for (int i = 0; i <= NUM_SEGMENTS; i++) {
-        float theta = 2.0f * 3.1415926f * (float)i / (float)NUM_SEGMENTS;  // Angle for each segment
-        float x = radius * cosf(theta);  // Calculate x position
-        float y = radius * sinf(theta);  // Calculate y position
-        glVertex2f(cx + x, cy + y);      // Output vertex for the circle
-    }
-    glEnd();
 }
 
 
@@ -919,16 +862,6 @@ int louvain_method() {
 }
 
 
-
-// Assigner des couleurs de clusters aux noeuds
-void assign_colors_to_nodes() {
-    for (int i = 0; i < num_nodes; i++) {
-        int cluster = clusters[i];
-        glColor3f(cluster_colors[cluster][0], cluster_colors[cluster][1], cluster_colors[cluster][2]);
-    }
-}
-
-
 // Fonction pour vérifier la connectivité interne d'une communauté
 int is_strongly_connected(int community_id) {
     // Parcours en profondeur ou en largeur pour vérifier si tous les nœuds de la communauté sont connectés
@@ -1172,69 +1105,6 @@ int leiden_method_CPM() {
     return num_communities;
 }
 
-
-// Gérer les clics de souris pour mettre en pause la simulation et accéder aux options
-void mouse_click(int button, int state, int x, int y) {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-        pause_simulation = !pause_simulation;  // Toggle pause on left mouse click
-    }
-}
-
-// Réinitialiser les clusters si le nombre de clusters change
-void reinitialize_clusters(int new_num_clusters) {
-    if (new_num_clusters != n_clusters) {
-        free_clusters();
-        init_clusters(new_num_clusters);
-    } else {
-        clear_clusters();
-    }
-    initialize_centers();
-    assign_cluster_colors();
-    n_clusters = new_num_clusters;
-}
-
-// Initialiser les clusters avec des tableaux dynamiques
-void init_clusters(int num_clusters) {
-    int estimated_capacity = (num_nodes / num_clusters) + 1;
-    cluster_nodes = (Cluster *)malloc(num_clusters * sizeof(Cluster));
-    for (int i = 0; i < num_clusters; i++) {
-        cluster_nodes[i].nodes = (int *)malloc(estimated_capacity * sizeof(int));
-        cluster_nodes[i].size = 0;
-        cluster_nodes[i].capacity = estimated_capacity;
-    }
-}
-
-// Libérer la mémoire allouée pour les clusters
-void free_clusters() {
-    if (cluster_nodes != NULL) {
-        for (int i = 0; i < n_clusters; i++) {
-            if (cluster_nodes[i].nodes != NULL) {
-                free(cluster_nodes[i].nodes);
-                cluster_nodes[i].nodes = NULL;
-            }
-        }
-        free(cluster_nodes);
-        cluster_nodes = NULL;
-    }
-}
-
-// Ajouter un noeud à un cluster, redimensionner si nécessaire
-void add_node_to_cluster(int cluster_id, int node) {
-    Cluster *cluster = &cluster_nodes[cluster_id];
-    if (cluster->size == cluster->capacity) {
-        cluster->capacity *= 2;
-        cluster->nodes = (int *)realloc(cluster->nodes, cluster->capacity * sizeof(int));
-    }
-    cluster->nodes[cluster->size++] = node;
-}
-
-// Vider les clusters
-void clear_clusters() {
-    for (int i = 0; i < n_clusters; i++) {
-        cluster_nodes[i].size = 0;
-    }
-}
-
 // Fonction pour échantillonner un sous-ensemble de lignes
 void sample_rows(int **sampled_rows, int *sampled_num_rows) {
     int *rows = malloc(num_rows * sizeof(int));
@@ -1269,159 +1139,6 @@ void calculate_node_degrees(void) {
     }
 }
 
-// Dessiner une courbe de Bézier entre deux points
-void draw_bezier_curve(Point p0, Point p1, Point control, int segments) {
-    glBegin(GL_LINE_STRIP);
-    for (int i = 0; i <= segments; i++) {
-        float t = (float)i / (float)segments;
-        float u = 1 - t;
-        float x = u * u * p0.x + 2 * u * t * control.x + t * t * p1.x;
-        float y = u * u * p0.y + 2 * u * t * control.y + t * t * p1.y;
-        glVertex2f(x, y);
-    }
-    glEnd();
-}
-
-// Pour éviter les warnings à la compilation
-void* glGenFramebuffers(int arg1, void* arg2);
-void* glBindFramebuffer(int arg1, unsigned int arg2);
-void* glGenRenderbuffers(int arg1, void* arg2);
-void* glBindRenderbuffer(int arg1, unsigned int arg2);
-void* glRenderbufferStorage(int arg1, int arg2, int arg3, int arg4);
-void* glFramebufferRenderbuffer(int arg1, int arg2, int arg3, unsigned int arg4);
-int glCheckFramebufferStatus(int arg1);
-void* glDeleteRenderbuffers(int arg1, void* arg2);
-void* glDeleteFramebuffers(int arg1, void* arg2);
-
-// Sauvegarder la scène OpenGL comme image
-void save_image_opengl(int width, int height) {
-    GLuint fbo, renderBuffer, depthBuffer;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-    glGenRenderbuffers(1, &renderBuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBuffer);
-
-    glGenRenderbuffers(1, &depthBuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        printf("Failed to create framebuffer!\n");
-        return;
-    }
-
-    glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(-Lx / 2, Lx / 2, -Ly / 2, Ly / 2);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    // Dessiner les noeuds
-    // Demander à l'utilisateur d'entrer les valeurs
-    printf("Enter new threshold of the displayed edges (current: %.10lf): ", correlation_threshold);
-    scanf("%lf", &correlation_threshold);
-
-    printf("Entrez la taille initiale des noeuds (actuellement %.2f): ", initial_node_size);
-    scanf("%f", &initial_node_size);
-
-    printf("Entrez le coefficient de dilatation par rapport au degré (actuellement %.2f): ", degree_scale_factor);
-    scanf("%f", &degree_scale_factor);
-    printf("modeA =%d\n ",modeA);fflush(stdout);
-    for (int i = 0; i < num_nodes; i++) {
-        // Dessiner le cercle blanc autour du point
-        if (modeA == 1) {if (S[i] == 1) 
-        					{//printf("B%d ",S[i]); fflush(stdout); 
-					glColor3f(1.0f, 0.0f, 0.0f);} 
-				else {//printf("R%d ",S[i]); fflush(stdout); 
-					glColor3f(0.0f, 0.0f, 1.0f);}
-        				glPointSize(initial_node_size + node_degrees[i] * degree_scale_factor + 20.0f); // Taille légèrement supérieure
-        				glBegin(GL_POINTS);
-        				glVertex2f(positions[i].x, positions[i].y);
-        				glEnd();} 
-				else {glColor3f(1.0f, 1.0f, 1.0f); // Couleur blanche
-        					glPointSize(initial_node_size + node_degrees[i] * degree_scale_factor + 5.0f); // Taille légèrement supérieure
-        					glBegin(GL_POINTS);
-        					glVertex2f(positions[i].x, positions[i].y);
-        					glEnd();
-					// Utiliser les couleurs des communautés pour les nœuds
-        					int community = communities[i];
-        					glColor3f(cluster_colors[community][0], cluster_colors[community][1], cluster_colors[community][2]);
-        					glPointSize(initial_node_size + node_degrees[i] * degree_scale_factor);
-        					glBegin(GL_POINTS);
-        					glVertex2f(positions[i].x, positions[i].y);
-        					glEnd();} 
-        //printf("RR S[%d]=%d ",i,S[i]);fflush(stdout);
-        
-        
-
-    }
-
-
-//for (int i = 0; i < num_nodes; i++) {
-    // Dessiner le cercle blanc autour du point
-//    glColor3f(1.0f, 1.0f, 1.0f); // Couleur blanche pour le contour
-//    float outer_radius = initial_node_size + node_degrees[i] * degree_scale_factor + 2.0f;
-//    draw_circle(positions[i].x, positions[i].y, outer_radius);
-
-    // Utiliser les couleurs des communautés pour les nœuds
-//    int community = communities[i];
-//    glColor3f(cluster_colors[community][0], cluster_colors[community][1], cluster_colors[community][2]);
-//    float inner_radius = initial_node_size + node_degrees[i] * degree_scale_factor;
- //   draw_circle(positions[i].x, positions[i].y, inner_radius);
-//}
-
-    // Dessiner les arêtes comme des courbes de Bézier avec une couleur moyenne
-    for (int i = 0; i < num_edges; i++) {
-        if (edges[i].weight > correlation_threshold) {  
-            Point p0 = positions[edges[i].node1];
-            Point p1 = positions[edges[i].node2];
-
-            double dx = fabs(p0.x - p1.x);
-            double dy = fabs(p0.y - p1.y);
-
-            if (dx < Lx / 2 && dy < Ly / 2) {
-                // Calculer la couleur moyenne entre les deux communautés
-                float avg_color[3];
-                avg_color[0] = (cluster_colors[communities[edges[i].node1]][0] + cluster_colors[communities[edges[i].node2]][0]) / 2.0f;
-                avg_color[1] = (cluster_colors[communities[edges[i].node1]][1] + cluster_colors[communities[edges[i].node2]][1]) / 2.0f;
-                avg_color[2] = (cluster_colors[communities[edges[i].node1]][2] + cluster_colors[communities[edges[i].node2]][2]) / 2.0f;
-
-                glColor3f(avg_color[0], avg_color[1], avg_color[2]);
-
-                Point control;
-                control.x = (p0.x + p1.x) / 2.0 + (p0.y - p1.y) * bez;
-                control.y = (p0.y + p1.y) / 2.0 - (p0.x - p1.x) * bez;
-
-                draw_bezier_curve(p0, p1, control, 20);  // Ajuster pour la douceur de la courbe
-            }
-        }
-    }
-
-    unsigned char *pixels = (unsigned char*)malloc(3 * width * height);
-    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-
-    unsigned char *flipped_pixels = (unsigned char*)malloc(3 * width * height);
-    for (int y = 0; y < height; y++) {
-        memcpy(flipped_pixels + (height - 1 - y) * width * 3, pixels + y * width * 3, width * 3);
-    }
-    free(pixels);
-
-    stbi_write_png("output.png", width, height, 3, flipped_pixels, width * 3);
-
-    free(flipped_pixels);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDeleteRenderbuffers(1, &depthBuffer);
-    glDeleteRenderbuffers(1, &renderBuffer);
-    glDeleteFramebuffers(1, &fbo);
-}
 
 
 // Générer un point aléatoire près du centre
@@ -1430,14 +1147,6 @@ void random_point_in_center(Point *p) {
     double center_height = Ly * 0.3;
     p->x = (rand() / (double)RAND_MAX) * center_width - center_width / 2;
     p->y = (rand() / (double)RAND_MAX) * center_height - center_height / 2;
-}
-
-// Calculer un vecteur avec un enroulement toroïdal
-void toroidal_vector(Point *dir, Point p1, Point p2) {
-    dir->x = p2.x - p1.x;
-    dir->y = p2.y - p1.y;
-    if (fabs(dir->x) > Lx / 2) dir->x -= copysign(Lx, dir->x);
-    if (fabs(dir->y) > Ly / 2) dir->y -= copysign(Ly, dir->y);
 }
 
 // Calculer la distance toroïdale entre deux points
@@ -1466,12 +1175,16 @@ void load_csv_data(const char *filename) {
 
         // Compter les colonnes uniquement à la première ligne
         if (num_columns == 0) {
-            int count = 1;  // Commence à 1 car il y a toujours une colonne avant la première virgule
+            int count = 0;  // Commence à 1 car il y a toujours une colonne avant la première virgule
             for (int i = 0; line[i] != '\0'; i++) {
-                if (line[i] == ',') {
+                if (delimiter[0] == '\0' || line[i] == ',' || line[i] == ';' || line[i] == '|' || line[i] == ' ' || line[i] == '\t') {
+                    delimiter[0] = line[i];
+                    count++;
+                } else if (line[i] == delimiter[0]) {
                     count++;
                 }
             }
+
             num_columns = count;
         }
     }
@@ -1493,11 +1206,14 @@ void load_csv_data(const char *filename) {
         char *end = NULL;
 
         // Parcourir chaque valeur séparée par des virgules
-        while ((end = strchr(start, ',')) != NULL || *start != '\0') {
+        while ((end = strchr(start, delimiter[0])) != NULL || *start != '\0') {
             if (end) {
                 *end = '\0';  // Terminer la chaîne courante à la virgule
             }
             // Convertir la valeur en double
+            if ( ! str_is_number(start) ){
+                printf("Warning %s: Missing value on row %d, col %d\n", start, row, col);
+            }
             data[row][col] = atof(start);
             col++;
 
@@ -1509,7 +1225,7 @@ void load_csv_data(const char *filename) {
 
         // Si le nombre de colonnes lues est différent de num_columns, avertir
         if (col != num_columns) {
-            printf("Warning: Row %d has %d columns (expected %d).\n", row, col, num_columns);
+            //printf("Warning: Row %d has %d columns (expected %d).\n", row, col, num_columns);
         }
 
         row++;
@@ -1543,7 +1259,7 @@ int compare_double(const void *a, const void *b) {
 }
 
 // Fonction par dichotomie pour trouver le threshold
-double calculate_threshold(int num_samples, int choice, int N) {
+double calculate_threshold(int num_samples, int choice, int N, double* threshold, double* anti_threshold) {
     double total_similarity = 0.0;
     int count = 0;
 
@@ -1595,31 +1311,27 @@ double calculate_threshold(int num_samples, int choice, int N) {
 
     // Tri des similarités pour la dichotomie
     qsort(similarities, num_samples, sizeof(double), compare_double);
-    printf("tri Ok\n");
-    fflush(stdout);
     // Utilisation de la dichotomie pour trouver le seuil
     double low = similarities[0];
     double high = similarities[num_samples - 1];
-    double threshold = 0.5 * (low + high);
-    //printf("%lf",threshold);
+    *threshold = 0.5 * (low + high);
+    // TODO Potentiel boucle infini ici
     while ((high-low) >= 0.000001) {
         // Réinitialiser le compteur d'arêtes pour le seuil actuel
         int current_edges = 0;
         for (int sample = 0; sample < num_samples; sample++) {
-            if ((similarities[sample]) >= threshold) {
+            if ((similarities[sample]) >= *threshold) {
                 current_edges++;
             }
         }
 
         // Comparer avec N et ajuster le seuil
         if (current_edges < N-100) {
-            low = threshold;
-            threshold = 0.5 * (threshold + high);
-//printf("%lf",threshold);  // Dichotomie vers le haut
+            low = *threshold;
+            *threshold = 0.5 * (*threshold + high);
         } else if (current_edges > N+100) {
-            high = threshold;
-//printf("%lf",threshold);
-            threshold = 0.5 * (low + threshold);  // Dichotomie vers le bas
+            high = *threshold;
+            *threshold = 0.5 * (low + *threshold);  // Dichotomie vers le bas
         } else { printf("seuil trouvé \n");
 	         fflush(stdout);
             break;  // On a trouvé le seuil exact
@@ -1628,36 +1340,31 @@ double calculate_threshold(int num_samples, int choice, int N) {
 
      low = similarities[0];
      high = similarities[num_samples - 1];
-     double antiseuil = 0.5 * (low + high);
-    //printf("%lf",antiseuil);
+     *anti_threshold = 0.5 * (low + high);
+    // TODO Potentiel boucle infini ici
     while ((high-low) >= 0.000001) {
         // Réinitialiser le compteur d'arêtes pour le seuil actuel
         int current_edges = 0;
         for (int sample = 0; sample < num_samples; sample++) {
-            if ((similarities[sample]) <= antiseuil) {
+            if ((similarities[sample]) <= *anti_threshold) {
                 current_edges++;
             }
         }
 
         // Comparer avec N et ajuster le seuil
         if (current_edges > N-100) {
-            low = antiseuil;
-            antiseuil = 0.5 * (antiseuil + high);
+            low = *anti_threshold;
+            *anti_threshold = 0.5 * (*anti_threshold + high);
 //printf("%lf",antiseuil);  // Dichotomie vers le haut
         } else if (current_edges < N+100) {
-            high = antiseuil;
+            high = *anti_threshold;
 //printf("%lf",antiseuil);
-            antiseuil = 0.5 * (low + antiseuil);  // Dichotomie vers le bas
-        } else { printf("antiseuil trouvé \n");
-	         fflush(stdout);
+            *anti_threshold = 0.5 * (low + *anti_threshold);  // Dichotomie vers le bas
+        } else {
+	        fflush(stdout);
             break;  // On a trouvé le seuil exact
         }
     }
-
-    // Afficher le seuil trouvé
-      printf("Threshold for %d edges for %d nodes: %.6f\n", N, num_nodes, threshold);
-
-    printf("AntiThreshold for %d edges for %d nodes: %.6f\n", N, num_nodes, antiseuil);
 
     free(similarities);  // Libérer la mémoire allouée
     return (count > 0) ? total_similarity / count : 0.0;
@@ -1754,6 +1461,134 @@ double calculate_mean_similitude(int num_samples, int choice) {
     return (count > 0) ? total_similarity / count : 0.0;
 }
 
+struct mean_similitude_args {
+    int choice;
+    int thread_id;
+    int start_row;
+    int end_row;
+    double *res;
+    int *cpt;
+    int *histogram;
+    int **thread_histograms;
+};
+
+void mean_similitude_job(void *args) {
+    struct mean_similitude_args *data = (struct mean_similitude_args*) args;
+    double somme = 0.0;
+    int count = 0;
+    int *local_histogram = data->thread_histograms[data->thread_id];
+    printf("Thread %d row %d à %d\n", data->thread_id, data->start_row, data->end_row);
+    for (int i = data->start_row; i < data->end_row; i++) {
+        for (int j = i + 1; j < num_rows; j++) {
+            double similarity = 0.0;
+            switch (data->choice) {
+                case 0:  // Corrélation
+                    similarity = correlation_similarity(i, j);
+                    break;
+                case 1:  // Distance Cosinus
+                    similarity = cosine_similarity(i, j);
+                    break;
+                case 2:  // Distance Euclidienne
+                    similarity = euclidean_distance(i, j);
+                    break;
+                case 3:  // Norme L1
+                    similarity = L1_norm(i, j);
+                    break;
+                case 4:  // Norme Linf
+                    similarity = Linf_norm(i, j);
+                    break;
+                case 5:  // KL Div
+                    similarity = KL_divergence(i, j);
+                    break;
+                default:
+                    printf("Choix non valide.\n");
+                    similarity = 0.0;
+                    break; 
+            }
+            if(!isnan(similarity)){
+                somme += similarity;
+            }
+            count++;
+
+            double scaled_similarity = (data->choice == 0 || data->choice == 1) 
+                ? (similarity + 1.0) / 2.0 
+                : similarity;
+
+            int bin_index = (int)(scaled_similarity * NUM_BINS);
+            if (bin_index >= NUM_BINS) bin_index = NUM_BINS - 1;
+            if (bin_index < 0) bin_index = 0;
+            local_histogram[bin_index]++;
+        }
+    }
+
+    data->res[data->thread_id] = somme;
+    data->cpt[data->thread_id] = count;
+    printf("Thread %d somme = %f count = %d\n", data->thread_id, somme, count);
+}
+
+double calculate_mean_similitude_paralel(int choice) {
+    int num_threads = pool.nb_threads;
+    double *res = calloc(num_threads, sizeof(double));
+    int *cpt = calloc(num_threads, sizeof(int));
+    int histogram[NUM_BINS] = {0};
+
+    int **thread_histograms = calloc(num_threads, sizeof(int *));
+    for (int t = 0; t < num_threads; t++) {
+        thread_histograms[t] = calloc(NUM_BINS, sizeof(int));
+    }
+
+    int rows_per_thread = num_rows / num_threads;
+    int remaining_rows = num_rows % num_threads;
+
+    for (int t = 0; t < num_threads; t++) {
+        struct mean_similitude_args *args = malloc(sizeof(struct mean_similitude_args));
+        args->choice = choice;
+        args->thread_id = t;
+        args->start_row = t * rows_per_thread;
+        args->end_row = (t + 1) * rows_per_thread;
+        args->res = res;
+        args->cpt = cpt;
+        args->histogram = histogram;
+        args->thread_histograms = thread_histograms;
+
+        if (t == num_threads - 1) {
+            args->end_row += remaining_rows;
+        }
+
+        struct Job task;
+        task.j = mean_similitude_job;
+        task.args = args;
+        submit(&pool, task);
+    }
+
+    while (GetOp(&pool) < num_threads) {}
+
+    for (int t = 0; t < num_threads; t++) {
+        for (int bin = 0; bin < NUM_BINS; bin++) {
+            histogram[bin] += thread_histograms[t][bin];
+        }
+    }
+
+
+    double somme = 0.0;
+    int count = 0;
+    for (int t = 0; t < num_threads; t++) {
+        somme += res[t];
+        count += cpt[t];
+    }
+
+
+    printf("Histogram of Similarities (Normalized):\n");
+    for (int bin = 0; bin < NUM_BINS; bin++) {
+        double bin_start = (choice == 0 || choice == 1) ? -1.0 + (2.0 * bin) / NUM_BINS : (double)bin / NUM_BINS;
+        double bin_end = (choice == 0 || choice == 1) ? -1.0 + (2.0 * (bin + 1)) / NUM_BINS : (double)(bin + 1) / NUM_BINS;
+        printf("Bin [%.2f, %.2f): %d\n", bin_start, bin_end, histogram[bin]);
+    }
+
+    return (count > 0) ? somme / count : 0.0;
+}
+
+
 /////////////////////////////////////
 struct similarity_args {
     double threshold;
@@ -1830,28 +1665,8 @@ void similarity_job(void * args){
 
 
 // Fonction pour calculer la similitude en fonction du choix de l'utilisateur
-void calculate_similitude_and_edges(double threshold, double antiseuil) {
-    int choice;
-    
-    // Demander à l'utilisateur de choisir une mesure de similitude
-    printf("Choisissez la mesure de similarité à utiliser:\n");
-    printf("0: Corrélation\n");
-    printf("1: Distance Cosinus\n");
-    printf("2: Distance Euclidienne\n");
-    printf("3: Norme L1\n");
-    printf("4: Norme Linf\n");
-    printf("5: KL divergence\n");
-    scanf("%d", &choice);
-    
-    printf("Mean similitude: %.5lf\n",calculate_mean_similitude(5000,choice));
-calculate_threshold(num_nodes,choice,10*num_nodes);
-    printf("Enter up threshold: ");
-    scanf("%lf", &threshold);
-    while (getchar() != '\n');
-    printf("Enter down threshold (coeff_antiarete): ");
-    scanf("%lf", &antiseuil);
-    while (getchar() != '\n');
-    
+void calculate_similitude_and_edges(int md, double threshold, double antiseuil) {
+        
     num_edges = 0;
     num_antiedges = 0;
 
@@ -1860,7 +1675,7 @@ calculate_threshold(num_nodes,choice,10*num_nodes);
         s_args->threshold = threshold;
         s_args->antiseuil = antiseuil;
         s_args->row       = i;
-        s_args->choice    = choice;
+        s_args->choice    = md;
 
         struct Job task;
         task.j = similarity_job;
@@ -1870,16 +1685,6 @@ calculate_threshold(num_nodes,choice,10*num_nodes);
     }
     while ( GetOp(&pool) < num_rows ) {}
 
-
-    printf("Nombre de nœuds : %d\n", num_rows);
-    printf("Nombre d'arêtes : %d\n", num_edges);
-    printf("Nombre d'anti-arêtes : %d\n", num_antiedges);
-}
-
-// Générer un point aléatoire dans le plan
-void random_point_in_plane(Point *p) {
-    p->x = (rand() / (double)RAND_MAX) * Lx - Lx / 2;
-    p->y = (rand() / (double)RAND_MAX) * Ly - Ly / 2;
 }
 
 // Normaliser un point
@@ -1888,683 +1693,6 @@ void normalize(Point *p) {
     if (norm > 0) {
         p->x /= norm;
         p->y /= norm;
-    }
-}
-
-// Fonction pour initialiser les centres de clusters de manière aléatoire
-void initialize_centers(){
-    for (int i = 0; i < n_clusters; i++) {
-        random_point_in_plane((Point *)centers[i]);
-    }
-}
-
-// Assigner des noeuds aux clusters et mettre à jour les centres en utilisant l'algorithme k-means
-void kmeans_iteration(Point *points, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly) {
-    int counts[MAX_NODES] = {0};
-
-    // Modification pour utiliser moins de memoire et eviter un seg fault
-    double ** new_centers = (double**) malloc(sizeof(double*) * num_clusters);  // Stocker les nouveaux centres calculés
-    // TODO
-
-
-    for (int i = 0; i < num_clusters; ++i)
-    {
-        new_centers[i] = (double*) malloc(sizeof(double) * 2);
-        new_centers[i][0] = 0.;
-        new_centers[i][1] = 1.;
-    }
-
-    // Assigner chaque point au cluster le plus proche et mettre à jour les centres
-    for (int i = 0; i < num_points; i++) {
-        double min_dist = DBL_MAX;
-        int best_cluster = 0;
-
-        for (int j = 0; j < num_clusters; j++) {
-            Point dir;
-            toroidal_vector(&dir, points[i], (Point){centers[j][0], centers[j][1]});
-            double dist = (dir.x * dir.x + dir.y * dir.y);
-
-            if (dist < min_dist) {
-                min_dist = dist;
-                best_cluster = j;
-            }
-        }
-
-        labels[i] = best_cluster;
-
-        // Ajuster les coordonnées du point pour qu'elles soient proches du centre du cluster
-        double adjusted_x = points[i].x;
-        double adjusted_y = points[i].y;
-
-        while (adjusted_x - centers[best_cluster][0] > Lx / 2) adjusted_x -= Lx;
-        while (centers[best_cluster][0] - adjusted_x > Lx / 2) adjusted_x += Lx;
-        while (adjusted_y - centers[best_cluster][1] > Ly / 2) adjusted_y -= Ly;
-        while (centers[best_cluster][1] - adjusted_y > Ly / 2) adjusted_y += Ly;
-
-        new_centers[best_cluster][0] += adjusted_x;
-        new_centers[best_cluster][1] += adjusted_y;
-        counts[best_cluster]++;
-    }
-
-    // Mise à jour des centres de clusters en fonction des nouvelles assignations
-    for (int i = 0; i < num_clusters; i++) {
-        if (counts[i] > 0) {
-            centers[i][0] = new_centers[i][0] / counts[i];
-            centers[i][1] = new_centers[i][1] / counts[i];
-
-            // Ramener les centres dans l'espace torique
-            while (centers[i][0] < -Lx / 2) centers[i][0] += Lx;
-            while (centers[i][0] > Lx / 2) centers[i][0] -= Lx;
-            while (centers[i][1] < -Ly / 2) centers[i][1] += Ly;
-            while (centers[i][1] > Ly / 2) centers[i][1] -= Ly;
-        }
-    }
-
-    for (int i = 0; i < num_clusters; ++i)
-    {
-        free(new_centers[i]);
-    }
-    free(new_centers);
-}
-
-// Assigner des couleurs aux clusters
-void assign_cluster_colors() {
-    for (int i = 0; i < n_clusters; i++) {
-        cluster_colors[i][0] = (float)rand() / RAND_MAX;
-        cluster_colors[i][1] = (float)rand() / RAND_MAX;
-        cluster_colors[i][2] = (float)rand() / RAND_MAX;
-    }
-}
-
-// Mettre à jour les positions des noeuds en fonction des forces entre eux
-void update_positions() {
-   //int iteration;
-    double Max_movement;
-    double PasMaxX = Lx/10;
-    double PasMaxY = Ly/10;
-    double FMaxX = Lx/(friction*1000);
-    double FMaxY = Ly/(friction*1000);
-    double rep_force=1;
-    thresholdS = (Lx/4000)*(Ly/4000);
-    thresholdA = (Lx/4000)*(Ly/4000);
-    epsilon = (Lx/800)*(Ly/800);
-    seuilrep = (Lx/1000)*(Lx/1000);
-    for (iteration = 0; iteration < max_iterations; iteration++) {
-        Point forces[MAX_NODES] = {0};
-
-        // Si une touche est enfoncée
-        if (kbhit()) {
-            char key = getchar();  // Récupérer la touche enfoncée
-            if (key == 's' || key == 'S') {
-                printf("Arrêt de la boucle, touche 's' enfoncée\n");
-                iteration=max_iterations;  // Arrêt de la boucle si 's' est enfoncée
-            }
-        }
-
-
-// Étape 1 : Forces d'attraction basées sur les arêtes
-for (int edge_index = 0; edge_index < num_edges; edge_index++) {
-    int node1 = edges[edge_index].node1;
-    int node2 = edges[edge_index].node2;
-
-    Point dir;
-    toroidal_vector(&dir, positions[node1], positions[node2]);
-
-    double dist_squared = dir.x * dir.x + dir.y * dir.y;
-    double att_force = attraction_coeff; //*dist_squared;
-    
-    if (dist_squared > thresholdA) {            
-    forces[node1].x += dir.x * att_force;
-    forces[node1].y += dir.y * att_force;
-    forces[node2].x -= dir.x * att_force;
-    forces[node2].y -= dir.y * att_force;}
-}
-
-
-// Étape 2 : Forces de répulsion intra-cluster
-double half_Lx = Lx / 2.0;
-double half_Ly = Ly / 2.0;
-
-
-
-for (int cluster = 0; cluster < n_clusters; cluster++) {
-    int size = cluster_nodes[cluster].size;
-    for (int i = 0; i < size; i++) {
-        int node_i = cluster_nodes[cluster].nodes[i];
-
-
-
-        Point pi = positions[node_i];
-        for (int j = i + 1; j < size; j++) {
-            int node_j = cluster_nodes[cluster].nodes[j];
-            Point dir;
-            toroidal_vector(&dir, pi, positions[node_j]);
-
-            double dist_squared = dir.x * dir.x + dir.y * dir.y;
-            if (dist_squared > seuilrep) { // Assume a minimum distance to avoid division by zero
-                //double dist = sqrt(dist_squared);
-                if (mode == 0) { rep_force = repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;} else
-                   if (mode==1) { rep_force = repulsion_coeff/ dist_squared*dist_squared;} else
-                        {if (communities[i] != communities[j]) {//printf("extra repulsion %d, %d \n",i,j);
-                        rep_force = 100000*repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;} 
-                        else {rep_force = repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;} }
-                                    
-                forces[node_i].x -= dir.x * rep_force;
-                forces[node_i].y -= dir.y * rep_force;
-                forces[node_j].x += dir.x * rep_force;
-                forces[node_j].y += dir.y * rep_force;
-            } else
-          {double rep_force = repulsion_coeff / seuilrep;
-                                    
-                forces[node_i].x -= dir.x * rep_force;
-                forces[node_i].y -= dir.y * rep_force;
-                forces[node_j].x += dir.x * rep_force;
-                forces[node_j].y += dir.y * rep_force;}
-        }
-            // capper les forces d'attractions
-    forces[node_i].x = fmax(fmin(forces[node_i].x, FMaxX), -FMaxX);
-    forces[node_i].y = fmax(fmin(forces[node_i].y, FMaxY), -FMaxY);
-
-    }
-}
-
-        
-        // Step 2bis: Repulsion forces based on anti-edges
-for (int edge_index = 0; edge_index < num_antiedges; edge_index++) {
-    int node1 = antiedges[edge_index].node1;
-    int node2 = antiedges[edge_index].node2;
-
-    Point dir;
-    toroidal_vector(&dir, positions[node1], positions[node2]);
-
-    double dist = sqrt(dir.x * dir.x + dir.y * dir.y);
-    if (dist > seuilrep) {
-        double rep_force = coeff_antiarete/(dist*dist);
-        forces[node1].x -= (dir.x / dist) * rep_force;
-        forces[node1].y -= (dir.y / dist) * rep_force;
-        forces[node2].x += (dir.x / dist) * rep_force;
-        forces[node2].y += (dir.y / dist) * rep_force;
-    } else {double rep_force = coeff_antiarete/ seuilrep;
-                                    
-                forces[node1].x -= dir.x * rep_force;
-                forces[node1].y -= dir.y * rep_force;
-                forces[node2].x += dir.x * rep_force;
-                forces[node2].y += dir.y * rep_force;}
-}
-
-// Étape 3 : Mettre à jour les positions en fonction des forces
-Max_movement = 0.0;
-for (int i = 0; i < num_nodes; i++) {
-    velocities[i].x = (velocities[i].x + forces[i].x) * friction;
-    velocities[i].y = (velocities[i].y + forces[i].y) * friction;
-    velocities[i].x = fmin(fmax(velocities[i].x, -PasMaxX), PasMaxX); // Capper la force en x à 1
-    velocities[i].y = fmin(fmax(velocities[i].y, -PasMaxY), PasMaxY); // Capper la force en y à 1
-
-    positions[i].x += velocities[i].x;
-    positions[i].y += velocities[i].y;
-                // Appliquer les conditions aux limites toroïdales
-            while (positions[i].x < -half_Lx) positions[i].x += Lx;
-            while (positions[i].x > half_Lx) positions[i].x -= Lx;
-            while (positions[i].y < -half_Ly) positions[i].y += Ly;
-            while (positions[i].y > half_Ly) positions[i].y -= Ly;
-
-    Max_movement = fmax(Max_movement, velocities[i].x * velocities[i].x + velocities[i].y * velocities[i].y);
-}
-
-        // Étape 4 : Mettre à jour les clusters tous les quelques itérations
-        if (iteration % (saut * (1+0*espacement)) == 0) {
-            espacement++;
-            centers_converged = 0;
-
-            while (centers_converged == 0) {
-                double old_centers[MAX_NODES][2];
-                memcpy(old_centers, centers, sizeof(centers));
-
-                kmeans_iteration(positions, num_nodes, n_clusters, clusters, centers, Lx, Ly);
-
-                centers_converged = 1;
-                for (int i = 0; i < n_clusters; i++) {
-                    double dx = centers[i][0] - old_centers[i][0];
-                    double dy = centers[i][1] - old_centers[i][1];
-                    if ((dx * dx + dy * dy) > epsilon) {
-                        centers_converged = 0;
-                        break;
-                    }
-                }
-            }
-            clear_clusters();
-
-            for (int i = 0; i < num_nodes; i++) {
-                int best_cluster = clusters[i];
-                add_node_to_cluster(best_cluster, i);
-            }
-        }
-
-        //display();
-	//printf("Iteration %d, Max_movement %lf, friction %lf \n", iteration, Max_movement,friction);
-	//fflush(stdout);  // Force le vidage du tampon de la sortie standard
-
-	  if (Max_movement==Max_movementOld) {friction *= 0.7;}
-          Max_movementOld=Max_movement;
-          if ((Max_movement < thresholdS && iteration > 50) || iteration > max_iterations-1 ) {
-            printf("Paused at iteration %d due to small movement or stop.\n", iteration);
-
-            char user_input;
-            while (1) {
-printf("Simulation paused.\n Press 'c' to continue \n 'q' to quit \n 'm' to modify parameters \n 'k' to redo communities search \n 's' to save the image \n 'r' to save the graph \n 't' to translate \n 'd' pour charger un fichier .dot\n  ? ");
-
-user_input = getchar();
-
-if (user_input == 'c') {
-    printf("Enter new friction (current: %.10lf): ", friction);
-    scanf("%lf", &friction);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-
-    printf("Enter new saut (current: %d): ", saut);
-    scanf("%d", &saut);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-
-    printf("Enter new amortissement (current: %.10lf): ", amortissement);
-    scanf("%lf", &amortissement);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-
-    printf("Enter new threshold (current: %.10lf): ", thresholdS);
-    scanf("%lf", &thresholdS);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-    
-    printf("Resuming simulation...\n");
-    espacement=1;
-    break;
-} else if (user_input == 'r') {
-    espacement=1;
-    printf("Enregistrer l'image, la position des points et le fichier GEXF.\n");
-
-    // Ouvrir un fichier pour enregistrer les positions des points
-    FILE *output_file = fopen("positions.txt", "w");
-    if (output_file != NULL) {
-        for (int i = 0; i < num_nodes; i++) {
-            fprintf(output_file, "Node %d: Position (%f, %f), Communauté %d, [", 
-                    i, positions[i].x, positions[i].y, communities[i]);
-                           for (int j = 0; j < num_columns; j++) {
-            fprintf(output_file, " %f, ", 
-                    data[i][j] );
-        }
-        fprintf(output_file, " ]\n ");
-        }
-        fclose(output_file);
-        printf("Positions saved in 'positions.txt'.\n");
-    } else {
-        printf("Error: Unable to write to 'positions.txt'.\n");
-    }
-
-    // Ouvrir un fichier pour enregistrer le fichier GEXF
-    FILE *gexf_file = fopen("graph.gexf", "w");
-    if (gexf_file != NULL) {
-        // Écriture de l'en-tête XML et des métadonnées avec déclaration du namespace 'viz'
-        fprintf(gexf_file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        fprintf(gexf_file, "<gexf xmlns=\"http://www.gexf.net/1.2draft\" xmlns:viz=\"http://www.gexf.net/1.2draft/viz\" version=\"1.2\">\n");
-        fprintf(gexf_file, "  <meta lastmodifieddate=\"%s\">\n", __DATE__);
-        fprintf(gexf_file, "    <creator>ForceAtlas Simulation</creator>\n");
-        fprintf(gexf_file, "    <description>A graph generated by ForceAtlas simulation</description>\n");
-        fprintf(gexf_file, "  </meta>\n");
-
-        // Section des nœuds
-        fprintf(gexf_file, "  <graph mode=\"static\" defaultedgetype=\"undirected\">\n");
-        fprintf(gexf_file, "    <nodes>\n");
-        for (int i = 0; i < num_nodes; i++) {
-            fprintf(gexf_file, "      <node id=\"%d\" label=\"Node %d\">\n", i, i);
-            fprintf(gexf_file, "        <viz:position x=\"%f\" y=\"%f\" z=\"0.0\" />\n", positions[i].x, positions[i].y);
-            fprintf(gexf_file, "        <viz:color r=\"%d\" g=\"%d\" b=\"%d\" a=\"1\" />\n",
-                    (int)(cluster_colors[clusters[i]][0] * 255),
-                    (int)(cluster_colors[clusters[i]][1] * 255),
-                    (int)(cluster_colors[clusters[i]][2] * 255));
-            fprintf(gexf_file, "      </node>\n");
-        }
-        fprintf(gexf_file, "    </nodes>\n");
-
-        // Section des arêtes
-        fprintf(gexf_file, "    <edges>\n");
-        for (int i = 0; i < num_edges; i++) {
-            fprintf(gexf_file, "      <edge id=\"%d\" source=\"%d\" target=\"%d\" weight=\"%f\" />\n", 
-                    i, edges[i].node1, edges[i].node2, edges[i].weight);
-        }
-        fprintf(gexf_file, "    </edges>\n");
-        fprintf(gexf_file, "  </graph>\n");
-        fprintf(gexf_file, "</gexf>\n");
-
-        fclose(gexf_file);
-        printf("GEXF graph saved in 'graph.gexf'.\n");
-    } else {
-        printf("Error: Unable to write to 'graph.gexf'.\n");
-    }
-
-
-
-    break;
-}
-
-else if (user_input == 's') {
-    printf("Entrer courbure (current: %f): ", bez);
-    scanf("%f", &bez);
-    printf("Saving image.\n");
-
-    save_image_opengl(IMAGE_SIZE, IMAGE_SIZE);
-    printf("Image saved as 'output.png'.\n");
-
-    // Réinitialisation d'OpenGL pour continuer la simulation
-    glViewport(0, 0, 800, 800);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(-Lx / 2, Lx / 2, -Ly / 2, Ly / 2);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    break;
-}
-
-
-else if (user_input == 'd') {
-    printf("Entrer chemin d'accès: ");
-    
-    // Use scanf with a width specifier to avoid buffer overflow
-    scanf("%255s", filename);  // Limiting the input to 255 characters
-
-    // Initialize your variables and call parse_dot_file
-    num_nodes = 0;
-    num_edges = 0;
-    num_antiedges = 0;
-
-    // Call your function to parse the file
-    parse_dot_file(filename);
-
-    printf("\n Graph Loaded, %d nodes, %d edges \n",num_nodes, num_edges);
-    fflush(stdout);
-
-    // Ensure `num_nodes` is positive
-    if (num_nodes <= 0) {
-        fprintf(stderr, "Error: Number of nodes is invalid.\n");
-        break;
-    }
-    // Check if the number of nodes exceeds the maximum allowed nodes
-if (num_nodes > MAX_NODES) {
-    fprintf(stderr, "Warning: Number of nodes exceeds the maximum capacity of %d. Reducing to maximum allowed nodes.\n", MAX_NODES);
-    num_nodes = MAX_NODES;
-}
-
-    printf("Début Louvain \n");
-num_communities = louvain_method();
-    initialize_community_colors();
-    printf("Louvain fini \n");
-    
-    // Initialize positions and velocities arrays
-    printf("Initialize positions and velocities arrays \n");
-    for (int i = 0; i < num_nodes; i++) {
-        random_point_in_center(&positions[i]);
-        velocities[i].x = velocities[i].y = 0.0;
-    }
-    printf("Initialization OK \n");
-    
-
-    printf("Initialisation clusters \n");
-    n_clusters = (int)sqrt(num_nodes);
-    init_clusters(n_clusters);
-    initialize_centers();
-    assign_cluster_colors();
-    printf("Clusters OK \n");
-
-    printf("Calcul des degrés \n");
-    calculate_node_degrees();
-    printf("Degré OK \n");
-    break;
-}
-
-
-else if (user_input == 'q') {
-    printf("Quitting simulation.\n");
-    free_clusters(); // Free allocated memory before exit
-    exit(0);
-}
-
-else if (user_input == 't') {
-    double dx, dy;
-    double center_x = 0.0;
-    double center_y = 0.0;
-
-    // Sum up all x and y coordinates
-    for (int i = 0; i < num_nodes; i++) {
-        center_x += positions[i].x;
-        center_y += positions[i].y;
-    }
-
-    // Divide by the number of points to get the average
-    center_x /= num_nodes;
-    center_y /= num_nodes;
-    printf("Enter the translation vector (dx, dy), actuellement le barycentre est en (%f,%f):\n",center_x,center_y);
-    scanf("%lf %lf", &dx, &dy);
-    
-    translate_positions(dx, dy);
-    printf("Translation applied: (%.2lf, %.2lf)\n", dx, dy);
-    break;
-}
-
- else if (user_input == 'm') {
-// Demander les nouveaux paramètres
-       printf("Enter new mode (current: %d): repulsion by degree (0), repulsion by edges (1), repulsion by communities (2)   ", mode);
-    scanf("%d", &mode);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-        printf("Enter new threshold of the displayed edges (current: %.10lf): ", correlation_threshold);
-    scanf("%lf", &correlation_threshold);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-    // Demander les nouvelles dimensions du tore
-    
-    printf("Enter new x dimension (current: %lf): ", Lx);
-    scanf("%lf", &Lx);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-    
-    printf("Enter new y dimension (current: %lf): ", Ly);
-    scanf("%lf", &Ly);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-    
-    thresholdA = (Lx/4000)*(Ly/4000);
-    PasMaxX = Lx/10;
-    PasMaxY = Ly/10;
-    FMaxX = Lx/(friction*1000);
-    FMaxY = Ly/(friction*1000);
-    thresholdS = (Lx/4000)*(Ly/4000);
-    epsilon = (Lx/800)*(Ly/800);
-
-    // Demander le nouveau nombre de clusters
-    int new_n_clusters;
-    printf("Enter new number of clusters (current: %d): ", n_clusters);
-    scanf("%d", &new_n_clusters);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-    // Vérification que le nombre de clusters est positif et différent de l'actuel
-    if (new_n_clusters > 0 ) {
-        // Libérer la mémoire allouée pour les anciens clusters
-        free_clusters();
-
-        // Mettre à jour le nombre de clusters
-        n_clusters = new_n_clusters;
-
-        // Réinitialiser les clusters avec le nouveau nombre de clusters
-        init_clusters(n_clusters); // Initialize clusters with dynamic arrays
-        initialize_centers(); // Réinitialiser les centres des clusters
-        assign_cluster_colors(); // Réassigner les couleurs des clusters
-
-        printf("Number of clusters updated to %d.\n", n_clusters);
-    } else {
-        printf("Invalid number of clusters. Please enter a positive number.\n");
-    }
-    printf("Enter new repulsion force (current: %.10lf): ", repulsion_coeff);
-    scanf("%lf", &repulsion_coeff);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-    
-        printf("Enter new repulsion threshold (current: %.10lf): ", seuilrep);
-    scanf("%lf", &seuilrep);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix 
-
-    printf("Enter new attraction force (current: %.10lf): ", attraction_coeff);
-    scanf("%lf", &attraction_coeff);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-
-    
-            printf("Enter new attraction threshold (current: %.10lf): ", thresholdA);
-    scanf("%lf", &thresholdA);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-
-        printf("Enter new antiedges force (current: %.10lf): ", coeff_antiarete);
-    scanf("%lf", &coeff_antiarete);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-
-
-    printf("Enter new friction (current: %.10lf): ", friction);
-    scanf("%lf", &friction);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-
-    printf("Enter new amortissement (current: %.10lf): ", amortissement);
-    scanf("%lf", &amortissement);
-    while (getchar() != '\n')
-    ; // Vider le tampon après chaque choix
-
-    // Mettre à jour les autres paramètres
-    printf("Parameters updated.\n");
-    glViewport(0, 0, 800, 800);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(-Lx / 2, Lx / 2, -Ly / 2, Ly / 2);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    break;
-}
-else if (user_input == 'k') {
-    printf("select Louvain component (0), Louvain component (1), Leiden (2), Leiden CPM (3), couleurs à partir d'un fichier (4)\n");
-    scanf("%d", &ll);
-
-if (ll == 1) {modeA=0;
-    num_communities = louvain_methodC();
-    initialize_community_colors();
-    printf("Louvain Composante fini \n");
-} else if (ll == 2) {modeA=0;
-    num_communities = leiden_method();
-    initialize_community_colors();
-    printf("Leiden fini \n");
-} else if (ll == 0) {modeA=0;
-    num_communities = louvain_method();
-    initialize_community_colors();
-    printf("Leiden fini \n");
-} else if (ll == 3) {modeA=0;
-    printf("résolution CPM (current %lf) \n",lambda);
-    scanf("%lf", &lambda);
-    num_communities = leiden_method_CPM();
-    initialize_community_colors();
-    printf("Leiden CPM fini \n");
-}else if (ll == 4) {
-    //int nbValeurs;
-    //int S[MAX_NODES]={0};
-    // Demander le chemin du fichier à l'utilisateur
-    lireColonneCSV(S, &nbValeurs);
-    // Afficher les valeurs lues
-    printf("nombres de valeurs lues : %d pour %d données \n",nbValeurs,num_nodes);
-    modeA =1;
-    compute_ratio_S(S);
-}  else {
-    printf("Option invalide\n");
-}
-    break;
-} else {
-    printf("Invalid input. Press 'c' to continue, 'q' to quit, 'm' to modify parameters, or 'k' to redo k-means: ");
-}
-
-                while ((getchar()) != '\n')
-                ; // Clear the buffer
-            }
-        }
-
-        friction *= amortissement;
-    }
-}
-
-// Fonction d'affichage pour OpenGL
-void display() {
-    glClear(GL_COLOR_BUFFER_BIT);
-    // Définir l'épaisseur des arêtes (par exemple, 1.0 pour une ligne fine)
-    glLineWidth(0.1f);  // Changez cette valeur pour ajuster l'épaisseur des arêtes
-
-    // Dessiner les arêtes comme des lignes droites avec la couleur moyenne des communautés
-    for (int i = 0; i < num_edges; i++) {
-        Point p0 = positions[edges[i].node1];
-        Point p1 = positions[edges[i].node2];
-
-        if (edges[i].weight > correlation_threshold) {  
-            // Calculer les différences en x et y
-            double dx = fabs(p0.x - p1.x);
-            double dy = fabs(p0.y - p1.y);
-
-            // Condition pour vérifier si les différences sont dans les limites spécifiées
-            if (dx < Lx / 2 && dy < Ly / 2) {
-                // Calculer la couleur moyenne entre les deux communautés
-                float avg_color[3];
-                avg_color[0] = (cluster_colors[communities[edges[i].node1]][0] + cluster_colors[communities[edges[i].node2]][0]) / 2.0f;
-                avg_color[1] = (cluster_colors[communities[edges[i].node1]][1] + cluster_colors[communities[edges[i].node2]][1]) / 2.0f;
-                avg_color[2] = (cluster_colors[communities[edges[i].node1]][2] + cluster_colors[communities[edges[i].node2]][2]) / 2.0f;
-
-                // Définir la couleur à la couleur moyenne
-                glColor3f(avg_color[0], avg_color[1], avg_color[2]);
-
-                // Dessiner la ligne droite
-                glBegin(GL_LINES);
-                glVertex2f(p0.x, p0.y);
-                glVertex2f(p1.x, p1.y);
-                glEnd();
-            }
-        }
-    }
-
-    // Afficher les nœuds
-    for (int i = 0; i < num_nodes; i++) {
-        int community = communities[i];
-        glColor3f(cluster_colors[community][0], cluster_colors[community][1], cluster_colors[community][2]);
-        glPointSize(0.1f + node_degrees[i] * 0.05f);
-
-        glBegin(GL_POINTS);
-        glVertex2f(positions[i].x, positions[i].y);
-        glEnd();
-    }
-
-    // Optionnel : Afficher les centres des communautés
-    // glPointSize(10.0f);
-    // glBegin(GL_POINTS);
-    // for (int i = 0; i < num_nodes; i++) {
-    //     int community = communities[i];
-    //     glColor3f(cluster_colors[community][0], cluster_colors[community][1], cluster_colors[community][2]);
-    //     glVertex2f(centers[i][0], centers[i][1]);
-    // }
-    // glEnd();
-
-    glutSwapBuffers();
-}
-
-
-// Fonction d'idle pour OpenGL
-void idle() {
-    if (!pause_simulation) {
-        update_positions();
-        glutPostRedisplay();
     }
 }
 
@@ -2579,161 +1707,52 @@ void idle() {
  * 
  */
 
- JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_updatePositions
+JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
  (JNIEnv * env, jobject obj)
 {
-   //int iteration;
+   double Max_movementOld = 0.0;
    double Max_movement;
-   double PasMaxX = Lx/10;
-   double PasMaxY = Ly/10;
    double FMaxX = Lx/(friction*1000);
    double FMaxY = Ly/(friction*1000);
-   double rep_force=1;
    thresholdS = (Lx/4000)*(Ly/4000);
    thresholdA = (Lx/4000)*(Ly/4000);
    epsilon = (Lx/800)*(Ly/800);
    seuilrep = (Lx/1000)*(Lx/1000);
 
+   double PasMaxX = Lx / 10.;
+   double PasMaxY = Ly / 10.;
+
+   static int iteration = 0;
    static Point forces[MAX_NODES] = {0};
 
-    for (int edge_index = 0; edge_index < num_edges; edge_index++) {
-        int node1 = edges[edge_index].node1;
-        int node2 = edges[edge_index].node2;
+   if ( pause_updates == 0 ){
+        repulsion_edges(forces);
+        repulsion_intra_clusters(forces, FMaxX, FMaxY);
+        repulsion_anti_edges(forces);
+        Max_movement = update_position_forces(forces, PasMaxX, PasMaxY, Max_movement);
+        update_clusters();
 
-        Point dir;
-        toroidal_vector(&dir, positions[node1], positions[node2]);
+        ++iteration;
 
-        double dist_squared = dir.x * dir.x + dir.y * dir.y;
-        double att_force = attraction_coeff; //*dist_squared;
-        
-        if (dist_squared > thresholdA) {            
-            forces[node1].x += dir.x * att_force;
-            forces[node1].y += dir.y * att_force;
-            forces[node2].x -= dir.x * att_force;
-            forces[node2].y -= dir.y * att_force;
+        if (Max_movement==Max_movementOld) {
+            friction *= 0.7;
         }
-    }
+           
+        Max_movementOld=Max_movement;
+        friction *= amortissement;
+   }
 
-    double half_Lx = Lx / 2.0;
-    double half_Ly = Ly / 2.0;
-    
-    
-    for (int cluster = 0; cluster < n_clusters; cluster++) {
-        int size = cluster_nodes[cluster].size;
-        for (int i = 0; i < size; i++) {
-            int node_i = cluster_nodes[cluster].nodes[i];
-    
-    
-    
-            Point pi = positions[node_i];
-            for (int j = i + 1; j < size; j++) {
-                int node_j = cluster_nodes[cluster].nodes[j];
-                Point dir;
-                toroidal_vector(&dir, pi, positions[node_j]);
-    
-                double dist_squared = dir.x * dir.x + dir.y * dir.y;
-                if (dist_squared > seuilrep) { // Assume a minimum distance to avoid division by zero
-                    //double dist = sqrt(dist_squared);
-                    if (mode == 0) { rep_force = repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;} else
-                       if (mode==1) { rep_force = repulsion_coeff/ dist_squared*dist_squared;} else
-                            {if (communities[i] != communities[j]) {//printf("extra repulsion %d, %d \n",i,j);
-                            rep_force = 100000*repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;} 
-                            else {rep_force = repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;} }
-                                        
-                    forces[node_i].x -= dir.x * rep_force;
-                    forces[node_i].y -= dir.y * rep_force;
-                    forces[node_j].x += dir.x * rep_force;
-                    forces[node_j].y += dir.y * rep_force;
-                } else
-              {double rep_force = repulsion_coeff / seuilrep;
-                                        
-                    forces[node_i].x -= dir.x * rep_force;
-                    forces[node_i].y -= dir.y * rep_force;
-                    forces[node_j].x += dir.x * rep_force;
-                    forces[node_j].y += dir.y * rep_force;}
-            }
-                // capper les forces d'attractions
-        forces[node_i].x = fmax(fmin(forces[node_i].x, FMaxX), -FMaxX);
-        forces[node_i].y = fmax(fmin(forces[node_i].y, FMaxY), -FMaxY);
-    
-        }
-    }
+   if ((Max_movement < thresholdS && iteration > 50) || iteration > max_iterations-1 ) {
+        // end state reached
+        pause_updates = 1;
 
-    // Step 2bis: Repulsion forces based on anti-edges
-    for (int edge_index = 0; edge_index < num_antiedges; edge_index++) {
-        int node1 = antiedges[edge_index].node1;
-        int node2 = antiedges[edge_index].node2;
+        return 0;
+   }
 
-        Point dir;
-        toroidal_vector(&dir, positions[node1], positions[node2]);
-
-        double dist = sqrt(dir.x * dir.x + dir.y * dir.y);
-        if (dist > seuilrep) {
-            double rep_force = coeff_antiarete/(dist*dist);
-            forces[node1].x -= (dir.x / dist) * rep_force;
-            forces[node1].y -= (dir.y / dist) * rep_force;
-            forces[node2].x += (dir.x / dist) * rep_force;
-            forces[node2].y += (dir.y / dist) * rep_force;
-        } else {double rep_force = coeff_antiarete/ seuilrep;
-                                        
-                    forces[node1].x -= dir.x * rep_force;
-                    forces[node1].y -= dir.y * rep_force;
-                    forces[node2].x += dir.x * rep_force;
-                    forces[node2].y += dir.y * rep_force;}
-    }
-
-    // Étape 3 : Mettre à jour les positions en fonction des forces
-    Max_movement = 0.0;
-    for (int i = 0; i < num_nodes; i++) {
-        velocities[i].x = (velocities[i].x + forces[i].x) * friction;
-        velocities[i].y = (velocities[i].y + forces[i].y) * friction;
-        velocities[i].x = fmin(fmax(velocities[i].x, -PasMaxX), PasMaxX); // Capper la force en x à 1
-        velocities[i].y = fmin(fmax(velocities[i].y, -PasMaxY), PasMaxY); // Capper la force en y à 1
-
-        positions[i].x += velocities[i].x;
-        positions[i].y += velocities[i].y;
-                    // Appliquer les conditions aux limites toroïdales
-                while (positions[i].x < -half_Lx) positions[i].x += Lx;
-                while (positions[i].x > half_Lx) positions[i].x -= Lx;
-                while (positions[i].y < -half_Ly) positions[i].y += Ly;
-                while (positions[i].y > half_Ly) positions[i].y -= Ly;
-
-        Max_movement = fmax(Max_movement, velocities[i].x * velocities[i].x + velocities[i].y * velocities[i].y);
-    }
-
-        // Étape 4 : Mettre à jour les clusters tous les quelques itérations
-        if (iteration % (saut * (1+0*espacement)) == 0) {
-            espacement++;
-            centers_converged = 0;
-
-            while (centers_converged == 0) {
-                double old_centers[MAX_NODES][2];
-                memcpy(old_centers, centers, sizeof(centers));
-
-                kmeans_iteration(positions, num_nodes, n_clusters, clusters, centers, Lx, Ly);
-
-                centers_converged = 1;
-                for (int i = 0; i < n_clusters; i++) {
-                    double dx = centers[i][0] - old_centers[i][0];
-                    double dy = centers[i][1] - old_centers[i][1];
-                    if ((dx * dx + dy * dy) > epsilon) {
-                        centers_converged = 0;
-                        break;
-                    }
-                }
-            }
-            clear_clusters();
-
-            for (int i = 0; i < num_nodes; i++) {
-                int best_cluster = clusters[i];
-                add_node_to_cluster(best_cluster, i);
-            }
-        }
-
-
+   return 1;
 }
 
-JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphlayout_Graph_getCommunitites
+JNIEXPORT jintArray JNICALL Java_graph_Graph_getCommunities
   (JNIEnv * env, jobject obj)
 {
     jintArray result = (*env)->NewIntArray(env, MAX_NODES);
@@ -2743,7 +1762,7 @@ JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphlayout_Graph_getCommunitites
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getClusterColors
+JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getClusterColors
   (JNIEnv * env, jobject obj)
 {
     jclass obj_class = (*env)->FindClass(env, "[F");
@@ -2760,13 +1779,11 @@ JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getClusterCo
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getEdges
+JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getEdges
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Edge" par "[packageName]/[nomClasse]"
-    jclass obj_class = (*env)->FindClass(env, "Lcom/mongraphe/graphlayout/EdgeInterm;");
-    if ( obj_class == NULL )
-        printf("Nope");
+    jclass obj_class = (*env)->FindClass(env, "graph/EdgeC");
     jmethodID edge_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(IID)V");
     jobject initial_elem = (*env)->NewObject(env, obj_class, edge_constructor, 0, 0, 0.);
     
@@ -2785,13 +1802,11 @@ JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getEdges
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getPositions
+JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getPositions
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Point" par "[packageName]/[nomClasse]"
-    jclass obj_class = (*env)->FindClass(env, "Lcom/mongraphe/graphlayout/Vertex;");
-    if ( obj_class == NULL )
-        printf("Nope");
+    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
     jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
     jobject initial_elem = (*env)->NewObject(env, obj_class, point_constructor, 0., 0.);
 
@@ -2810,16 +1825,34 @@ JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphlayout_Graph_getPositions
     return result;
 }
 
-JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_startsProgram
+JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
   (JNIEnv * env, jobject obj, jstring filepath)
 {
     srand(time(NULL));
-    
 
     const char* str = (*env)->GetStringUTFChars(env, filepath, JNI_FALSE);
 
     load_csv_data(str);
-    
+
+    jclass obj_class = (*env)->FindClass(env, "[D");
+    jobjectArray result = (*env)->NewObjectArray(env, num_rows, obj_class, 0);
+
+    for (int i = 0; i < num_rows; ++i)
+    {
+        jdoubleArray double_array = (*env)->NewDoubleArray(env, num_columns);
+        (*env)->SetDoubleArrayRegion(env, double_array, 0, num_columns, data[i]);
+
+        (*env)->SetObjectArrayElement(env, result, i, double_array);
+    }
+
+    return result;
+
+}
+
+JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
+  (JNIEnv * env, jobject obj, jint modeSimilitude)
+{
+
     InitPool(&pool, 1000, 8);
 
     int *sampled_rows = NULL;
@@ -2827,44 +1860,56 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_startsProgram
     sample_rows(&sampled_rows, &sampled_num_rows);
     num_rows = sampled_num_rows;
     num_nodes = num_rows;
+    
+    double threshold, antiseuil;
+    printf("Mean similitude: %.5lf\n",calculate_mean_similitude_paralel(modeSimilitude));
+    mode_similitude = modeSimilitude;
+    calculate_threshold(num_nodes, modeSimilitude, 10*num_nodes, &threshold, &antiseuil);
+
+    jclass res_class = (*env)->FindClass(env, "graph/Metadata");
+    jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDD)V");
+    jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, threshold, antiseuil);
+
+    free(sampled_rows);
+
+    return res;
+
+}
+
+
+JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
+  (JNIEnv *env, jobject obj, jint md, jdouble thresh, jdouble anti_thresh)
+{
+
+    printf("Mode de similitude utilisé : %d\n", mode_similitude);
+    printf("Threshold utilisé : %lf\n", thresh);
+    printf("Anti-Threshold utilisé : %lf\n", anti_thresh);
+
     #ifdef _DEBUG_
         struct chrono chr;
         chr_assign_log(&chr, "debug.csv");
         chr_start_clock(&chr);
-        calculate_similitude_and_edges(threshold, coeff_antiarete);
+        calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
         chr_stop(&chr);
         chr_close_log(&chr);
     #else
-        calculate_similitude_and_edges(threshold, coeff_antiarete);
+        calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
     #endif
 
-
-    
-    printf("Louvain (0), Louvain par composante (1) ou Leiden (2) ou Leiden CPM (3) ou couleurs speciales (4) \n");
-    scanf("%d", &ll);
-
-
-    if (ll == 0) {modeA=0;
+    modeA=0;
+    if (md == 0) {
         num_communities = louvain_method();
-        initialize_community_colors();
-        printf("Louvain fini \n");
-    } else if (ll == 1) {modeA=0;
+    } else if (md == 1) {
         num_communities = louvain_methodC();
-        initialize_community_colors();
-        printf("Louvain fini \n");
-    } else if (ll == 2) {modeA=0;
+    } else if (md == 2) {
         num_communities = leiden_method();
-        initialize_community_colors();
-        printf("Leiden fini \n");
-    } else if (ll == 3) {modeA=0;
+    } else if (md == 3) {
         num_communities = leiden_method_CPM();
-        initialize_community_colors();
-        printf("Leiden CPM fini \n");
-    } else if (ll == 4) {
+    } else if (md == 4) {
+        // TODO 
         //int nbValeurs;
         //int S[MAX_NODES]={0};
         num_communities = leiden_method_CPM();
-        initialize_community_colors();
         // Demander le chemin du fichier à l'utilisateur
         lireColonneCSV(S, &nbValeurs);
         // Afficher les valeurs lues
@@ -2874,9 +1919,18 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_startsProgram
     } else {
         printf("Option invalide\n");
     }
+    initialize_community_colors();
+
+    #ifdef _DEBUG_
+        printf("Fin Calcul Communaute");
+    #endif
 
     compute_average_vectors();
-    printf("Vecteurs moyens fini \n");
+
+    #ifdef _DEBUG_
+        printf("Vecteurs moyens fini \n");
+    #endif
+
     for (int i = 0; i < num_nodes; i++) {
         random_point_in_center(&positions[i]);
         velocities[i].x = velocities[i].y = 0.0;
@@ -2886,13 +1940,16 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_startsProgram
     initialize_centers();
     assign_cluster_colors();
     calculate_node_degrees();
-	
-    free(sampled_rows);
+
+    jclass res_class = (*env)->FindClass(env, "graph/Metadata");
+    jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDIII)V");
+    jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, thresh, anti_thresh, num_edges, num_antiedges, n_clusters);
+
+    return res;   
+
 }
 
-
-
-JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_freeAllocatedMemory
+JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
   (JNIEnv * env, jobject obj)
 {
 
@@ -2911,115 +1968,71 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphlayout_Graph_freeAllocatedMemory
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-// Fonction principale
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        printf("Usage: %s <csv_file>\n", argv[0]);
-        return 1;
-    }
-
-    srand(time(NULL));
-
-    load_csv_data(argv[1]);
-    
-    InitPool(&pool, 1000, 8);
-
-    int *sampled_rows = NULL;
-    int sampled_num_rows = 0;
-    sample_rows(&sampled_rows, &sampled_num_rows);
-    num_rows = sampled_num_rows;
-    num_nodes = num_rows;
-    #ifdef _DEBUG_
-        struct chrono chr;
-        chr_assign_log(&chr, "debug.csv");
-        chr_start_clock(&chr);
-        calculate_similitude_and_edges(threshold, coeff_antiarete);
-        chr_stop(&chr);
-        chr_close_log(&chr);
-    #else
-        calculate_similitude_and_edges(threshold, coeff_antiarete);
-    #endif
-
-
-    
-printf("Louvain (0), Louvain par composante (1) ou Leiden (2) ou Leiden CPM (3) ou couleurs speciales (4) \n");
-scanf("%d", &ll);
-
-
-if (ll == 0) {modeA=0;
-    num_communities = louvain_method();
-    initialize_community_colors();
-    printf("Louvain fini \n");
-} else if (ll == 1) {modeA=0;
-    num_communities = louvain_methodC();
-    initialize_community_colors();
-    printf("Louvain fini \n");
-} else if (ll == 2) {modeA=0;
-    num_communities = leiden_method();
-    initialize_community_colors();
-    printf("Leiden fini \n");
-} else if (ll == 3) {modeA=0;
-    num_communities = leiden_method_CPM();
-    initialize_community_colors();
-    printf("Leiden CPM fini \n");
-} else if (ll == 4) {
-    //int nbValeurs;
-    //int S[MAX_NODES]={0};
-    num_communities = leiden_method_CPM();
-    initialize_community_colors();
-    // Demander le chemin du fichier à l'utilisateur
-    lireColonneCSV(S, &nbValeurs);
-    // Afficher les valeurs lues
-    printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
-    modeA =1;
-    compute_ratio_S(S);
-} else {
-    printf("Option invalide\n");
+JNIEXPORT void JNICALL Java_graph_Graph_setSaut
+  (JNIEnv * env, jobject obj, jint s)
+{
+    saut = s;
+    espacement = 1;
 }
 
-    compute_average_vectors();
-    printf("Vecteurs moyens fini \n");
-    for (int i = 0; i < num_nodes; i++) {
-        random_point_in_center(&positions[i]);
-        velocities[i].x = velocities[i].y = 0.0;
-    }
-    n_clusters = (int)sqrt(num_nodes);
-    init_clusters(n_clusters);
-    initialize_centers();
-    assign_cluster_colors();
-    calculate_node_degrees();
-
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize(800, 800);
-    glutCreateWindow("Force-Directed Graph Layout");
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(-Lx / 2, Lx / 2, -Ly / 2, Ly / 2);
-
-    glutDisplayFunc(display);
-    glutIdleFunc(idle);
-  // glutKeyboardFunc(keyboard);
-
-
-    glutMainLoop();
-
-    // Libérer la mémoire allouée pour les voisins
-    for (int i = 0; i < num_nodes; i++) {
-    	Neighbor* neighbor = adjacency_list[i].head;
-        while (neighbor != NULL) {
-           Neighbor* next = neighbor->next;
-           free(neighbor);
-           neighbor = next;
-    }
+JNIEXPORT void JNICALL Java_graph_Graph_setThresholdS
+  (JNIEnv * env, jobject obj, jdouble thresh)
+{
+    thresholdS = thresh;
 }
-    free_clusters();
-    free(sampled_rows);
 
-    FreePool(&pool);
-    return 0;
+JNIEXPORT void JNICALL Java_graph_Graph_setFriction
+  (JNIEnv * env, jobject obj, jdouble f)
+{
+    friction = f;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setModeRepulsion
+  (JNIEnv * env, jobject obj, jint modeRepulsion)
+{
+    mode = modeRepulsion;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setAntiRepulsion
+  (JNIEnv * env, jobject obj, jdouble repulsion)
+{
+    coeff_antiarete = repulsion;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setAttractionCoeff
+  (JNIEnv * env, jobject obj, jdouble coeff)
+{
+    attraction_coeff = coeff;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setThresholdA
+  (JNIEnv * env, jobject obj, jdouble thresh)
+{
+    thresholdA = thresh;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setSeuilRep
+  (JNIEnv * env, jobject obj, jdouble seuil)
+{
+    seuilrep = seuil;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setDimension
+  (JNIEnv * env, jobject obj, jdouble width, jdouble height)
+{
+    Lx = width;
+    Ly = height;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setAmortissement
+  (JNIEnv * env, jobject obj, jdouble amort)
+{
+    amortissement = amort;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_setNodePosition
+  (JNIEnv * env, jobject obj, jint index, jdouble x, jdouble y)
+{
+    positions[index].x = x;
+    positions[index].y = y;
 }

@@ -20,6 +20,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import com.mongraphe.graphlayout.GraphData;
+import com.mongraphe.graphlayout.GraphData.SimilitudeMode;
+
 public class ChoixSimilitudeController {
 	
     @FXML private TableView<ObservableList<String>> tableView;
@@ -101,7 +104,7 @@ public class ChoixSimilitudeController {
         String selectedMeasure = similarityMeasureComboBox.getValue();
         
         // Convertir le texte sélectionné en un code correspondant
-        int measureCode = getMeasureCode(selectedMeasure);
+        SimilitudeMode measureCode = getMeasureCode(selectedMeasure);
 
         // Debug: Afficher la mesure sélectionnée
         System.out.println("Mesure sélectionnée: " + selectedMeasure + " (Code: " + measureCode + ")");
@@ -134,15 +137,15 @@ public class ChoixSimilitudeController {
     /**
      * Convertit le nom de la mesure sélectionnée en un code numérique.
      */
-    private int getMeasureCode(String measure) {
+    private GraphData.SimilitudeMode getMeasureCode(String measure) {
         return switch (measure) {
-            case "Corrélation" -> 0;
-            case "Distance Cosinus" -> 1;
-            case "Distance Euclidienne" -> 2;
-            case "Norme L1" -> 3;
-            case "Norme Linf" -> 4;
-            case "KL divergence" -> 5;
-            default -> -1; // Valeur par défaut en cas d'erreur
+            case "Corrélation" -> GraphData.SimilitudeMode.CORRELATION;
+            case "Distance Cosinus" -> GraphData.SimilitudeMode.DISTANCE_COSINE;
+            case "Distance Euclidienne" -> GraphData.SimilitudeMode.DISTANCE_EUCLIDIENNE;
+            case "Norme L1" -> GraphData.SimilitudeMode.NORME_L1;
+            case "Norme Linf" -> GraphData.SimilitudeMode.NORME_LINF;
+            case "KL divergence" -> GraphData.SimilitudeMode.KL_DIVERGENCE;
+            default -> null; // Valeur par défaut en cas d'erreur
         };
     }
     

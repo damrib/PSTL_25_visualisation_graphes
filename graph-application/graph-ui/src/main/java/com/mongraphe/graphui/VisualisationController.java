@@ -3,6 +3,8 @@ package com.mongraphe.graphui;
 import java.io.File;
 
 import com.mongraphe.graphlayout.Graph;
+import com.mongraphe.graphlayout.GraphData.NodeCommunity;
+import com.mongraphe.graphlayout.GraphData.SimilitudeMode;
 
 import javafx.fxml.FXML;
 import javafx.scene.layout.AnchorPane;
@@ -14,29 +16,28 @@ public class VisualisationController {
 
     private Graph graph; // Instance de la classe Graph
 
-    private File fichier; // Fichier contenant les données du graphe
-    private int measureCode; // Code de mesure de similarité
+    private String fichier; // Fichier contenant les données du graphe
+    private SimilitudeMode measureCode; // Code de mesure de similarité
     private double upThreshold; // Seuil supérieur
     private double downThreshold; // Seuil inférieur
-    private int methodCode; // Code de méthode
+    private NodeCommunity methodCode; // Code de méthode
 
     @FXML
     public void initialize() {
         // Initialiser le graphe
         graph = new Graph();
-        graph.setFilename(fichier.getAbsolutePath());
     }
 
     /**
      * Charge le graphe dans la partie centrale de la fenêtre.
      */
     private void loadGraph() {
-//        if (fichier != null && fichier.exists()) {
-//            // Initialiser et afficher le graphe dans le centerPane
-//            graph.initializeGraph(centerPane, fichier.getAbsolutePath());
-//        } else {
-//            System.err.println("Le fichier spécifié est invalide ou n'existe pas.");
-//        }
+        if (fichier != null) {
+            // Initialiser et afficher le graphe dans le centerPane
+            graph.init(fichier, measureCode, methodCode);
+        } else {
+            System.err.println("Le fichier spécifié est invalide ou n'existe pas.");
+        }
     	
     	
     }
@@ -58,8 +59,8 @@ public class VisualisationController {
      * @param downThreshold Le seuil inférieur.
      * @param methodCode    Le code de méthode.
      */
-    public void initData(File fichier, int measureCode, double upThreshold, double downThreshold, int methodCode) {
-        this.fichier = fichier;
+    public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold, NodeCommunity methodCode) {
+        this.fichier = fichier.getAbsolutePath();
         this.measureCode = measureCode;
         this.upThreshold = upThreshold;
         this.downThreshold = downThreshold;

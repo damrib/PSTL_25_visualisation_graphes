@@ -3,6 +3,8 @@ package com.mongraphe.graphui;
 import java.io.File;
 import java.io.IOException;
 
+import com.mongraphe.graphlayout.GraphData.SimilitudeMode;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -28,12 +30,12 @@ public class EchantillonageController {
     private Button cancelButton;
 
     private File fichier;
-    private int measureCode;
+    private SimilitudeMode measureCode;
 
     /**
      * Initialise la fenêtre avec les données passées depuis ChoixSimilitudeController.
      */
-    public void initData(File fichier, int measureCode) {
+    public void initData(File fichier, SimilitudeMode measureCode) {
         this.fichier = fichier;
         this.measureCode = measureCode;
 

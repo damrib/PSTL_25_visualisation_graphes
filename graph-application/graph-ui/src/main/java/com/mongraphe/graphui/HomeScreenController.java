@@ -33,7 +33,6 @@ public class HomeScreenController {
                 System.err.println("Le fichier spécifié n'existe pas : " + file.getAbsolutePath());
                 return;
             }
-            graph.setFilename(file.getAbsolutePath());
 
             // Créer une nouvelle fenêtre (Stage)
             Stage graphStage = new Stage();
