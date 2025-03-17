@@ -1,4 +1,5 @@
 #include "cluster.h"
+#include "../global.h"
 
 int communities[MAX_NODES]; // Stocke les communautés détectées par Louvain
 

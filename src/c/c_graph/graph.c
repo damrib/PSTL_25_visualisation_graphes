@@ -1,13 +1,10 @@
 #include "graph.h"
+#include "../global.h"
 
 jobjectArray vertices;
-jclass obj_class;
-jmethodID getterX, getterY, point_constructor, update_method;
-
 
 Edge edges[MAX_EDGES]; // Pour les arêtes normales
 char *node_names[MAX_NODES]; // Array to store node names as strings      
-int S[MAX_NODES]={0};
 Point velocities[MAX_NODES];
 int node_degrees[MAX_NODES];
 
@@ -19,13 +16,13 @@ Edge antiedges[MAX_EDGES];  // Pour les anti-arêtes
 int num_nodes = 0;
 double Lx = 300, Ly = 300;
 
-int iteration=0;
-
 double friction = 0.1;
 double attraction_coeff = 100;
 double thresholdA = 1;
 double seuilrep = 0;
 double thresholdS = 1;
+
+double amortissement = 0.999;
 
 void toroidal_vector(Point *dir, Point p1, Point p2) {
     dir->x = p2.x - p1.x;
@@ -167,11 +164,8 @@ double update_position_forces(JNIEnv* env, Point* forces, double PasMaxX, double
 }
 
 void initialize_vertices(JNIEnv* env){
-    obj_class = (*env)->FindClass(env, "graph/Vertex");
-    point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
-    update_method = (*env)->GetMethodID(env, obj_class, "updatePosition", "(DD)V");
-    getterX = (*env)->GetMethodID(env, obj_class, "getX", "()D");
-    getterY = (*env)->GetMethodID(env, obj_class, "getY", "()D");
+    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
+    jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
 
     jobject initial_elem = (*env)->NewObject(env, obj_class, point_constructor, 0., 0.);
     jobjectArray localArray = (*env)->NewObjectArray(env, num_nodes, obj_class, initial_elem);
@@ -183,6 +177,9 @@ void initialize_vertices(JNIEnv* env){
 
 // Uses Vertex constructor instead of the update method
 void setNewVertex(JNIEnv* env, int index, double x, double y){
+    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
+    jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
+
     jobject point = (*env)->NewObject(env, obj_class, point_constructor, x, y);
     jobject global_point = (*env)->NewGlobalRef(env, point);
 
@@ -193,6 +190,8 @@ void setNewVertex(JNIEnv* env, int index, double x, double y){
 }
 
 void setVertex(JNIEnv* env, int index, double x, double y){
+    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
+    jmethodID update_method = (*env)->GetMethodID(env, obj_class, "updatePosition", "(DD)V");
     jobject vertex = (*env)->GetObjectArrayElement(env, vertices, index);
     
     (*env)->CallVoidMethod(env, vertex, update_method, x, y);
@@ -201,9 +200,11 @@ void setVertex(JNIEnv* env, int index, double x, double y){
 }
 
 jdouble getVertex_x(JNIEnv* env, int index){
+    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
+    jmethodID getter = (*env)->GetMethodID(env, obj_class, "getX", "()D");
     jobject vertex = (*env)->GetObjectArrayElement(env, vertices, index);
 
-    double res = (*env)->CallDoubleMethod(env, vertex, getterX);
+    double res = (*env)->CallDoubleMethod(env, vertex, getter);
 
     (*env)->DeleteLocalRef(env, vertex);
 
@@ -211,9 +212,11 @@ jdouble getVertex_x(JNIEnv* env, int index){
 }
 
 jdouble getVertex_y(JNIEnv* env, int index){
+    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
+    jmethodID getter = (*env)->GetMethodID(env, obj_class, "getY", "()D");
     jobject vertex = (*env)->GetObjectArrayElement(env, vertices, index);
 
-    double res = (*env)->CallDoubleMethod(env, vertex, getterY);
+    double res = (*env)->CallDoubleMethod(env, vertex, getter);
 
     (*env)->DeleteLocalRef(env, vertex);
 
@@ -226,4 +229,105 @@ Point getVertex(JNIEnv* env, int index){
     res.y = getVertex_y(env, index);
 
     return res;  
+}
+
+// Normaliser un point
+void normalize(Point *p) {
+    double norm = sqrt(p->x * p->x + p->y * p->y);
+    if (norm > 0) {
+        p->x /= norm;
+        p->y /= norm;
+    }
+}
+
+
+
+struct similarity_args {
+    double threshold;
+    double antiseuil;
+    int row;
+    int choice;
+    Barrier barrier;
+};
+
+void similarity_job(void * args){
+
+    struct similarity_args * data = (struct similarity_args*) args;
+
+    for ( int j = data->row + 1; j < num_rows; ++j)
+    {
+        double similarity = 0.0;
+
+        switch (data->choice) {
+            case 0:  // Corrélation
+                similarity = correlation_similarity(data->row, j);
+                break;
+            case 1:  // Distance Cosinus
+                similarity = cosine_similarity(data->row, j);
+                break;
+            case 2:  // Distance Euclidienne
+                similarity = euclidean_distance(data->row, j);
+                break;
+            case 3:  // Norme L1
+                similarity = L1_norm(data->row, j);
+                break;
+            case 4:  // Norme Linf
+                similarity = Linf_norm(data->row, j);
+                break;
+            case 5:  // KL Div
+                similarity = KL_divergence(data->row, j);
+                break;
+            default:
+                printf("Choix non valide.\n");
+        }
+        
+        if (similarity > data->threshold && num_edges < MAX_EDGES) {
+            int edge_index = incr_or_max(&num_edges, MAX_EDGES);
+            if ( edge_index < MAX_EDGES ){
+                edges[edge_index].node1 = data->row;
+                edges[edge_index].node2 = j;
+                edges[edge_index].weight = similarity;
+            }
+        } else if (similarity < data->antiseuil && num_antiedges < MAX_EDGES) {
+            int antiedge_index = incr_or_max(&num_antiedges, MAX_EDGES);
+            if ( antiedge_index < MAX_EDGES ){
+                antiedges[antiedge_index].node1 = data->row;
+                antiedges[antiedge_index].node2 = j;
+                antiedges[antiedge_index].weight = similarity;
+            }
+        }
+
+    }
+
+    decrement_barrier(data->barrier, 1);
+}
+
+/////////////////////////////////////
+
+
+// Fonction pour calculer la similitude en fonction du choix de l'utilisateur
+void calculate_similitude_and_edges(int md, double threshold, double antiseuil) {
+        
+    num_edges = 0;
+    num_antiedges = 0;
+    struct barrier bar;
+    new_barrier(&bar, num_rows);
+
+    for (int i = 0; i < num_rows; i++) {
+        struct similarity_args* s_args = (struct similarity_args*) malloc(sizeof(struct similarity_args));
+        s_args->threshold = threshold;
+        s_args->antiseuil = antiseuil;
+        s_args->row       = i;
+        s_args->choice    = md;
+        s_args->barrier   = &bar;
+
+        struct Job task;
+        task.j = similarity_job;
+        task.args = s_args;
+
+        submit(&pool, task);
+    }
+    // main thread wait for the thread to finish processing the previous calculation
+    wait_barrier(&bar);
+
 }

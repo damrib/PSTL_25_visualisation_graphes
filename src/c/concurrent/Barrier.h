@@ -1,5 +1,5 @@
-#ifndef FORCEATLAS_BARRIER
-#define FORCEATLAS_BARRIER
+#ifndef FORCEATLAS_BARRIER_H
+#define FORCEATLAS_BARRIER_H
 
 #include <pthread.h>
 #include <stdatomic.h>
