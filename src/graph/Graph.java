@@ -80,6 +80,13 @@ public class Graph extends Application implements GraphSettings {
     public native void setAmortissement(double amortissement);
     public native void setNodePosition(int index, double x, double y);
 
+    /** Set the number of clusters and recomputes them 
+     * Warning this function does not take constant time
+     * @param new_n_clusters 
+    */
+    public native void SetNumberClusters(int new_n_clusters);
+
+    /** Free Allocated Memory in back-end */
     public native void freeAllocatedMemory();
 
 

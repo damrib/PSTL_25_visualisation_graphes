@@ -102,6 +102,7 @@ void initialize_adjacency_list();
 void lireColonneCSV(int *, int*);
 void compute_ratio_S(int *);
 short str_is_number(char* line);
+int incr_or_max(_Atomic int* n, int max);
 
 short str_is_number(char* line)
 {
@@ -1182,6 +1183,90 @@ int compare_double(const void *a, const void *b) {
     return 0;
 }
 
+int dichotomie(double threshold, double* similarities) {
+
+    int size_similarities = num_rows * (num_rows-1) / 2;
+
+    int st = 0;
+    int end = size_similarities - 1;
+    int mid;
+
+    int i = 0;
+    while (  st + 1 < end  ) {
+        mid = (st + end) / 2;
+        if ( similarities[mid] < threshold ) {
+            st = mid;
+        } else if ( similarities[mid] >  threshold ) {
+            end = mid;
+        } else {
+            // nombre d'element plus grand que threshold
+            return size_similarities - mid;
+        }
+        i += 1;
+    }
+    printf("%d\n", i);
+    return size_similarities - mid;
+} 
+
+void calculate_threshold_parallel(int choice, int N, double * threshold, double * anti_threshold, double* similarities) {
+
+    if ( choice < 0 || choice > 5 ) {
+      perror("Choix non valide");
+        exit(EXIT_FAILURE);
+    }
+
+    int size_similarities = num_rows * (num_rows - 1) / 2;
+
+    // Tri des similarités pour la dichotomie
+    qsort(similarities, size_similarities, sizeof(double), compare_double);
+    // Utilisation de la dichotomie pour trouver le seuil
+    double low = similarities[0];
+    double high = similarities[size_similarities - 1];
+    *threshold = 0.5 * (low + high);
+    // TODO Potentiel boucle infini ici
+    while ((high-low) >= 0.000001) {
+        // Réinitialiser le compteur d'arêtes pour le seuil actuel
+        int current_edges = dichotomie(*threshold, similarities);
+
+        // Comparer avec N et ajuster le seuil
+        if (current_edges < N-100) {
+            high = *threshold;
+            *threshold = 0.5 * (low + *threshold);  // Dichotomie vers le bas
+        } else if (current_edges > N+100) {
+            low = *threshold;
+            *threshold = 0.5 * (*threshold + high);
+        } else { printf("seuil trouvé \n");
+	         fflush(stdout);
+            break;  // On a trouvé le seuil exact
+        }
+    }
+
+     low = similarities[0];
+     high = similarities[size_similarities - 1];
+     *anti_threshold = 0.5 * (low + high);
+    // TODO Potentiel boucle infini ici
+    while ((high-low) >= 0.000001) {
+        // Réinitialiser le compteur d'arêtes pour le seuil actuel
+        int current_edges = size_similarities - dichotomie(*anti_threshold, similarities) + 1;
+
+        // Comparer avec N et ajuster le seuil
+        if (current_edges < N-100) {
+            low = *anti_threshold;
+            *anti_threshold = 0.5 * (*anti_threshold + high);
+//printf("%lf",antiseuil);  // Dichotomie vers le haut
+        } else if (current_edges > N+100) {
+            high = *anti_threshold;
+//printf("%lf",antiseuil);
+            *anti_threshold = 0.5 * (low + *anti_threshold);  // Dichotomie vers le bas
+        } else {
+	        fflush(stdout);
+            break;  // On a trouvé le seuil exact
+        }
+    }
+
+    free(similarities);
+}
+
 // Fonction par dichotomie pour trouver le threshold
 double calculate_threshold(int num_samples, int choice, int N, double* threshold, double* anti_threshold) {
     double total_similarity = 0.0;
@@ -1394,6 +1479,8 @@ struct mean_similitude_args {
     int *cpt;
     int *histogram;
     int **thread_histograms;
+    double * similarities;
+    _Atomic int* counter;
 };
 
 void mean_similitude_job(void *args) {
@@ -1402,6 +1489,7 @@ void mean_similitude_job(void *args) {
     int count = 0;
     int *local_histogram = data->thread_histograms[data->thread_id];
     printf("Thread %d row %d à %d\n", data->thread_id, data->start_row, data->end_row);
+    int size_similarities = num_rows * (num_rows - 1) / 2;
     for (int i = data->start_row; i < data->end_row; i++) {
         for (int j = i + 1; j < num_rows; j++) {
             double similarity = 0.0;
@@ -1429,6 +1517,10 @@ void mean_similitude_job(void *args) {
                     similarity = 0.0;
                     break; 
             }
+            if ( incr_or_max(data->counter, size_similarities) != size_similarities ) {
+                data->similarities[*data->counter] = similarity;
+            }
+
             if(!isnan(similarity)){
                 somme += similarity;
             }
@@ -1450,7 +1542,7 @@ void mean_similitude_job(void *args) {
     printf("Thread %d somme = %f count = %d\n", data->thread_id, somme, count);
 }
 
-double calculate_mean_similitude_paralel(int choice) {
+double calculate_mean_similitude_parallel(int choice, double* similarities) {
     int num_threads = pool.nb_threads;
     double *res = calloc(num_threads, sizeof(double));
     int *cpt = calloc(num_threads, sizeof(int));
@@ -1460,6 +1552,8 @@ double calculate_mean_similitude_paralel(int choice) {
     for (int t = 0; t < num_threads; t++) {
         thread_histograms[t] = calloc(NUM_BINS, sizeof(int));
     }
+
+    _Atomic int counter = 0;
 
     int rows_per_thread = num_rows / num_threads;
     int remaining_rows = num_rows % num_threads;
@@ -1474,6 +1568,8 @@ double calculate_mean_similitude_paralel(int choice) {
         args->cpt = cpt;
         args->histogram = histogram;
         args->thread_histograms = thread_histograms;
+        args->similarities = similarities;
+        args->counter = &counter;
 
         if (t == num_threads - 1) {
             args->end_row += remaining_rows;
@@ -1521,14 +1617,14 @@ struct similarity_args {
     Barrier barrier;
 };
 
-int incr_or_max(_Atomic int* n)
+int incr_or_max(_Atomic int* n, int max)
 {
     int res = *n;
     while ( ! atomic_compare_exchange_weak(n, &res, res+1) )
     {
-        if ( res >= MAX_EDGES ){
-            *n = MAX_EDGES;
-            return MAX_EDGES;
+        if ( res >= max ){
+            *n = max;
+            return max;
         }
     }
 
@@ -1567,14 +1663,14 @@ void similarity_job(void * args){
         }
         
         if (similarity > data->threshold && num_edges < MAX_EDGES) {
-            int edge_index = incr_or_max(&num_edges);
+            int edge_index = incr_or_max(&num_edges, MAX_EDGES);
             if ( edge_index < MAX_EDGES ){
                 edges[edge_index].node1 = data->row;
                 edges[edge_index].node2 = j;
                 edges[edge_index].weight = similarity;
             }
         } else if (similarity < data->antiseuil && num_antiedges < MAX_EDGES) {
-            int antiedge_index = incr_or_max(&num_antiedges);
+            int antiedge_index = incr_or_max(&num_antiedges, MAX_EDGES);
             if ( antiedge_index < MAX_EDGES ){
                 antiedges[antiedge_index].node1 = data->row;
                 antiedges[antiedge_index].node2 = j;
@@ -1769,13 +1865,15 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
   (JNIEnv * env, jobject obj, jint modeSimilitude)
 {
 
-    InitPool(&pool, 1000, 2);
+    InitPool(&pool, 1000, 8);
 
     num_nodes = num_rows;
 
     double threshold, antiseuil;
     mode_similitude = modeSimilitude;
-    
+
+    // un tableau dont de taille nombre de paire dans un ensemble avec num_rows element = 2 parmis num_rows
+    double * similarities = (double*) malloc(num_rows * (num_rows - 1) / 2 * sizeof(double));
     #ifdef _DEBUG_
         printf("debut log");
         struct chrono chr;
@@ -1786,11 +1884,12 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
         chr_close_log(&chr);
         printf("fin log");
     #else
-        double means_similitude = calculate_mean_similitude_paralel(modeSimilitude);
+        double means_similitude = calculate_mean_similitude_paralel(modeSimilitude, similarities);
     #endif
 
-    calculate_threshold(num_nodes, modeSimilitude, 10*num_nodes, &threshold, &antiseuil);
+    calculate_threshold_parallel(modeSimilitude, 10*num_nodes, &threshold, &antiseuil, similarities);
 
+    printf("Seuil recommandé: %lf, %lf\n", threshold, antiseuil);
     
     jclass res_class = (*env)->FindClass(env, "graph/Metadata");
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDD)V");
@@ -1967,4 +2066,15 @@ JNIEXPORT void JNICALL Java_graph_Graph_unpauseGraph
         iteration = 0;
         pause_updates = 0;
     }
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_SetNumberClusters
+  (JNIEnv * env, jobject obj, jint new_n_clusters)
+{
+    free_clusters();
+    n_clusters = new_n_clusters;
+
+    init_clusters(n_clusters);
+    initialize_centers();
+    asssign_cluster_colors();
 }

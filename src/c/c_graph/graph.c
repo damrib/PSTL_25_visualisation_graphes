@@ -1,9 +1,13 @@
 #include "graph.h"
 
+jobjectArray vertices;
+jclass obj_class;
+jmethodID getterX, getterY, point_constructor, update_method;
+
+
 Edge edges[MAX_EDGES]; // Pour les arêtes normales
 char *node_names[MAX_NODES]; // Array to store node names as strings      
 int S[MAX_NODES]={0};
-jobjectArray vertices;
 Point velocities[MAX_NODES];
 int node_degrees[MAX_NODES];
 
@@ -163,10 +167,13 @@ double update_position_forces(JNIEnv* env, Point* forces, double PasMaxX, double
 }
 
 void initialize_vertices(JNIEnv* env){
-    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
-    jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
-    jobject initial_elem = (*env)->NewObject(env, obj_class, point_constructor, 0., 0.);
+    obj_class = (*env)->FindClass(env, "graph/Vertex");
+    point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
+    update_method = (*env)->GetMethodID(env, obj_class, "updatePosition", "(DD)V");
+    getterX = (*env)->GetMethodID(env, obj_class, "getX", "()D");
+    getterY = (*env)->GetMethodID(env, obj_class, "getY", "()D");
 
+    jobject initial_elem = (*env)->NewObject(env, obj_class, point_constructor, 0., 0.);
     jobjectArray localArray = (*env)->NewObjectArray(env, num_nodes, obj_class, initial_elem);
 
     vertices = (jobjectArray) (*env)->NewGlobalRef(env, localArray);
@@ -176,9 +183,6 @@ void initialize_vertices(JNIEnv* env){
 
 // Uses Vertex constructor instead of the update method
 void setNewVertex(JNIEnv* env, int index, double x, double y){
-    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
-    jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
-
     jobject point = (*env)->NewObject(env, obj_class, point_constructor, x, y);
     jobject global_point = (*env)->NewGlobalRef(env, point);
 
@@ -189,8 +193,6 @@ void setNewVertex(JNIEnv* env, int index, double x, double y){
 }
 
 void setVertex(JNIEnv* env, int index, double x, double y){
-    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
-    jmethodID update_method = (*env)->GetMethodID(env, obj_class, "updatePosition", "(DD)V");
     jobject vertex = (*env)->GetObjectArrayElement(env, vertices, index);
     
     (*env)->CallVoidMethod(env, vertex, update_method, x, y);
@@ -199,11 +201,9 @@ void setVertex(JNIEnv* env, int index, double x, double y){
 }
 
 jdouble getVertex_x(JNIEnv* env, int index){
-    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
-    jmethodID getter = (*env)->GetMethodID(env, obj_class, "getX", "()D");
     jobject vertex = (*env)->GetObjectArrayElement(env, vertices, index);
 
-    double res = (*env)->CallDoubleMethod(env, vertex, getter);
+    double res = (*env)->CallDoubleMethod(env, vertex, getterX);
 
     (*env)->DeleteLocalRef(env, vertex);
 
@@ -211,11 +211,9 @@ jdouble getVertex_x(JNIEnv* env, int index){
 }
 
 jdouble getVertex_y(JNIEnv* env, int index){
-    jclass obj_class = (*env)->FindClass(env, "graph/Vertex");
-    jmethodID getter = (*env)->GetMethodID(env, obj_class, "getY", "()D");
     jobject vertex = (*env)->GetObjectArrayElement(env, vertices, index);
 
-    double res = (*env)->CallDoubleMethod(env, vertex, getter);
+    double res = (*env)->CallDoubleMethod(env, vertex, getterY);
 
     (*env)->DeleteLocalRef(env, vertex);
 

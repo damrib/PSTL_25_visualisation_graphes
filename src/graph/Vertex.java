@@ -142,7 +142,7 @@ public class Vertex extends Circle {
     public void updatePosition(double x, double y) {
         setCenterX(x);
         setCenterY(y);
-        // edges.forEach(edge -> edge.update(this));
+        edges.forEach(edge -> edge.update(this));
     }
 
 
