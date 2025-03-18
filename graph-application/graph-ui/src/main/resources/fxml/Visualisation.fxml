@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 
 <GridPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-          fx:controller="com.mongraphe.graphui.VisualisationController">
+          fx:controller="com.mongraphe.graphui.Graph">
     <!-- Définir les proportions des colonnes et des lignes -->
     <columnConstraints>
         <!-- Colonne 0 : En haut à gauche et en bas à gauche (20% de la largeur) -->
@@ -33,7 +33,7 @@
     </AnchorPane>
 
     <!-- Au centre : Partie principale pour le graphe -->
-    <AnchorPane fx:id="centerPane" style="-fx-border-color: #FF5733; -fx-border-width: 2px;" GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.rowSpan="2">
+    <AnchorPane fx:id="contentPane" style="-fx-border-color: #FF5733; -fx-border-width: 2px;" GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.rowSpan="2">
         <!-- Contenu pour le graphe (sera remplacé dynamiquement) -->
     </AnchorPane>
 

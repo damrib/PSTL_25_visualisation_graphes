@@ -14,8 +14,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mongraphe.graphlayout.Graph;
-
 public class HomeScreenController {
 
     @FXML private Hyperlink newProjectLink;
@@ -33,13 +31,7 @@ public class HomeScreenController {
                 System.err.println("Le fichier spécifié n'existe pas : " + file.getAbsolutePath());
                 return;
             }
-
-            // Créer une nouvelle fenêtre (Stage)
-            Stage graphStage = new Stage();
-            graphStage.setTitle("Visualisation du Graphe");
-
-            // Lancer la fenêtre de visualisation
-            graph.start(graphStage);
+            
         } catch (Exception e) {
             e.printStackTrace();
         }

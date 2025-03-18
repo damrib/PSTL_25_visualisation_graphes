@@ -20,8 +20,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import com.mongraphe.graphlayout.GraphData;
-import com.mongraphe.graphlayout.GraphData.SimilitudeMode;
+import com.mongraphe.graphui.GraphData.SimilitudeMode;
 
 public class ChoixSimilitudeController {
 	

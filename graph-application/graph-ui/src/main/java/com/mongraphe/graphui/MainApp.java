@@ -57,8 +57,8 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
-    	runMake("../");
-    	String libnative = new File(System.getProperty("user.dir")).getParent() + "/out/libnative.so";
+    	runMake("./");
+    	String libnative = new File(System.getProperty("user.dir")).getParent() + "/graph-ui/out/libnative.so";
     	System.load(libnative);
     	System.out.println("Chemin de la bibliothèque native : " + libnative);
         launch(args);

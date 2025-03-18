@@ -1,12 +1,12 @@
-package com.mongraphe.graphlayout;
+package com.mongraphe.graphui;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-import java.util.ArrayList;
+import static com.mongraphe.graphui.Graph.HEIGHT;
+import static com.mongraphe.graphui.Graph.WIDTH;
 
-import static com.mongraphe.graphlayout.Graph.HEIGHT;
-import static com.mongraphe.graphlayout.Graph.WIDTH;
+import java.util.ArrayList;
 
 /**
  * Représente un sommet du graphe JavaFX

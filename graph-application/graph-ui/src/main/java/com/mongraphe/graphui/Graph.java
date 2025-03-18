@@ -1,22 +1,36 @@
-package com.mongraphe.graphlayout;
+package com.mongraphe.graphui;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.beans.property.*;
-import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-import javafx.util.Duration;
-import javafx.scene.transform.Scale;
-import javafx.scene.transform.Translate;
-
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 
-public class Graph extends Application implements GraphSettings {
+import com.mongraphe.graphui.GraphData.NodeCommunity;
+import com.mongraphe.graphui.GraphData.SimilitudeMode;
+
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.fxml.FXML;
+import javafx.scene.Scene;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Translate;
+import javafx.util.Duration;
+
+public class Graph implements GraphSettings {
+	
+	@FXML
+    private AnchorPane contentPane;
+
 
     static {
         String libnative = System.getProperty("user.dir") + "/out/libnative.so";
@@ -105,25 +119,38 @@ public class Graph extends Application implements GraphSettings {
 
     private Metadata init_metadata;
     private Metadata metadata;
-    private Pane root;
     private Scene scene;
     private Timeline timeline;
     private Scale scale;
     private Translate translate;
+    
+    private File fichier;
+    private SimilitudeMode measureCode;
+    private double upThreshold;
+    private double downThreshold;
+    private NodeCommunity methodCode;
+    private Pane root;
 
-
-
-
-    public static void main(String[] args) {
-        launch();
+    public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold, NodeCommunity methodCode) {
+        this.fichier = fichier;
+        this.measureCode = measureCode;
+        this.upThreshold = upThreshold;
+        this.downThreshold = downThreshold;
+        this.methodCode = methodCode;
     }
-
+    
 
     /**
-     * Méthode principale de l'application
+     * Gère l'action du bouton "Démarrer".
      */
-    @Override
-    public void start(Stage primaryStage) {
+    @FXML
+    private void handleStartButton() {
+        creerLeGraphe();
+        contentPane.getChildren().clear(); // Nettoyer le conteneur
+        contentPane.getChildren().add(root);
+    }
+    
+    public void creerLeGraphe() {
 
         // Création de la racine du graphe
         root = new Pane();
@@ -254,16 +281,6 @@ public class Graph extends Application implements GraphSettings {
         // Tests d'actions sur le graphe (en attendant l'interface graphique)
         testActions(root);
 
-
-
-        primaryStage.setTitle("Graphe interactif");
-        scene = new Scene(root, WIDTH, HEIGHT);
-        scene.setFill(Color.web(background_color.get()));
-        primaryStage.setScene(scene);
-        //primaryStage.setMaximized(true);
-        primaryStage.setOnCloseRequest(event -> Platform.exit());
-        primaryStage.show();
-
     }
 
 
@@ -273,9 +290,7 @@ public class Graph extends Application implements GraphSettings {
     private void testInit() {
 
         // Initialisation du graphe avec le fichier à charger, la méthode de similitude et la méthode de détection de communautés
-        String sample1 = "samples/iris.csv";
-        String sample2 = "samples/predicancerNUadd9239.csv";
-        init(sample2, GraphData.SimilitudeMode.CORRELATION, GraphData.NodeCommunity.LOUVAIN);
+        init(fichier.getAbsolutePath(), measureCode, methodCode);
 
         setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
         setRefreshRate(1); // Fréquence de mise à jour du graphe (en secondes)
@@ -735,5 +750,10 @@ public class Graph extends Application implements GraphSettings {
             throw new RuntimeException("Mode de détection de communautés non reconnu.");
         return modeCommunity;
     }
+    
+    
+	public Pane getGraphRoot() {
+		return root;
+	}
 
 }

@@ -3,7 +3,7 @@ package com.mongraphe.graphui;
 import java.io.File;
 import java.io.IOException;
 
-import com.mongraphe.graphlayout.GraphData.SimilitudeMode;
+import com.mongraphe.graphui.GraphData.SimilitudeMode;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

@@ -1,5 +1,6 @@
 package com.mongraphe.graphui;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -7,15 +8,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextArea;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
 
-import com.mongraphe.graphlayout.Graph;
-import com.mongraphe.graphlayout.GraphData;
-import com.mongraphe.graphlayout.GraphData.NodeCommunity;
-import com.mongraphe.graphlayout.GraphData.SimilitudeMode;
+import com.mongraphe.graphui.GraphData.NodeCommunity;
+import com.mongraphe.graphui.GraphData.SimilitudeMode;
 
 public class ClusteringController {
 
@@ -101,14 +101,17 @@ public class ClusteringController {
             Parent root = loader.load();
 
             // Récupérer le contrôleur de la vue de visualisation
-            VisualisationController controller = loader.getController();
+            Graph controller = loader.getController();
 
             // Passer les données au contrôleur
             controller.initData(fichier, measureCode, upThreshold, downThreshold, methodCode);
 
             // Afficher la nouvelle vue
             Stage stage = (Stage) nextButton.getScene().getWindow();
-            stage.setScene(new Scene(root, 1000, 700));
+            stage.setScene(new Scene(root, 2500, 800));
+            stage.setTitle("Graphe interactif");
+            //primaryStage.setMaximized(true);
+            stage.setOnCloseRequest(event -> Platform.exit());
             stage.show();
 
         } catch (IOException e) {

@@ -1,4 +1,4 @@
-package com.mongraphe.graphlayout;
+package com.mongraphe.graphui;
 
 /**
  * Définit les constantes utilisées pour les différentes opérations du graphe

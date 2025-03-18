@@ -1,4 +1,4 @@
-package com.mongraphe.graphlayout;
+package com.mongraphe.graphui;
 
 /**
  * Définit les méthodes à appeler par l'inteface graphique pour modifier les paramètres du graphe

@@ -1,4 +1,4 @@
-package com.mongraphe.graphlayout;
+package com.mongraphe.graphui;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;

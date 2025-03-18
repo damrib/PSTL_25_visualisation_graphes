@@ -1,4 +1,4 @@
-package com.mongraphe.graphlayout;
+package com.mongraphe.graphui;
 
 public class Community {
     private final int id;
