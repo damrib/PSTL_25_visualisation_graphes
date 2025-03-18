@@ -144,7 +144,7 @@ void repulsion_intra_clusters(JNIEnv* env, Point* forces, double FMaxX, double F
 // etape 4 dans update_positions
 void update_clusters(JNIEnv* env)
 {
-    if (iteration % (saut * (1+0*espacement)) == 0) {
+    if (iteration % (saut * (1+espacement)) == 0) {
         int centers_converged = 0;
 
         while (centers_converged == 0) {

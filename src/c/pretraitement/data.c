@@ -82,7 +82,7 @@ void load_csv_data(const char *filename) {
                 *end = '\0';  // Terminer la chaîne courante à la virgule
             }
             // Convertir la valeur en double
-            if ( ! str_is_number(start) ){
+            if ( row > 0 && ! str_is_number(start) ){
                 printf("Warning %s: Missing value on row %d, col %d\n", start, row, col);
             }
             data[row][col] = atof(start);

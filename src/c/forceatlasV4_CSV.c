@@ -186,7 +186,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
         struct chrono chr;
         chr_assign_log(&chr, "similitude.csv");
         chr_start_clock(&chr);
-        double means_similitude = calculate_mean_similitude_paralel(modeSimilitude);
+        double means_similitude = calculate_mean_similitude_parallel(modeSimilitude, similarities);
         chr_stop(&chr);
         chr_close_log(&chr);
         printf("fin log");
@@ -201,6 +201,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
     jclass res_class = (*env)->FindClass(env, "graph/Metadata");
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDD)V");
     jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, threshold, antiseuil, means_similitude);
+    printf("%lf", means_similitude);
 
     return res;
 
