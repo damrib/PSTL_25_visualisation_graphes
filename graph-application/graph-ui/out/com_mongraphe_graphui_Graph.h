@@ -161,6 +161,14 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setNodePosition
 
 /*
  * Class:     com_mongraphe_graphui_Graph
+ * Method:    SetNumberClusters
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_SetNumberClusters
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
  * Method:    freeAllocatedMemory
  * Signature: ()V
  */

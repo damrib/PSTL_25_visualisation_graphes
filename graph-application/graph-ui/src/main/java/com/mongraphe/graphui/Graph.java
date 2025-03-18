@@ -94,6 +94,8 @@ public class Graph implements GraphSettings {
     public native void setAmortissement(double amortissement);
     public native void setNodePosition(int index, double x, double y);
 
+    public native void SetNumberClusters(int new_number_of_clusters);
+
     public native void freeAllocatedMemory();
 
 

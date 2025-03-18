@@ -26,7 +26,7 @@ public class HomeScreenController {
             Graph graph = new Graph();
 
             // Définir le fichier à utiliser
-            File file = new File("/home/ronald/Documents/STL-S2/PSTL/PSTL_25_visualisation_graphes/graph-application/samples/iris.csv");
+            File file = new File(System.getProperty("user.dir") + "/samples/iris.csv");
             if (!file.exists()) {
                 System.err.println("Le fichier spécifié n'existe pas : " + file.getAbsolutePath());
                 return;
