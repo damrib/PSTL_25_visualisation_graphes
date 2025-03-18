@@ -37,8 +37,10 @@ void mean_similitude_job(void *args) {
                     similarity = 0.0;
                     break; 
             }
-            if ( incr_or_max(data->counter, size_similarities) != size_similarities ) {
-                data->similarities[*data->counter] = similarity;
+
+            int new_index = incr_or_max(data->counter, size_similarities);
+            if ( new_index < size_similarities ) {
+                data->similarities[new_index] = similarity;
             }
 
             if(!isnan(similarity)){
@@ -287,9 +289,8 @@ void calculate_threshold(int choice, int N, double * threshold, double * anti_th
     double low = similarities[0];
     double high = similarities[size_similarities - 1];
     *threshold = 0.5 * (low + high);
-    // TODO Potentiel boucle infini ici
     while ((high-low) >= 0.000001) {
-        // Réinitialiser le compteur d'arêtes pour le seuil actuel
+        // combre d'arête plus grand que *threshold
         int current_edges = dichotomie(*threshold, similarities);
 
         // Comparer avec N et ajuster le seuil
@@ -310,7 +311,7 @@ void calculate_threshold(int choice, int N, double * threshold, double * anti_th
      *anti_threshold = 0.5 * (low + high);
     // TODO Potentiel boucle infini ici
     while ((high-low) >= 0.000001) {
-        // Réinitialiser le compteur d'arêtes pour le seuil actuel
+        // combre d'arête plus petite qu'anti threshold
         int current_edges = size_similarities - dichotomie(*anti_threshold, similarities) + 1;
 
         // Comparer avec N et ajuster le seuil
@@ -328,5 +329,4 @@ void calculate_threshold(int choice, int N, double * threshold, double * anti_th
         }
     }
 
-    free(similarities);
 }

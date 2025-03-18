@@ -61,8 +61,8 @@ void load_csv_data(const char *filename) {
     }
 
     // Allouer de la mémoire pour les données
-    data = (double **)malloc(num_rows * sizeof(double *));
-    for (int i = 0; i < num_rows; i++) {
+    data = (double **)malloc((num_rows-1) * sizeof(double *));
+    for (int i = 0; i < num_rows-1; i++) {
         data[i] = (double *)malloc(num_columns * sizeof(double));
     }
 
@@ -81,11 +81,16 @@ void load_csv_data(const char *filename) {
             if (end) {
                 *end = '\0';  // Terminer la chaîne courante à la virgule
             }
+            int is_number = str_is_number(start);
             // Convertir la valeur en double
-            if ( row > 0 && ! str_is_number(start) ){
+            if ( row > 0 && ! is_number ){
                 printf("Warning %s: Missing value on row %d, col %d\n", start, row, col);
             }
-            data[row][col] = atof(start);
+            if ( row > 0 && is_number ) {
+                data[row-1][col] = atof(start);
+            } else if ( row > 0 ) {
+                data[row-1][col] = 0.;
+            }
             col++;
 
             // Si end est NULL, on est à la dernière valeur
@@ -115,6 +120,9 @@ void load_csv_data(const char *filename) {
         }
         printf("\n");
     }
+
+    // On ne garde pas la première ligne dans les données
+    num_rows = num_rows - 1;
 }
 
 

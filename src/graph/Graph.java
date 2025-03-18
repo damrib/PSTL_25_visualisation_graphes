@@ -80,13 +80,6 @@ public class Graph extends Application implements GraphSettings {
     public native void setAmortissement(double amortissement);
     public native void setNodePosition(int index, double x, double y);
 
-    /** Set the number of clusters and recomputes them 
-     * Warning this function does not take constant time
-     * @param new_n_clusters 
-    */
-    public native void SetNumberClusters(int new_n_clusters);
-
-    /** Free Allocated Memory in back-end */
     public native void freeAllocatedMemory();
 
 
@@ -228,10 +221,10 @@ public class Graph extends Application implements GraphSettings {
                 setMode(GraphData.GraphMode.SELECTION);
             }
 
-            //List<Vertex> updatedVertices = List.of(getPositions());
-            for (int i = 0; i < vertices.size(); i++) {
+            List<Vertex> updatedVertices = List.of(getPositions());
+            for (int i = 0; i < updatedVertices.size(); i++) {
                 // Mise à jour des coordonnées des sommets
-                vertices.get(i).updatePosition(vertices.get(i).getX(), vertices.get(i).getY());
+                vertices.get(i).updatePosition(updatedVertices.get(i).getX(), updatedVertices.get(i).getY());
 
                 // Mise à jour du degré minimum des sommets
                 int min_degree = minimumDegree.get();

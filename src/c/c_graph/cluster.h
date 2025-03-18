@@ -18,10 +18,10 @@ typedef struct Neighbor {
     struct Neighbor* next;
 } Neighbor;
 
-void kmeans_iteration(JNIEnv* env, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly);
+void kmeans_iteration(int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly);
 
-void update_clusters(JNIEnv* env);
-void repulsion_intra_clusters(JNIEnv* env, Point* forces, double FMaxX, double FMaxY);
+void update_clusters();
+void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY);
 
 // Fonction pour initialiser les centres de clusters de manière aléatoire
 void initialize_centers();
