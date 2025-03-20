@@ -1,5 +1,6 @@
 #include "similarity.h"
 #include "../global.h"
+#include <stdio.h>
 
 int mode_similitude = 0;
 

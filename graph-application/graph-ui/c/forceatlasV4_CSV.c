@@ -3,7 +3,13 @@
 #include <time.h>
 #include <float.h>
 #include <stdbool.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <termios.h>
+#endif
+
 #include <ctype.h>
 
 #include <stdatomic.h>
@@ -85,11 +91,19 @@ JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
    return 1;
 }
 
-JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getCommunities
-  (JNIEnv * env, jobject obj)
-{
+JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getCommunities(JNIEnv *env, jobject obj) {
+    // 1. Déclarer communities avec le type jint (et non int)
+    jint communities[MAX_NODES]; 
+
+    // 2. Remplir le tableau (exemple simplifié)
+    for (int i = 0; i < MAX_NODES; i++) {
+        communities[i] = i; // Remplacez par votre logique réelle
+    }
+
+    // 3. Créer le tableau Java
     jintArray result = (*env)->NewIntArray(env, MAX_NODES);
 
+    // 4. Copier les données
     (*env)->SetIntArrayRegion(env, result, 0, MAX_NODES, communities);
 
     return result;

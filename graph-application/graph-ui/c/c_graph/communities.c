@@ -1,6 +1,6 @@
 #include "communities.h"
 #include "../global.h"
-
+#include <stdio.h>
 double lambda=0.1;
 AdjacencyList adjacency_list[MAX_NODES];
 Community node_community_map[MAX_NODES];

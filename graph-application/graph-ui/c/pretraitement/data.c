@@ -1,3 +1,6 @@
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
 #include "data.h"
 #include "../global.h"
 
@@ -6,6 +9,15 @@ double **data = NULL;
 int num_rows = 0, num_columns = 0;
 char delimiter[1] = "\0";
 int S[MAX_NODES]={0};
+
+
+char* my_getline(FILE *file) {
+    static char buffer[MAX_LINE_LENGTH];
+    if (fgets(buffer, MAX_LINE_LENGTH, file) != NULL) {
+        return buffer;
+    }
+    return NULL;
+}
 
 short str_is_number(char* line)
 {
@@ -39,7 +51,7 @@ void load_csv_data(const char *filename) {
     size_t len = 0;
 
     // Première passe : Compter les lignes et les colonnes
-    while (getline(&line, &len, file) != -1) {
+    while ((line = my_getline(file)) != NULL) {
         // Supprimer les retours à la ligne potentiels
         line[strcspn(line, "\r\n")] = '\0';
         num_rows++;
@@ -69,7 +81,7 @@ void load_csv_data(const char *filename) {
     // Deuxième passe : Lire les données
     rewind(file);
     int row = 0;
-    while (getline(&line, &len, file) != -1) {
+    while ((line = my_getline(file)) != NULL) {
         line[strcspn(line, "\r\n")] = '\0';  // Supprimer les retours à la ligne potentiels
 
         int col = 0;
@@ -108,7 +120,7 @@ void load_csv_data(const char *filename) {
     }
     
     fclose(file);
-    free(line);  // Libérer la mémoire allouée par getline
+    free(line);  // Libérer la mémoire allouée par my_getline
 
     printf("Loaded CSV with %d rows and %d columns.\n", num_rows, num_columns);
     
