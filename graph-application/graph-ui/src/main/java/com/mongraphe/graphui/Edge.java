@@ -12,11 +12,11 @@ public class Edge extends Line {
 
     private final Vertex start, end;
 
-
     /**
      * Crée une arête à partir de ses deux sommets
-     * @param start : sommet de départ de l'arête
-     * @param end : sommet d'arrivée de l'arête
+     * 
+     * @param start  : sommet de départ de l'arête
+     * @param end    : sommet d'arrivée de l'arête
      * @param weight : poids de l'arête
      */
     public Edge(Vertex start, Vertex end, double weight) {
@@ -35,7 +35,9 @@ public class Edge extends Line {
             if (startCommunity.getId() == endCommunity.getId())
                 setStroke(Color.color(startCommunity.getR(), startCommunity.getG(), startCommunity.getB()));
             else
-                setStroke(Color.color((startCommunity.getR() + endCommunity.getR()) / 2, (startCommunity.getG() + endCommunity.getG()) / 2, (startCommunity.getB() + endCommunity.getB()) / 2));
+                setStroke(Color.color((startCommunity.getR() + endCommunity.getR()) / 2,
+                        (startCommunity.getG() + endCommunity.getG()) / 2,
+                        (startCommunity.getB() + endCommunity.getB()) / 2));
         } else {
             setStroke(Color.BLACK);
         }
@@ -43,13 +45,13 @@ public class Edge extends Line {
         setStrokeWidth(initial_edge_weight * weight);
     }
 
-
     /**
      * @return le sommet de départ de l'arête
      */
     public Vertex getStart() {
         return start;
     }
+
     /**
      * @return le sommet d'arrivée de l'arête
      */
@@ -57,9 +59,9 @@ public class Edge extends Line {
         return end;
     }
 
-
     /**
      * Met à jour les coordonnées de l'arête si l'un de ses sommets est déplacé
+     * 
      * @param vertex : sommet à mettre à jour
      */
     public void update(Vertex vertex) {
@@ -71,7 +73,6 @@ public class Edge extends Line {
             setEndY(vertex.getY());
         }
     }
-
 
     /**
      * @return une représentation textuelle de l'arête (pour le débogage)

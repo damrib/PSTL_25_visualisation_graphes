@@ -2,43 +2,155 @@
 
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
 
 <GridPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-          fx:controller="com.mongraphe.graphui.Graph">
-    <!-- Définir les proportions des colonnes et des lignes -->
+          fx:controller="com.mongraphe.graphui.Graph"
+          stylesheets="@../css/visualisation.css">
+    
+    <!-- Configuration des colonnes et lignes -->
     <columnConstraints>
-        <!-- Colonne 0 : En haut à gauche et en bas à gauche (20% de la largeur) -->
         <ColumnConstraints percentWidth="20" />
-        <!-- Colonne 1 : Partie centrale (60% de la largeur) -->
         <ColumnConstraints percentWidth="60" />
-        <!-- Colonne 2 : En haut à droite (20% de la largeur) -->
         <ColumnConstraints percentWidth="20" />
     </columnConstraints>
     <rowConstraints>
-        <!-- Ligne 0 : En haut à gauche et en haut à droite (30% de la hauteur) -->
-        <RowConstraints percentHeight="30" />
-        <!-- Ligne 1 : En bas à gauche (70% de la hauteur) -->
-        <RowConstraints percentHeight="70" />
+        <RowConstraints prefHeight="25" maxHeight="25" /> <!-- Barre de menus -->
+        <RowConstraints prefHeight="35" maxHeight="35" /> <!-- Barre d'onglets -->
+        <RowConstraints percentHeight="100" /> <!-- Contenu principal -->
     </rowConstraints>
 
-    <!-- En haut à gauche : Aspect des nœuds -->
-    <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" GridPane.rowIndex="0" GridPane.columnIndex="0">
-        <!-- Contenu pour l'aspect des nœuds -->
-            <Button text="Démarrer" onAction="#handleStartButton" />
-    </AnchorPane>
+    
+   <!-- Barre de menus (ligne 0) -->
+    <MenuBar GridPane.columnSpan="3" GridPane.rowIndex="0">
+        <Menu text="Fichier">
+            <MenuItem text="Nouveau" />
+            <MenuItem text="Ouvrir..." />
+            <MenuItem text="Enregistrer" />
+            <SeparatorMenuItem />
+            <MenuItem text="Quitter" onAction="#handleQuit" />
+        </Menu>
+        <Menu text="Édition">
+            <MenuItem text="Annuler" />
+            <MenuItem text="Rétablir" />
+        </Menu>
+        <Menu text="Affichage">
+            <MenuItem text="Plein écran" />
+            <CheckMenuItem text="Afficher les statistiques" />
+        </Menu>
+        <Menu text="Outils">
+            <MenuItem text="Options..." />
+        </Menu>
+        <Menu text="Fenêtre">
+            <MenuItem text="Disposition" />
+        </Menu>
+        <Menu text="Aide">
+            <MenuItem text="Documentation" />
+            <MenuItem text="À propos..." onAction="#handleAbout" />
+        </Menu>
+    </MenuBar>
 
-    <!-- En bas à gauche : Options de personnalisation -->
-    <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" GridPane.rowIndex="1" GridPane.columnIndex="0">
-        <!-- Contenu pour les options de personnalisation -->
-    </AnchorPane>
+  <!-- Barre d'onglets -->
+    <HBox GridPane.columnSpan="3" GridPane.rowIndex="1" 
+          style="-fx-background-color: #f4f4f4; -fx-padding: 5;" 
+          spacing="10">
+        <fx:define>
+            <ToggleGroup fx:id="viewToggleGroup"/>
+        </fx:define>
+        
+        <ToggleButton text="Vue d'ensemble" 
+                     toggleGroup="$viewToggleGroup"
+                     onAction="#handleViewChange"
+                     userData="overview"
+                     selected="true"/>
+        <ToggleButton text="Données" 
+                     toggleGroup="$viewToggleGroup"
+                     onAction="#handleViewChange"
+                     userData="data"/>
+        <ToggleButton text="Prévisualisation" 
+                     toggleGroup="$viewToggleGroup"
+                     onAction="#handleViewChange"
+                     userData="preview"/>
+    </HBox>
 
-    <!-- Au centre : Partie principale pour le graphe -->
-    <AnchorPane fx:id="contentPane" style="-fx-border-color: #FF5733; -fx-border-width: 2px;" GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.rowSpan="2">
-        <!-- Contenu pour le graphe (sera remplacé dynamiquement) -->
-    </AnchorPane>
+    <!-- Conteneur principal (ligne 2) -->
+    <StackPane fx:id="mainContentPane" GridPane.columnSpan="3" GridPane.rowIndex="2">
+        <!-- Vue d'ensemble -->
+        <GridPane fx:id="overviewPane" visible="true">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="20" />
+                <ColumnConstraints percentWidth="60" />
+                <ColumnConstraints percentWidth="20" />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints percentHeight="30" />
+                <RowConstraints percentHeight="70" />
+            </rowConstraints>
 
-    <!-- En haut à droite : Statistiques -->
-    <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" GridPane.rowIndex="0" GridPane.columnIndex="2">
-        <!-- Contenu pour les statistiques -->
-    </AnchorPane>
+
+            <!-- Panneau gauche haut -->
+            <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
+                       GridPane.rowIndex="0" GridPane.columnIndex="0">
+                <Button text="Démarrer" onAction="#handleStartButton"
+                        style="-fx-opacity: 1; -fx-disabled-opacity: 1;"
+                        AnchorPane.topAnchor="10" AnchorPane.leftAnchor="10" />
+                        
+            </AnchorPane>
+
+            <!-- Panneau gauche bas -->
+            <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
+                       GridPane.rowIndex="1" GridPane.columnIndex="0">
+                <VBox GridPane.columnIndex="0" GridPane.rowIndex="1" spacing="10" style="-fx-padding: 10;">
+                    <Label text="Mode du graphe:" style="-fx-font-weight: bold;"/>
+                    
+                    <fx:define>
+                        <ToggleGroup fx:id="graphModeToggleGroup"/> 
+                    </fx:define>
+                    
+                    <RadioButton text="Exécution (RUN)" 
+                                toggleGroup="$graphModeToggleGroup"
+                                userData="RUN"
+                                selected="true"/>
+                    <RadioButton text="Sélection (SELECTION)" 
+                                toggleGroup="$graphModeToggleGroup"
+                                userData="SELECTION"/>
+                    <RadioButton text="Déplacement (MOVE)" 
+                                toggleGroup="$graphModeToggleGroup"
+                                userData="MOVE"/>
+                    <RadioButton text="Suppression (DELETE)" 
+                                toggleGroup="$graphModeToggleGroup"
+                                userData="DELETE"/>
+                    
+                    <Button text="Appliquer" onAction="#handleApplyGraphMode"/>
+                </VBox>
+            </AnchorPane>
+
+            <!-- Panneau central -->
+            <AnchorPane fx:id="graphContentPane" 
+                       style="-fx-border-color: #FF5733; -fx-border-width: 2px;" 
+                       GridPane.rowIndex="0" GridPane.columnIndex="1" 
+                       GridPane.rowSpan="2">
+                <!-- Contenu du graphe -->
+            </AnchorPane>
+
+            <!-- Panneau droit -->
+            <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
+                       GridPane.rowIndex="0" GridPane.columnIndex="2">
+                <!-- Statistiques -->
+            </AnchorPane>
+        </GridPane>
+
+        <!-- Vue Données -->
+        <AnchorPane fx:id="dataPane" visible="false">
+            <!-- Contenu des données -->
+        </AnchorPane>
+
+        <!-- Vue Prévisualisation -->
+        <AnchorPane fx:id="previewPane" visible="false">
+            <!-- Contenu de prévisualisation -->
+        </AnchorPane>
+    </StackPane>
 </GridPane>

@@ -33,18 +33,18 @@ public class EchantillonageController {
     private SimilitudeMode measureCode;
 
     /**
-     * Initialise la fenêtre avec les données passées depuis ChoixSimilitudeController.
+     * Initialise la fenêtre avec les données passées depuis
+     * ChoixSimilitudeController.
      */
     public void initData(File fichier, SimilitudeMode measureCode) {
         this.fichier = fichier;
         this.measureCode = measureCode;
 
         // Affichage des informations dans le TextArea
-        infoTextArea.setText("Mesure de similarité sélectionnée: " + fichier + 
-                             "\nCode associé: " + measureCode + 
-                             "\n\nVeuillez entrer les seuils pour l'échantillonnage.");
+        infoTextArea.setText("Mesure de similarité sélectionnée: " + fichier +
+                "\nCode associé: " + measureCode +
+                "\n\nVeuillez entrer les seuils pour l'échantillonnage.");
     }
-
 
     @FXML
     private void handleBack() {
@@ -59,7 +59,7 @@ public class EchantillonageController {
             Stage stage = (Stage) backButton.getScene().getWindow();
             stage.setTitle("Mesure de similarité");
             stage.setScene(new Scene(root, 1000, 700));
-            stage.show(); 
+            stage.show();
         } catch (IOException e) {
             e.printStackTrace();
         }

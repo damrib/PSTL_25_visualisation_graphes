@@ -26,12 +26,4 @@
         <TextField fx:id="downThresholdField" text="0.5"/>
     </HBox>
 
-    <!-- Section pour les boutons Next, Back et Annuler -->
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Region /> <!-- Espace vide pour pousser les boutons vers la droite -->
-        <Button text="Back" fx:id="backButton" onAction="#handleBack"/>
-        <Button text="Next" fx:id="nextButton" onAction="#handleNext"/>
-        <Button text="Annuler" fx:id="cancelButton" onAction="#handleAnnuler"/>
-    </HBox>
-    
 </VBox>

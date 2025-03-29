@@ -22,9 +22,9 @@ public class Vertex extends Circle {
     private Community community;
     private Graph graph;
 
-
     /**
      * Crée un sommet à partir de ses coordonnées
+     * 
      * @param x : abscisse du centre du sommet
      * @param y : ordonnée du centre du sommet
      */
@@ -32,15 +32,14 @@ public class Vertex extends Circle {
         super(convertX(x), convertY(y), 5, Color.BLUE);
     }
 
-
     /**
      * Modifie l'identifiant du sommet
+     * 
      * @param id : identifiant du sommet
      */
     public void setId(int id) {
         this.id = id;
     }
-
 
     /**
      * @return la coordonnée x du centre du sommet dans le repère modifié (JavaFX)
@@ -48,6 +47,7 @@ public class Vertex extends Circle {
     public double getX() {
         return getCenterX();
     }
+
     /**
      * @return la coordonnée y du centre du sommet dans le repère modifié (JavaFX)
      */
@@ -61,6 +61,7 @@ public class Vertex extends Circle {
     public double getRedoX() {
         return redoX(getCenterX());
     }
+
     /**
      * @return la coordonnée y du centre du sommet dans le repère initial (C)
      */
@@ -68,9 +69,9 @@ public class Vertex extends Circle {
         return redoY(getCenterY());
     }
 
-
     /**
      * Modifie la communauté à laquelle appartient le sommet
+     * 
      * @param c : communauté du sommet
      */
     public void setCommunity(Community c) {
@@ -85,9 +86,9 @@ public class Vertex extends Circle {
         return community;
     }
 
-
     /**
      * Modifie la couleur du sommet
+     * 
      * @param r : composante rouge de la couleur du sommet
      * @param g : composante verte de la couleur du sommet
      * @param b : composante bleue de la couleur du sommet
@@ -96,15 +97,16 @@ public class Vertex extends Circle {
         setFill(Color.color(r, g, b));
     }
 
-
     /**
      * Modifie le graphe auquel appartient le sommet
+     * 
      * @param g : graphe auquel appartient le sommet
      */
     public void setGraph(Graph g) {
         graph = g;
         initializeEventHandlers();
     }
+
     private void initializeEventHandlers() {
         setOnMousePressed(e -> {
             if (Graph.isSelectionMode.get()) {
@@ -124,7 +126,6 @@ public class Vertex extends Circle {
         });
     }
 
-
     /**
      * Actualise le rayon du sommet en fonction de son degré
      */
@@ -136,6 +137,7 @@ public class Vertex extends Circle {
 
     /**
      * Modifie la position du sommet
+     * 
      * @param x : nouvelle coordonnée x du centre du sommet
      * @param y : nouvelle coordonnée y du centre du sommet
      */
@@ -145,9 +147,9 @@ public class Vertex extends Circle {
         edges.forEach(edge -> edge.update(this));
     }
 
-
     /**
      * Ajoute une arête à la liste des arêtes rattachées au sommet
+     * 
      * @param edge : arête à ajouter
      */
     public void addEdge(Edge edge) {
@@ -168,7 +170,6 @@ public class Vertex extends Circle {
         return edges.size();
     }
 
-
     /**
      * @return représentation textuelle du sommet (pour le débogage)
      */
@@ -176,26 +177,28 @@ public class Vertex extends Circle {
         return id + " (" + getCenterX() + ", " + getCenterY() + ")";
     }
 
-
     private static double convertX(double x) {
         if (upscale <= 0)
             upscale = 1;
-        return x * upscale + (WIDTH/2);
+        return x * upscale + (WIDTH / 2);
     }
+
     private static double convertY(double y) {
         if (upscale <= 0)
             upscale = 1;
-        return y * upscale + (HEIGHT/2);
+        return y * upscale + (HEIGHT / 2);
     }
+
     private static double redoX(double x) {
         if (upscale <= 0)
             upscale = 1;
-        return (x - (WIDTH/2)) / upscale;
+        return (x - (WIDTH / 2)) / upscale;
     }
+
     private static double redoY(double y) {
         if (upscale <= 0)
             upscale = 1;
-        return (y - (HEIGHT/2)) / upscale;
+        return (y - (HEIGHT / 2)) / upscale;
     }
 
 }

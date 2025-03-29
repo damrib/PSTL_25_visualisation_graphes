@@ -19,13 +19,5 @@
     <!-- ComboBox pour la sélection de la mesure de similarité -->
     <ComboBox fx:id="clusteringComboBox" promptText="Méthode à utiliser:" />
 
-    <!-- Section pour les boutons Next, Back et Annuler -->
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Region /> <!-- Espace vide pour pousser les boutons vers la droite -->
-        <Button text="Back" fx:id="backButton" onAction="#handleBack"/>
-        <Button text="Next" fx:id="nextButton" onAction="#handleNext"/>
-        <Button text="Annuler" fx:id="cancelButton" onAction="#handleAnnuler"/>
-    </HBox>
-    
 </VBox>
 

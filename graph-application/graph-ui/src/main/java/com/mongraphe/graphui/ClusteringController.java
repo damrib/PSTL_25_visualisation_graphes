@@ -8,7 +8,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextArea;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import java.io.File;
@@ -42,14 +41,13 @@ public class ClusteringController {
 
     @FXML
     private void initialize() {
-        // Ajouter des options pour les méthodes de clustering
+        // Méthodes de clustering
         clusteringComboBox.getItems().addAll(
-            "Louvain",
-            "Louvain par composantes",
-            "Leiden",
-            "Leiden CPM",
-            "Couleurs spéciales"
-        );
+                "Louvain",
+                "Louvain par composantes",
+                "Leiden",
+                "Leiden CPM",
+                "Couleurs spéciales");
         clusteringComboBox.setValue("Louvain"); // Valeur par défaut
 
         // Message par défaut
@@ -67,63 +65,16 @@ public class ClusteringController {
 
         // Mise à jour de l'affichage avec les valeurs reçues
         infoTextArea.setText("Mesure de similarité: " + measureCode +
-                             "\nSeuils: " + downThreshold + " - " + upThreshold +
-                             "\n\nVeuillez choisir un algorithme de clustering.");
+                "\nSeuils: " + downThreshold + " - " + upThreshold +
+                "\n\nVeuillez choisir un algorithme de clustering.");
     }
 
-    @FXML
-    private void handleBack() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Echantillonage.fxml"));
-            Parent root = loader.load();
-
-            // Récupérer le contrôleur précédent et lui renvoyer les données
-            EchantillonageController controller = loader.getController();
-            controller.initData(fichier, measureCode);
-
-            Stage stage = (Stage) backButton.getScene().getWindow();
-            stage.setTitle("Echantillonnage");
-            stage.setScene(new Scene(root, 1000, 700));
-            stage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @FXML
-    private void handleNext() {
-        try {
-            String selectedMethod = clusteringComboBox.getValue();
-            NodeCommunity methodCode = getMethodeCode(selectedMethod);
-
-            // Charger la vue de visualisation
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Visualisation.fxml"));
-            Parent root = loader.load();
-
-            // Récupérer le contrôleur de la vue de visualisation
-            Graph controller = loader.getController();
-
-            // Passer les données au contrôleur
-            controller.initData(fichier, measureCode, upThreshold, downThreshold, methodCode);
-
-            // Afficher la nouvelle vue
-            Stage stage = (Stage) nextButton.getScene().getWindow();
-            stage.setScene(new Scene(root, 2500, 800));
-            stage.setTitle("Graphe interactif");
-            //primaryStage.setMaximized(true);
-            stage.setOnCloseRequest(event -> Platform.exit());
-            stage.show();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @FXML
-    private void handleAnnuler() {
-        // Fermer la fenêtre actuelle
-        Stage stage = (Stage) cancelButton.getScene().getWindow();
-        stage.close();
+    /**
+     * Récupère la méthode de clustering sélectionnée
+     */
+    public NodeCommunity getSelectedMethod() {
+        String selected = clusteringComboBox.getValue();
+        return getMethodeCode(selected);
     }
 
     /**

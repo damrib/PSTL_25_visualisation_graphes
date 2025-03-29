@@ -10,8 +10,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 
 public class VisualisationController {
-	
-	@FXML
+
+    @FXML
     private AnchorPane graphContainer; // Référence au conteneur dans le FXML
 
     private File fichier;
@@ -21,7 +21,8 @@ public class VisualisationController {
     private NodeCommunity methodCode;
     private Graph contenuVisuel;
 
-    public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold, NodeCommunity methodCode) {
+    public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold,
+            NodeCommunity methodCode) {
         this.fichier = fichier;
         this.measureCode = measureCode;
         this.upThreshold = upThreshold;
@@ -48,7 +49,7 @@ public class VisualisationController {
 
     private void displayGraph() {
         // Implémentez cette méthode pour afficher le graphe dans la scène
-    	// Récupérer le panneau racine du graphe
+        // Récupérer le panneau racine du graphe
         Pane graphRoot = contenuVisuel.getGraphRoot(); // Supposons que Graph ait une méthode getGraphRoot()
 
         // Ajouter le graphe au conteneur

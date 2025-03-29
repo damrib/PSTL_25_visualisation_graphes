@@ -14,9 +14,11 @@ public class EdgeInterm {
     public int getStart() {
         return start;
     }
+
     public int getEnd() {
         return end;
     }
+
     public double getWeight() {
         return weight;
     }

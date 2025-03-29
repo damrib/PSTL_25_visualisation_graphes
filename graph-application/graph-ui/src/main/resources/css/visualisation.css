@@ -1,0 +1,12 @@
+.button {
+    -fx-background-radius: 5 5 0 0;
+    -fx-background-color: #e0e0e0;
+    -fx-padding: 5 15 5 15;
+}
+
+.button:selected {
+    -fx-background-color: #ffffff;
+    -fx-font-weight: bold;
+    -fx-border-color: #c0c0c0;
+    -fx-border-width: 0 0 3 0;
+}

@@ -9,6 +9,7 @@ import com.mongraphe.graphui.GraphData.SimilitudeMode;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -17,10 +18,16 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
@@ -29,7 +36,88 @@ import javafx.util.Duration;
 public class Graph implements GraphSettings {
 
     @FXML
-    private AnchorPane contentPane;
+    private StackPane mainContentPane;
+    @FXML
+    private GridPane overviewPane;
+    @FXML
+    private AnchorPane dataPane;
+    @FXML
+    private AnchorPane previewPane;
+    @FXML
+    private AnchorPane graphContentPane;
+    @FXML
+    private ToggleGroup viewToggleGroup;
+    @FXML
+    private ToggleGroup graphModeToggleGroup;
+
+    public void handleQuit(ActionEvent event) {
+        Platform.exit();
+    }
+
+    public void handleAbout(ActionEvent event) {
+    }
+
+    @FXML
+    private void handleViewChange(ActionEvent event) {
+        ToggleButton selected = (ToggleButton) viewToggleGroup.getSelectedToggle();
+        if (selected == null)
+            return;
+
+        String viewType = (String) selected.getUserData();
+
+        overviewPane.setVisible(false);
+        dataPane.setVisible(false);
+        previewPane.setVisible(false);
+
+        switch (viewType) {
+            case "overview":
+                overviewPane.setVisible(true);
+                break;
+            case "data":
+                dataPane.setVisible(true);
+                break;
+            case "preview":
+                previewPane.setVisible(true);
+                break;
+        }
+    }
+
+    @FXML
+    private void handleApplyGraphMode(ActionEvent event) {
+        RadioButton selected = (RadioButton) graphModeToggleGroup.getSelectedToggle();
+        if (selected == null)
+            return;
+
+        String mode = (String) selected.getUserData();
+
+        switch (mode) {
+            case "RUN":
+                setMode(GraphData.GraphMode.RUN);
+                break;
+            case "SELECTION":
+                setMode(GraphData.GraphMode.SELECTION);
+                break;
+            case "MOVE":
+                setMode(GraphData.GraphMode.MOVE);
+                break;
+            case "DELETE":
+                setMode(GraphData.GraphMode.DELETE);
+                break;
+        }
+
+        System.out.println("Mode changé : " + mode);
+    }
+
+    /**
+     * Gère l'action du bouton "Démarrer".
+     */
+    @FXML
+    private void handleStartButton() {
+        System.out.println("Bouton démarrer cliqué !");
+        creerLeGraphe();
+        graphContentPane.getChildren().clear(); // Nettoyer le conteneur
+        graphContentPane.getChildren().add(root);
+    }
 
     static {
         String os = System.getProperty("os.name").toLowerCase();
@@ -66,69 +154,67 @@ public class Graph implements GraphSettings {
     // A modifier quand le graphe est en pause
     /**
      * Set the frequence at which the clusters are updated
-     *
+     * 
      * @param saut
      */
     public native void setSaut(int saut);
 
     /**
-     * Threshold indicating when the graph should be stopped (if movement is
-     * less than threshold and it has been long enough then the graph stops
-     * moving)
-     *
+     * Threshold indicating when the graph should be stopped
+     * (if movement is less than threshold and it has been long enough then the
+     * graph stops moving)
+     * 
      * @param thresholdS
      */
     public native void setThresholdS(double thresholdS);
 
     /**
-     * Set new friction
-     *
-     *
+     * Set new friction *
+     * 
      * @param friction
-     *
-     */
+     **/
     public native void setFriction(double friction);
 
     // Modifiable pendant l'execution (avant prochain updatePositions)
     /**
      * sets the repulsion mode to be used by updatePositions
-     *
-     * @param mode : repulsion by degree (0), repulsion by edges (1), repulsion
-     *             by communities (2)
+     * 
+     * @param mode : repulsion by degree (0), repulsion by edges (1), repulsion by
+     *             communities (2)
      */
     public native void setModeRepulsion(int mode);
 
     /**
      * sets force of anti-edges
-     *
+     * 
      * @param antiedge_repulsion
      */
     public native void setAntiRepulsion(double antiedge_repulsion);
 
     /**
      * sets attraction force
-     *
+     * 
      * @param attraction_coeff
      */
     public native void setAttractionCoeff(double attraction_coeff);
 
     /**
      * sets attraction threshold
-     *
+     * 
      * @param thresholdA
      */
     public native void setThresholdA(double thresholdA);
 
     /**
      * sets new repulsion threshold
-     *
+     * 
      * @param seuilrep
      */
     public native void setSeuilRep(double seuilrep);
 
     /**
      * the calculation depends on how big the window is
-     *
+     * 
      * @param width  positive real number
      * @param height positive real number
      */
@@ -137,7 +223,7 @@ public class Graph implements GraphSettings {
     /**
      * Set amortissement, factor dictating how the friction evolves after each
      * update of the graph
-     *
+     * 
      * @param amortissement
      */
     public native void setAmortissement(double amortissement);
@@ -187,16 +273,6 @@ public class Graph implements GraphSettings {
         this.upThreshold = upThreshold;
         this.downThreshold = downThreshold;
         this.methodCode = methodCode;
-    }
-
-    /**
-     * Gère l'action du bouton "Démarrer".
-     */
-    @FXML
-    private void handleStartButton() {
-        creerLeGraphe();
-        contentPane.getChildren().clear(); // Nettoyer le conteneur
-        contentPane.getChildren().add(root);
     }
 
     public void creerLeGraphe() {
@@ -259,9 +335,8 @@ public class Graph implements GraphSettings {
         }
 
         System.out.println("\nCommunautés (" + communities.size() + ") :");
-        for (Community c : communities.values()) {
+        for (Community c : communities.values())
             System.out.println("- " + c);
-        }
         System.out.println();
 
         // Récupérer les arêtes
@@ -274,9 +349,8 @@ public class Graph implements GraphSettings {
         }
 
         // Ajuster les rayons des sommets selon leur degré
-        for (Vertex v : vertices) {
+        for (Vertex v : vertices)
             v.updateRadius();
-        }
 
         // Ajouter les sommets à la racine
         root.getChildren().addAll(vertices);
@@ -302,17 +376,14 @@ public class Graph implements GraphSettings {
                 int min_degree = minimumDegree.get();
                 if (vertices.get(i).getDegree() >= min_degree && !root.getChildren().contains(vertices.get(i))) {
                     root.getChildren().add(vertices.get(i));
-                    for (Edge e : vertices.get(i).getEdges()) {
+                    for (Edge e : vertices.get(i).getEdges())
                         if (!root.getChildren().contains(e) && e.getStart().getDegree() >= min_degree
-                                && e.getEnd().getDegree() >= min_degree) {
+                                && e.getEnd().getDegree() >= min_degree)
                             root.getChildren().add(e);
-                        }
-                    }
                 } else if (vertices.get(i).getDegree() < minimumDegree.get()) {
                     root.getChildren().remove(vertices.get(i));
-                    for (Edge e : vertices.get(i).getEdges()) {
+                    for (Edge e : vertices.get(i).getEdges())
                         root.getChildren().remove(e);
-                    }
                 }
 
             }
@@ -326,13 +397,12 @@ public class Graph implements GraphSettings {
         timeline.play();
 
         // Tests d'actions sur le graphe (en attendant l'interface graphique)
-        testActions(root);
+        // testActions(root);
 
     }
 
     /**
-     * Exemple d'initialisation du graphe (à remplacer par l'interface
-     * graphique)
+     * Exemple d'initialisation du graphe (à remplacer par l'interface graphique)
      */
     private void testInit() {
 
@@ -350,7 +420,7 @@ public class Graph implements GraphSettings {
 
     /**
      * Exemple d'actions sur le graphe (en attendant l'interface graphique)
-     *
+     * 
      * @param root Racine du graphe
      */
     private void testActions(Pane root) {
@@ -482,9 +552,10 @@ public class Graph implements GraphSettings {
     }
 
     // Initialisation
+
     /**
      * Initialise le graphe avec les données du fichier .csv
-     *
+     * 
      * @param path      Chemin du fichier .csv à charger
      * @param mode      Mode de similitude à utiliser
      * @param community Mode de détection de communautés à utiliser
@@ -501,9 +572,8 @@ public class Graph implements GraphSettings {
         int modeSimilitude = getModeSimilitude(mode);
 
         init_metadata = computeThreshold(modeSimilitude);
-        if (init_metadata == null) {
+        if (init_metadata == null)
             throw new RuntimeException("Une erreur est survenue lors du calcul des seuils.");
-        }
 
         double recommendedThreshold = init_metadata.getEdgeThreshold();
         double recommendedAntiThreshold = init_metadata.getAntiThreshold();
@@ -525,7 +595,7 @@ public class Graph implements GraphSettings {
 
     /**
      * Initialise la taille de l'écran du graphe
-     *
+     * 
      * @param width  Largeur de l'écran (en px)
      * @param height Hauteur de l'écran (en px)
      */
@@ -537,6 +607,7 @@ public class Graph implements GraphSettings {
     }
 
     // Mode de sélection
+
     /**
      * @return le mode actuel du graphe
      * @see GraphData.GraphMode
@@ -557,7 +628,7 @@ public class Graph implements GraphSettings {
 
     /**
      * Définit le mode du graphe
-     *
+     * 
      * @param mode le mode à définir
      * @see GraphData.GraphMode
      */
@@ -596,14 +667,14 @@ public class Graph implements GraphSettings {
     }
 
     // Paramètres de la simulation
+
     /**
      * @return le seuil recommandé pour les arêtes
      */
     @Override
     public double getRecommendedThreshold() {
-        if (init_metadata == null) {
+        if (init_metadata == null)
             throw new RuntimeException("Métadonnées non initialisées. Veuillez appeler init() avant.");
-        }
         return init_metadata.getEdgeThreshold();
     }
 
@@ -612,9 +683,8 @@ public class Graph implements GraphSettings {
      */
     @Override
     public double getRecommendedAntiThreshold() {
-        if (init_metadata == null) {
+        if (init_metadata == null)
             throw new RuntimeException("Métadonnées non initialisées. Veuillez appeler init() avant.");
-        }
         return init_metadata.getAntiThreshold();
     }
 
@@ -623,9 +693,8 @@ public class Graph implements GraphSettings {
      */
     @Override
     public double getThreshold() {
-        if (metadata == null) {
+        if (metadata == null)
             throw new RuntimeException("Métadonnées non initialisées. Veuillez appeler init() avant.");
-        }
         return metadata.getEdgeThreshold();
     }
 
@@ -634,15 +703,14 @@ public class Graph implements GraphSettings {
      */
     @Override
     public double getAntiThreshold() {
-        if (metadata == null) {
+        if (metadata == null)
             throw new RuntimeException("Métadonnées non initialisées. Veuillez appeler init() avant.");
-        }
         return metadata.getAntiThreshold();
     }
 
     /**
      * Change le seuil pour les arêtes
-     *
+     * 
      * @param threshold Nouveau seuil pour les arêtes
      */
     @Override
@@ -652,7 +720,7 @@ public class Graph implements GraphSettings {
 
     /**
      * Change le seuil pour les anti-arêtes
-     *
+     * 
      * @param antiThreshold Nouveau seuil pour les anti-arêtes
      */
     @Override
@@ -677,10 +745,9 @@ public class Graph implements GraphSettings {
     }
 
     /**
-     * @param factor Facteur d'agrandissement selon le degré d'un sommet (0 pour
-     *               que la taille soit identique pour tous les sommets, > 0 pour
-     *               faire varier
-     *               la taille proportionnellement au degré)
+     * @param factor Facteur d'agrandissement selon le degré d'un sommet (0 pour que
+     *               la taille soit identique pour tous les sommets, > 0 pour faire
+     *               varier la taille proportionnellement au degré)
      */
     @Override
     public void setDegreeScaleFactor(double factor) {
@@ -689,7 +756,7 @@ public class Graph implements GraphSettings {
 
     /**
      * Affiche les sommets dont le degré est supérieur ou égal à degree
-     *
+     * 
      * @param degree Degré minimum des sommets à afficher
      */
     @Override
@@ -715,9 +782,10 @@ public class Graph implements GraphSettings {
     }
 
     // Options supplémentaires
+
     /**
      * Exporte le graphe en image PNG
-     *
+     * 
      * @param path Chemin de l'image PNG à exporter
      */
     @Override
@@ -767,22 +835,15 @@ public class Graph implements GraphSettings {
     private static int getModeSimilitude(GraphData.SimilitudeMode mode) {
         int modeSimilitude = -1;
         switch (mode) {
-            case GraphData.SimilitudeMode.CORRELATION ->
-                modeSimilitude = 0;
-            case GraphData.SimilitudeMode.DISTANCE_COSINE ->
-                modeSimilitude = 1;
-            case GraphData.SimilitudeMode.DISTANCE_EUCLIDIENNE ->
-                modeSimilitude = 2;
-            case GraphData.SimilitudeMode.NORME_L1 ->
-                modeSimilitude = 3;
-            case GraphData.SimilitudeMode.NORME_LINF ->
-                modeSimilitude = 4;
-            case GraphData.SimilitudeMode.KL_DIVERGENCE ->
-                modeSimilitude = 5;
+            case GraphData.SimilitudeMode.CORRELATION -> modeSimilitude = 0;
+            case GraphData.SimilitudeMode.DISTANCE_COSINE -> modeSimilitude = 1;
+            case GraphData.SimilitudeMode.DISTANCE_EUCLIDIENNE -> modeSimilitude = 2;
+            case GraphData.SimilitudeMode.NORME_L1 -> modeSimilitude = 3;
+            case GraphData.SimilitudeMode.NORME_LINF -> modeSimilitude = 4;
+            case GraphData.SimilitudeMode.KL_DIVERGENCE -> modeSimilitude = 5;
         }
-        if (modeSimilitude == -1) {
+        if (modeSimilitude == -1)
             throw new RuntimeException("Mode de similitude non reconnu.");
-        }
         return modeSimilitude;
     }
 
@@ -793,20 +854,14 @@ public class Graph implements GraphSettings {
     private static int getModeCommunity(GraphData.NodeCommunity community) {
         int modeCommunity = -1;
         switch (community) {
-            case GraphData.NodeCommunity.LOUVAIN ->
-                modeCommunity = 0;
-            case GraphData.NodeCommunity.LOUVAIN_PAR_COMPOSANTE ->
-                modeCommunity = 1;
-            case GraphData.NodeCommunity.LEIDEN ->
-                modeCommunity = 2;
-            case GraphData.NodeCommunity.LEIDEN_CPM ->
-                modeCommunity = 3;
-            case GraphData.NodeCommunity.COULEURS_SPECIALES ->
-                modeCommunity = 4;
+            case GraphData.NodeCommunity.LOUVAIN -> modeCommunity = 0;
+            case GraphData.NodeCommunity.LOUVAIN_PAR_COMPOSANTE -> modeCommunity = 1;
+            case GraphData.NodeCommunity.LEIDEN -> modeCommunity = 2;
+            case GraphData.NodeCommunity.LEIDEN_CPM -> modeCommunity = 3;
+            case GraphData.NodeCommunity.COULEURS_SPECIALES -> modeCommunity = 4;
         }
-        if (modeCommunity == -1) {
+        if (modeCommunity == -1)
             throw new RuntimeException("Mode de détection de communautés non reconnu.");
-        }
         return modeCommunity;
     }
 
