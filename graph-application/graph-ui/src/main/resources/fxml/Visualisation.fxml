@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<GridPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+          fx:controller="com.mongraphe.graphui.Graph">
+    <!-- Définir les proportions des colonnes et des lignes -->
+    <columnConstraints>
+        <!-- Colonne 0 : En haut à gauche et en bas à gauche (20% de la largeur) -->
+        <ColumnConstraints percentWidth="20" />
+        <!-- Colonne 1 : Partie centrale (60% de la largeur) -->
+        <ColumnConstraints percentWidth="60" />
+        <!-- Colonne 2 : En haut à droite (20% de la largeur) -->
+        <ColumnConstraints percentWidth="20" />
+    </columnConstraints>
+    <rowConstraints>
+        <!-- Ligne 0 : En haut à gauche et en haut à droite (30% de la hauteur) -->
+        <RowConstraints percentHeight="30" />
+        <!-- Ligne 1 : En bas à gauche (70% de la hauteur) -->
+        <RowConstraints percentHeight="70" />
+    </rowConstraints>
+
+    <!-- En haut à gauche : Aspect des nœuds -->
+    <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" GridPane.rowIndex="0" GridPane.columnIndex="0">
+        <!-- Contenu pour l'aspect des nœuds -->
+            <Button text="Démarrer" onAction="#handleStartButton" />
+    </AnchorPane>
+
+    <!-- En bas à gauche : Options de personnalisation -->
+    <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" GridPane.rowIndex="1" GridPane.columnIndex="0">
+        <!-- Contenu pour les options de personnalisation -->
+    </AnchorPane>
+
+    <!-- Au centre : Partie principale pour le graphe -->
+    <AnchorPane fx:id="contentPane" style="-fx-border-color: #FF5733; -fx-border-width: 2px;" GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.rowSpan="2">
+        <!-- Contenu pour le graphe (sera remplacé dynamiquement) -->
+    </AnchorPane>
+
+    <!-- En haut à droite : Statistiques -->
+    <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" GridPane.rowIndex="0" GridPane.columnIndex="2">
+        <!-- Contenu pour les statistiques -->
+    </AnchorPane>
+</GridPane>
