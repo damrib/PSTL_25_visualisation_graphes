@@ -117,11 +117,97 @@ void kmeans_map(void * arg) {
     decrement_barrier(arguments->barrier, 1);
 }
 
+// version originale de l'algorithme
+void kmeans_iteration_original(Point *points, int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly) {
+    int counts[MAX_NODES] = {0};
+
+    double ** new_centers = (double**) malloc(sizeof(double*) * num_clusters);  // Stocker les nouveaux centres calculés
+    for (int i = 0; i < num_clusters; ++i) {
+        new_centers[i] = (double*) calloc(2, sizeof(double));
+    }
+
+    // Assigner chaque point au cluster le plus proche et mettre à jour les centres
+    for (int i = 0; i < num_points; i++) {
+        double min_dist = DBL_MAX;
+        int best_cluster = 0;
+
+        for (int j = 0; j < num_clusters; j++) {
+            Point dir;
+            toroidal_vector(&dir, points[i], (Point){centers[j][0], centers[j][1]});
+            double dist = (dir.x * dir.x + dir.y * dir.y);
+
+            if (dist < min_dist) {
+                min_dist = dist;
+                best_cluster = j;
+            }
+        }
+
+        labels[i] = best_cluster;
+
+        // Ajuster les coordonnées du point pour qu'elles soient proches du centre du cluster
+        double adjusted_x = points[i].x;
+        double adjusted_y = points[i].y;
+
+        while (adjusted_x - centers[best_cluster][0] > Lx / 2) adjusted_x -= Lx;
+        while (centers[best_cluster][0] - adjusted_x > Lx / 2) adjusted_x += Lx;
+        while (adjusted_y - centers[best_cluster][1] > Ly / 2) adjusted_y -= Ly;
+        while (centers[best_cluster][1] - adjusted_y > Ly / 2) adjusted_y += Ly;
+
+        new_centers[best_cluster][0] += adjusted_x;
+        new_centers[best_cluster][1] += adjusted_y;
+        counts[best_cluster]++;
+    }
+
+    // Mise à jour des centres de clusters en fonction des nouvelles assignations
+    for (int i = 0; i < num_clusters; i++) {
+        if (counts[i] > 0) {
+            centers[i][0] = new_centers[i][0] / counts[i];
+            centers[i][1] = new_centers[i][1] / counts[i];
+
+            // Ramener les centres dans l'espace torique
+            while (centers[i][0] < -Lx / 2) centers[i][0] += Lx;
+            while (centers[i][0] > Lx / 2) centers[i][0] -= Lx;
+            while (centers[i][1] < -Ly / 2) centers[i][1] += Ly;
+            while (centers[i][1] > Ly / 2) centers[i][1] -= Ly;
+        }
+    }
+}
+
+void update_clusters_original() {
+    if (iteration % (saut * (1+0*espacement)) == 0) {
+        espacement++;
+        int centers_converged = 0;
+
+        while (centers_converged == 0) {
+            double old_centers[MAX_NODES][2];
+            memcpy(old_centers, centers, sizeof(centers));
+
+            kmeans_iteration_original(vertices, num_nodes, n_clusters, clusters, centers, Lx, Ly);
+
+            centers_converged = 1;
+            for (int i = 0; i < n_clusters; i++) {
+                double dx = centers[i][0] - old_centers[i][0];
+                double dy = centers[i][1] - old_centers[i][1];
+                if ((dx * dx + dy * dy) > epsilon) {
+                    centers_converged = 0;
+                    break;
+                }
+            }
+        }
+        clear_clusters();
+
+        for (int i = 0; i < num_nodes; i++) {
+            int best_cluster = clusters[i];
+            add_node_to_cluster(best_cluster, i);
+        }
+    }
+}
+
 // Assigner des noeuds aux clusters et mettre à jour les centres en utilisant l'algorithme k-means
 void kmeans_iteration(int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly, double* max_diff) {
 
     // Modification pour utiliser moins de memoire et eviter un seg fault
-    int* counts = (int*) calloc(num_nodes, sizeof(int));
+    int counts[MAX_NODES] = {0};
     double ** new_centers = (double**) malloc(sizeof(double*) * num_clusters);  // Stocker les nouveaux centres calculés
 
     for (int i = 0; i < num_clusters; ++i) {
@@ -181,7 +267,6 @@ void kmeans_iteration(int num_points, int num_clusters, int *labels, double cent
     }
 
     free(new_centers);
-    free(counts);
 }
 
 // probablement privé utilisée dans update_positions

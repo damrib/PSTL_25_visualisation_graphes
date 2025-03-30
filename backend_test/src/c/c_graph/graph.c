@@ -51,8 +51,8 @@ void calculate_node_degrees(void) {
 
 // Générer un point aléatoire près du centre
 void random_point_in_center(int index) {
-    double center_width = Lx * 0.3;
-    double center_height = Ly * 0.3;
+    double center_width = Lx * 0.5;
+    double center_height = Ly * 0.5;
     vertices[index].x = (rand() / (double)RAND_MAX) * center_width - center_width / 2;
     vertices[index].y = (rand() / (double)RAND_MAX) * center_height - center_height / 2;
 }

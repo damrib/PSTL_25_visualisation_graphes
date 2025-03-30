@@ -61,7 +61,6 @@ JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
    double PasMaxX = Lx / 10.;
    double PasMaxY = Ly / 10.;
 
-   iteration = 0;
    static Point forces[MAX_NODES] = {0};
 
    if ( pause_updates == 0 ){
@@ -97,20 +96,10 @@ JNIEXPORT void JNICALL Java_graph_Graph_testUpdatePosition
   (JNIEnv * env, jobject obj, jint iteration_number)
 {
 
-  double Max_movementOld = 0.0;
-  double Max_movement = 0.0;
-  double FMaxX = Lx/(friction*1000);
-  double FMaxY = Ly/(friction*1000);
-  thresholdS = (Lx/4000)*(Ly/4000);
-  thresholdA = (Lx/4000)*(Ly/4000);
-  epsilon = (Lx/800)*(Ly/800);
-  seuilrep = (Lx/1000)*(Lx/1000);
 
-  double PasMaxX = Lx / 10.;
-  double PasMaxY = Ly / 10.;
+  static Point forces[MAX_NODES] = {0};  
 
   iteration = 0;
-  static Point forces[MAX_NODES] = {0};  
 
   #ifdef _DEBUG_
     chr_assign_log(&chrono_means, "Kmeans.csv");
@@ -119,6 +108,19 @@ JNIEXPORT void JNICALL Java_graph_Graph_testUpdatePosition
   #endif
 
   for (int i = 0; i < iteration_number; ++i) {
+    double Max_movementOld = 0.0;
+    double Max_movement = 0.0;
+    double FMaxX = Lx/(friction*1000);
+    double FMaxY = Ly/(friction*1000);
+    thresholdS = (Lx/4000)*(Ly/4000);
+    thresholdA = (Lx/4000)*(Ly/4000);
+    epsilon = (Lx/800)*(Ly/800);
+    seuilrep = (Lx/1000)*(Lx/1000);
+  
+    double PasMaxX = Lx / 10.;
+    double PasMaxY = Ly / 10.;
+
+
     repulsion_edges(forces);
     repulsion_intra_clusters(forces, FMaxX, FMaxY);
     repulsion_anti_edges(forces);
@@ -254,7 +256,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
   (JNIEnv * env, jobject obj, jint modeSimilitude)
 {
 
-    InitPool(&pool, 1000, 4);
+    InitPool(&pool, 1000, 6);
 
     num_nodes = num_rows;
 
@@ -350,7 +352,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
     //n_clusters = (int)sqrt(num_nodes);
     n_clusters = 150;
     init_clusters(n_clusters);
-    initialize_centers_plus();
+    initialize_centers();
     assign_cluster_colors();
     calculate_node_degrees();
 
