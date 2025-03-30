@@ -3,6 +3,7 @@
 
 int mode_similitude = 0;
 
+//calcul de correlation pour j > i car correlation est symetrique 
 void get_ij_from_task_index(int task_index, int num_rows, int *i, int *j) {
     int row_count = num_rows - 1;
     int row_start = 0;
@@ -25,11 +26,11 @@ void mean_similitude_job(void *args) {
     while (1) {
         int task_index = atomic_fetch_add(data->task_index, 1);
         if (task_index >= size_similarities) {
-            break; 
+            break; // S'il n'y a plus de tâches à traiter
         }
 
         int i, j;
-        get_ij_from_task_index(task_index, data->num_rows, &i, &j);
+        get_ij_from_task_index(task_index, data->num_rows, &i, &j); // Récupérer i et j à partir de task_index
 
         double similarity = 0.0;
         switch (data->choice) {
