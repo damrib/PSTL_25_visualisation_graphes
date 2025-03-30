@@ -137,6 +137,7 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
         double bin_start = (choice == 0 || choice == 1) ? -1.0 + (2.0 * bin) / NUM_BINS : (double)bin / NUM_BINS;
         double bin_end = (choice == 0 || choice == 1) ? -1.0 + (2.0 * (bin + 1)) / NUM_BINS : (double)(bin + 1) / NUM_BINS;
         printf("Bin [%.2f, %.2f): %d\n", bin_start, bin_end, histogram[bin]);
+        global_histogram[bin] = histogram[bin];
     }
 
     return (count > 0) ? somme / count : 0.0;

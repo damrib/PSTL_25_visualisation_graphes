@@ -87,6 +87,7 @@ extern int S[MAX_NODES];
 
 extern int mode_similitude;
 extern double **similarity_matrix;
+extern int global_histogram[NUM_BINS];
 // ForceAtlas
 
 extern int iteration;

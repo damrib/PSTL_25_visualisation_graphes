@@ -28,6 +28,7 @@ int max_iterations = 5000;
 
 short pause_updates = 0;
 double** similarity_matrix = NULL;
+int global_histogram[NUM_BINS] = {0}; 
 /**
  * 
  * 
@@ -314,7 +315,10 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
         }
     }
     free_clusters();
-
+    for (int i = 0; i < num_rows; i++) {
+      free(similarity_matrix[i]);
+    }
+    free(similarity_matrix);
     FreePool(&pool);
 }
 
