@@ -33,6 +33,7 @@ import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 
+
 public class Graph implements GraphSettings {
 
     @FXML
@@ -56,6 +57,7 @@ public class Graph implements GraphSettings {
 
     public void handleAbout(ActionEvent event) {
     }
+
 
     @FXML
     private void handleViewChange(ActionEvent event) {
@@ -114,9 +116,13 @@ public class Graph implements GraphSettings {
     @FXML
     private void handleStartButton() {
         System.out.println("Bouton démarrer cliqué !");
-        creerLeGraphe();
+        graphInit();
         graphContentPane.getChildren().clear(); // Nettoyer le conteneur
         graphContentPane.getChildren().add(root);
+    }
+
+    public Pane getGraphRoot() {
+        return root;
     }
 
     static {
@@ -136,103 +142,67 @@ public class Graph implements GraphSettings {
 
     // Méthodes JNI
     public native boolean updatePositions();
-
     public native int[] getCommunities();
-
     public native float[][] getClusterColors();
-
     public native EdgeC[] getEdges();
-
     public native Vertex[] getPositions();
-
     public native double[][] startsProgram(String filename);
-
     public native Metadata computeThreshold(int modeSimilitude);
-
     public native Metadata initiliazeGraph(int modeCommunity, double threshold, double anti_threshold);
 
     // A modifier quand le graphe est en pause
-    /**
-     * Set the frequence at which the clusters are updated
-     * 
+    /** Set the frequence at which the clusters are updated
      * @param saut
      */
     public native void setSaut(int saut);
-
-    /**
-     * Threshold indicating when the graph should be stopped
-     * (if movement is less than threshold and it has been long enough then the
-     * graph stops moving)
-     * 
+    /** Threshold indicating when the graph should be stopped
+     * (if movement is less than threshold and it has been long enough then the graph stops moving)
      * @param thresholdS
      */
     public native void setThresholdS(double thresholdS);
-
-    /**
-     * Set new friction *
-     * 
+    /** Set new friction *
      * @param friction
      **/
     public native void setFriction(double friction);
 
     // Modifiable pendant l'execution (avant prochain updatePositions)
-    /**
-     * sets the repulsion mode to be used by updatePositions
-     * 
-     * @param mode : repulsion by degree (0), repulsion by edges (1), repulsion by
-     *             communities (2)
+    /** sets the repulsion mode to be used by updatePositions
+     * @param mode : repulsion by degree (0), repulsion by edges (1), repulsion by communities (2)
      */
     public native void setModeRepulsion(int mode);
-
-    /**
-     * sets force of anti-edges
-     * 
+    /** sets force of anti-edges
      * @param antiedge_repulsion
      */
     public native void setAntiRepulsion(double antiedge_repulsion);
-
-    /**
-     * sets attraction force
-     * 
+    /** sets attraction force
      * @param attraction_coeff
      */
     public native void setAttractionCoeff(double attraction_coeff);
-
-    /**
-     * sets attraction threshold
-     * 
+    /** sets attraction threshold
      * @param thresholdA
      */
     public native void setThresholdA(double thresholdA);
-
-    /**
-     * sets new repulsion threshold
-     * 
+    /** sets new repulsion threshold
      * @param seuilrep
      */
     public native void setSeuilRep(double seuilrep);
-
-    /**
-     * the calculation depends on how big the window is
-     * 
-     * @param width  positive real number
+    /** the calculation depends on how big the window is
+     * @param width positive real number
      * @param height positive real number
      */
     public native void setDimension(double width, double height);
-
-    /**
-     * Set amortissement, factor dictating how the friction evolves after each
-     * update of the graph
-     * 
+    /** Set amortissement, factor dictating how the friction evolves after each update of the graph
      * @param amortissement
      */
     public native void setAmortissement(double amortissement);
-
     public native void setNodePosition(int index, double x, double y);
 
     public native void SetNumberClusters(int new_number_of_clusters);
 
     public native void freeAllocatedMemory();
+
+
+
 
     public static double WIDTH = 1500; // Largeur de la fenêtre
     public static double HEIGHT = 800; // Hauteur de la fenêtre
@@ -266,6 +236,7 @@ public class Graph implements GraphSettings {
     private NodeCommunity methodCode;
     private Pane root;
 
+
     public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold,
             NodeCommunity methodCode) {
         this.fichier = fichier;
@@ -275,7 +246,11 @@ public class Graph implements GraphSettings {
         this.methodCode = methodCode;
     }
 
-    public void creerLeGraphe() {
+
+    /**
+     * Méthode principale du graphe
+     */
+    public void graphInit() {
 
         // Création de la racine du graphe
         root = new Pane();
@@ -311,8 +286,12 @@ public class Graph implements GraphSettings {
             // TODO
         });
 
+
+
         // Initialisation (provisoire, devra être appelé par l'interface graphique)
         testInit();
+
+
 
         // Récupérer les sommets
         List<Vertex> vertices = List.of(getPositions());
@@ -355,6 +334,8 @@ public class Graph implements GraphSettings {
         // Ajouter les sommets à la racine
         root.getChildren().addAll(vertices);
 
+
+
         // Création du keyframe pour la mise à jour du graphe
         KeyFrame keyFrame = new KeyFrame(Duration.seconds(updateFrequency.get()), event -> {
 
@@ -377,8 +358,7 @@ public class Graph implements GraphSettings {
                 if (vertices.get(i).getDegree() >= min_degree && !root.getChildren().contains(vertices.get(i))) {
                     root.getChildren().add(vertices.get(i));
                     for (Edge e : vertices.get(i).getEdges())
-                        if (!root.getChildren().contains(e) && e.getStart().getDegree() >= min_degree
-                                && e.getEnd().getDegree() >= min_degree)
+                        if (!root.getChildren().contains(e) && e.getStart().getDegree() >= min_degree && e.getEnd().getDegree() >= min_degree)
                             root.getChildren().add(e);
                 } else if (vertices.get(i).getDegree() < minimumDegree.get()) {
                     root.getChildren().remove(vertices.get(i));
@@ -396,18 +376,15 @@ public class Graph implements GraphSettings {
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
 
-        // Tests d'actions sur le graphe (en attendant l'interface graphique)
-        // testActions(root);
-
     }
+
 
     /**
      * Exemple d'initialisation du graphe (à remplacer par l'interface graphique)
      */
     private void testInit() {
 
-        // Initialisation du graphe avec le fichier à charger, la méthode de similitude
-        // et la méthode de détection de communautés
+        // Initialisation du graphe avec le fichier à charger, la méthode de similitude et la méthode de détection de communautés
         init(fichier.getAbsolutePath(), measureCode, methodCode);
 
         setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
@@ -418,9 +395,11 @@ public class Graph implements GraphSettings {
         setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un sommet
     }
 
+
+
+
     /**
      * Exemple d'actions sur le graphe (en attendant l'interface graphique)
-     * 
      * @param root Racine du graphe
      */
     private void testActions(Pane root) {
@@ -430,7 +409,8 @@ public class Graph implements GraphSettings {
                     setMode(GraphData.GraphMode.MOVE);
                     System.out.print("Switch to " + getMode());
                     System.out.println(" - Vous pouvez vous déplacer dans le graphe");
-                }));
+                })
+        );
         tl1.setCycleCount(1);
         tl1.play();
 
@@ -439,7 +419,8 @@ public class Graph implements GraphSettings {
                     setMode(GraphData.GraphMode.SELECTION);
                     System.out.print("Switch to " + getMode());
                     System.out.println(" - Vous pouvez sélectionner et déplacer des sommets");
-                }));
+                })
+        );
         tl2.setCycleCount(1);
         tl2.play();
 
@@ -448,7 +429,8 @@ public class Graph implements GraphSettings {
                     setMode(GraphData.GraphMode.RUN);
                     System.out.print("Back to " + getMode());
                     System.out.println(" - Exécution du graphe (en mouvement)");
-                }));
+                })
+        );
         tl3.setCycleCount(1);
         tl3.play();
 
@@ -456,7 +438,8 @@ public class Graph implements GraphSettings {
                 new KeyFrame(Duration.seconds(40), e -> {
                     setMiniumDegree(10);
                     System.out.print("Remove nodes with degree < 10");
-                }));
+                })
+        );
         tl4.setCycleCount(1);
         tl4.play();
 
@@ -464,7 +447,8 @@ public class Graph implements GraphSettings {
                 new KeyFrame(Duration.seconds(45), e -> {
                     setBackGroundColor("#FFFFFF");
                     System.out.println("Change background color to white");
-                }));
+                })
+        );
         tl5.setCycleCount(1);
         tl5.play();
 
@@ -472,15 +456,16 @@ public class Graph implements GraphSettings {
                 new KeyFrame(Duration.seconds(50), e -> {
                     setMiniumDegree(0);
                     System.out.println("Reset minimum degree restriction");
-                }));
+                })
+        );
         tl6.setCycleCount(1);
         tl6.play();
 
     }
 
     private void enableDrag(Pane root) {
-        final double[] lastMouseX = { 0 };
-        final double[] lastMouseY = { 0 };
+        final double[] lastMouseX = {0};
+        final double[] lastMouseY = {0};
 
         root.setOnMousePressed(event -> {
             lastMouseX[0] = event.getSceneX();
@@ -498,66 +483,64 @@ public class Graph implements GraphSettings {
             lastMouseY[0] = event.getSceneY();
         });
     }
-
     private void disableDrag(Pane root) {
         root.setOnMousePressed(null);
         root.setOnMouseDragged(null);
     }
 
     private void enableZoom(Pane root) {
-        /*
-         * root.setOnScroll(event -> {
-         * double zoomFactor = 1.1; // Facteur de zoom (10% à chaque scroll)
-         * double deltaY = event.getDeltaY();
-         * 
-         * if (deltaY < 0) {
-         * zoomFactor = 1 / zoomFactor; // Inverser le zoom si on scrolle vers le bas
-         * }
-         * 
-         * // Obtenir les coordonnées de la souris par rapport à la scène
-         * double mouseX = event.getSceneX();
-         * double mouseY = event.getSceneY();
-         * 
-         * // Convertir en coordonnées locales du graphe
-         * Point2D mouseInLocal = root.sceneToLocal(mouseX, mouseY);
-         * 
-         * // Nouveau facteur de zoom
-         * double newScaleX = scale.getX() * zoomFactor;
-         * double newScaleY = scale.getY() * zoomFactor;
-         * 
-         * // Limiter le zoom entre 0.5 et 5.0
-         * if (newScaleX >= 0.5 && newScaleX <= 5.0) {
-         * // Ajuster la translation pour garder le point sous la souris fixe
-         * double factor = (1 - zoomFactor);
-         * 
-         * translate.setX(translate.getX() + mouseInLocal.getX() * factor);
-         * translate.setY(translate.getY() + mouseInLocal.getY() * factor);
-         * 
-         * // Appliquer le zoom
-         * scale.setX(newScaleX);
-         * scale.setY(newScaleY);
-         * }
-         * 
-         * event.consume();
-         * });
-         */
+        /*root.setOnScroll(event -> {
+            double zoomFactor = 1.1; // Facteur de zoom (10% à chaque scroll)
+            double deltaY = event.getDeltaY();
+
+            if (deltaY < 0) {
+                zoomFactor = 1 / zoomFactor; // Inverser le zoom si on scrolle vers le bas
+            }
+
+            // Obtenir les coordonnées de la souris par rapport à la scène
+            double mouseX = event.getSceneX();
+            double mouseY = event.getSceneY();
+
+            // Convertir en coordonnées locales du graphe
+            Point2D mouseInLocal = root.sceneToLocal(mouseX, mouseY);
+
+            // Nouveau facteur de zoom
+            double newScaleX = scale.getX() * zoomFactor;
+            double newScaleY = scale.getY() * zoomFactor;
+
+            // Limiter le zoom entre 0.5 et 5.0
+            if (newScaleX >= 0.5 && newScaleX <= 5.0) {
+                // Ajuster la translation pour garder le point sous la souris fixe
+                double factor = (1 - zoomFactor);
+
+                translate.setX(translate.getX() + mouseInLocal.getX() * factor);
+                translate.setY(translate.getY() + mouseInLocal.getY() * factor);
+
+                // Appliquer le zoom
+                scale.setX(newScaleX);
+                scale.setY(newScaleY);
+            }
+
+            event.consume();
+        });*/
 
         // TODO
     }
-
     private void disableZoom(Pane root) {
-        // root.setOnScroll(null);
+        //root.setOnScroll(null);
 
         // TODO
     }
+
+
+
 
     // Initialisation
 
     /**
      * Initialise le graphe avec les données du fichier .csv
-     * 
-     * @param path      Chemin du fichier .csv à charger
-     * @param mode      Mode de similitude à utiliser
+     * @param path Chemin du fichier .csv à charger
+     * @param mode Mode de similitude à utiliser
      * @param community Mode de détection de communautés à utiliser
      * @return les données du fichier .csv
      * @see GraphData.SimilitudeMode
@@ -595,7 +578,6 @@ public class Graph implements GraphSettings {
 
     /**
      * Initialise la taille de l'écran du graphe
-     * 
      * @param width  Largeur de l'écran (en px)
      * @param height Hauteur de l'écran (en px)
      */
@@ -603,8 +585,11 @@ public class Graph implements GraphSettings {
     public void setScreenSize(double width, double height) {
         WIDTH = (int) width;
         HEIGHT = (int) height;
-        // setDimension(WIDTH, HEIGHT); // TODO
+        //setDimension(WIDTH, HEIGHT); // TODO
     }
+
+
+
 
     // Mode de sélection
 
@@ -628,12 +613,12 @@ public class Graph implements GraphSettings {
 
     /**
      * Définit le mode du graphe
-     * 
      * @param mode le mode à définir
      * @see GraphData.GraphMode
      */
     @Override
     public void setMode(GraphData.GraphMode mode) {
+        assert mode != null : "Mode non défini.";
         isRunMode.set(mode == GraphData.GraphMode.RUN);
         isSelectionMode.set(mode == GraphData.GraphMode.SELECTION);
         isMoveMode.set(mode == GraphData.GraphMode.MOVE);
@@ -641,30 +626,29 @@ public class Graph implements GraphSettings {
     }
 
     private void updateZoom(double zoomFactor) {
-        /*
-         * double newScaleX = scale.getX() * zoomFactor;
-         * double newScaleY = scale.getY() * zoomFactor;
-         * 
-         * if (newScaleX >= 0.5 && newScaleX <= 5) {
-         * scale.setX(newScaleX);
-         * scale.setY(newScaleY);
-         * }
-         */
+        /*double newScaleX = scale.getX() * zoomFactor;
+        double newScaleY = scale.getY() * zoomFactor;
+
+        if (newScaleX >= 0.5 && newScaleX <= 5) {
+            scale.setX(newScaleX);
+            scale.setY(newScaleY);
+        }*/
 
         // TODO
     }
-
     public void zoomIn() {
-        // updateZoom(1.1);
+        //updateZoom(1.1);
 
         // TODO
     }
-
     public void zoomOut() {
-        // updateZoom(0.9);
+        //updateZoom(0.9);
 
         // TODO
     }
+
+
+
 
     // Paramètres de la simulation
 
@@ -710,7 +694,6 @@ public class Graph implements GraphSettings {
 
     /**
      * Change le seuil pour les arêtes
-     * 
      * @param threshold Nouveau seuil pour les arêtes
      */
     @Override
@@ -720,7 +703,6 @@ public class Graph implements GraphSettings {
 
     /**
      * Change le seuil pour les anti-arêtes
-     * 
      * @param antiThreshold Nouveau seuil pour les anti-arêtes
      */
     @Override
@@ -733,6 +715,7 @@ public class Graph implements GraphSettings {
      */
     @Override
     public void setUpscale(int upscale) {
+        assert upscale > 0 : "Facteur d'agrandissement invalide.";
         Vertex.upscale = upscale;
     }
 
@@ -741,35 +724,35 @@ public class Graph implements GraphSettings {
      */
     @Override
     public void setInitialNodeSize(double size) {
+        assert size > 0 : "Taille initiale invalide.";
         Vertex.initial_node_size = size;
     }
 
     /**
-     * @param factor Facteur d'agrandissement selon le degré d'un sommet (0 pour que
-     *               la taille soit identique pour tous les sommets, > 0 pour faire
-     *               varier la taille proportionnellement au degré)
+     * @param factor Facteur d'agrandissement selon le degré d'un sommet (0 pour que la taille soit identique pour tous les sommets, > 0  pour faire varier la taille proportionnellement au degré)
      */
     @Override
     public void setDegreeScaleFactor(double factor) {
+        assert factor >= 0 : "Facteur d'agrandissement invalide.";
         Vertex.degree_scale_factor = factor;
     }
 
     /**
      * Affiche les sommets dont le degré est supérieur ou égal à degree
-     * 
      * @param degree Degré minimum des sommets à afficher
      */
     @Override
     public void setMiniumDegree(int degree) {
+        assert degree >= 0 : "Degré minimum invalide.";
         minimumDegree.set(degree);
     }
 
     /**
-     * @param rate Intervalle de temps entre chaque mise à jour du graphe (en
-     *             secondes)
+     * @param rate Intervalle de temps entre chaque mise à jour du graphe (en secondes)
      */
     @Override
     public void setRefreshRate(double rate) {
+        assert rate > 0 : "Fréquence de mise à jour invalide.";
         updateFrequency.set(rate);
     }
 
@@ -778,61 +761,65 @@ public class Graph implements GraphSettings {
      */
     @Override
     public void setBackGroundColor(String hexaColor) {
+        assert hexaColor != null && !hexaColor.isEmpty() : "Couleur de fond non définie.";
         background_color.set(hexaColor);
     }
+
+
+
 
     // Options supplémentaires
 
     /**
      * Exporte le graphe en image PNG
-     * 
      * @param path Chemin de l'image PNG à exporter
      */
     @Override
     public void exportToPng(String path) {
-        /*
-         * // Déterminer les dimensions réelles du graphe
-         * double contentWidth = root.getBoundsInLocal().getWidth();
-         * double contentHeight = root.getBoundsInLocal().getHeight();
-         * 
-         * // Vérifier que la taille n'est pas nulle
-         * if (contentWidth <= 0 || contentHeight <= 0) {
-         * System.out.println("Erreur : dimensions invalides pour l'export.");
-         * return;
-         * }
-         * 
-         * // Créer une image de la taille réelle du graphe
-         * WritableImage image = new WritableImage((int) contentWidth, (int)
-         * contentHeight);
-         * SnapshotParameters params = new SnapshotParameters();
-         * params.setTransform(Transform.scale(1, 1));
-         * 
-         * // Capture l'image complète du graphe
-         * root.snapshot(params, image);
-         * 
-         * // Enregistrement de l'image en PNG
-         * File file = new File(path);
-         * try {
-         * boolean success = ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png",
-         * file);
-         * if (!success) {
-         * throw new IOException("Échec de l'écriture de l'image.");
-         * } else {
-         * System.out.println("Graph exporté avec succès : " + file.getAbsolutePath());
-         * }
-         * } catch (IOException e) {
-         * throw new RuntimeException("Erreur lors de l'export du graphe en image", e);
-         * }
-         */
+        assert path != null && !path.isEmpty() : "Chemin d'export non défini.";
+        /*// Déterminer les dimensions réelles du graphe
+        double contentWidth = root.getBoundsInLocal().getWidth();
+        double contentHeight = root.getBoundsInLocal().getHeight();
+
+        // Vérifier que la taille n'est pas nulle
+        if (contentWidth <= 0 || contentHeight <= 0) {
+            System.out.println("Erreur : dimensions invalides pour l'export.");
+            return;
+        }
+
+        // Créer une image de la taille réelle du graphe
+        WritableImage image = new WritableImage((int) contentWidth, (int) contentHeight);
+        SnapshotParameters params = new SnapshotParameters();
+        params.setTransform(Transform.scale(1, 1));
+
+        // Capture l'image complète du graphe
+        root.snapshot(params, image);
+
+        // Enregistrement de l'image en PNG
+        File file = new File(path);
+        try {
+            boolean success = ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+            if (!success) {
+                throw new IOException("Échec de l'écriture de l'image.");
+            } else {
+                System.out.println("Graph exporté avec succès : " + file.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors de l'export du graphe en image", e);
+        }*/
 
         // TODO
     }
+
+
+
 
     /**
      * @param mode Mode de similitude
      * @return l'identifiant du mode de similitude
      */
     private static int getModeSimilitude(GraphData.SimilitudeMode mode) {
+        assert mode != null : "Mode de similitude non défini.";
         int modeSimilitude = -1;
         switch (mode) {
             case GraphData.SimilitudeMode.CORRELATION -> modeSimilitude = 0;
@@ -852,6 +839,7 @@ public class Graph implements GraphSettings {
      * @return l'identifiant du mode de détection de communautés
      */
     private static int getModeCommunity(GraphData.NodeCommunity community) {
+        assert community != null : "Mode de détection de communautés non défini.";
         int modeCommunity = -1;
         switch (community) {
             case GraphData.NodeCommunity.LOUVAIN -> modeCommunity = 0;
@@ -863,10 +851,6 @@ public class Graph implements GraphSettings {
         if (modeCommunity == -1)
             throw new RuntimeException("Mode de détection de communautés non reconnu.");
         return modeCommunity;
-    }
-
-    public Pane getGraphRoot() {
-        return root;
     }
 
 }

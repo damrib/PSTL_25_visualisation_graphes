@@ -34,8 +34,8 @@ public class Metadata {
     public double getEdgeThreshold() {
         return edge_threshold;
     }
-
     public double getAntiThreshold() {
         return anti_threshold;
     }
+
 }

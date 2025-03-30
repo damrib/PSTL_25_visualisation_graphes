@@ -1,8 +1,7 @@
 package com.mongraphe.graphui;
 
 /**
- * Définit les méthodes à appeler par l'inteface graphique pour modifier les
- * paramètres du graphe
+ * Définit les méthodes à appeler par l'inteface graphique pour modifier les paramètres du graphe
  */
 public interface GraphSettings {
 
@@ -10,9 +9,8 @@ public interface GraphSettings {
 
     /**
      * Initialise le graphe avec les données du fichier .csv
-     * 
-     * @param path      Chemin du fichier .csv à charger
-     * @param mode      Mode de similitude à utiliser
+     * @param path Chemin du fichier .csv à charger
+     * @param mode Mode de similitude à utiliser
      * @param community Mode de détection de communautés à utiliser
      * @return les données du fichier .csv
      * @see GraphData.SimilitudeMode
@@ -22,8 +20,7 @@ public interface GraphSettings {
 
     /**
      * Initialise la taille de l'écran du graphe
-     * 
-     * @param width  Largeur de l'écran (en px)
+     * @param width Largeur de l'écran (en px)
      * @param height Hauteur de l'écran (en px)
      */
     void setScreenSize(double width, double height);
@@ -38,11 +35,13 @@ public interface GraphSettings {
 
     /**
      * Change le mode du graphe
-     * 
      * @param mode Nouveau mode du graphe
      * @see GraphData.GraphMode
      */
     void setMode(GraphData.GraphMode mode);
+
+
+
 
     // Paramètres de la simulation
 
@@ -68,14 +67,12 @@ public interface GraphSettings {
 
     /**
      * Change le seuil pour les arêtes
-     * 
      * @param threshold Nouveau seuil pour les arêtes
      */
     void setThreshold(double threshold);
 
     /**
      * Change le seuil pour les anti-arêtes
-     * 
      * @param antiThreshold Nouveau seuil pour les anti-arêtes
      */
     void setAntiThreshold(double antiThreshold);
@@ -91,22 +88,18 @@ public interface GraphSettings {
     void setInitialNodeSize(double size);
 
     /**
-     * @param factor Facteur d'agrandissement selon le degré d'un sommet (0 pour que
-     *               la taille soit identique pour tous les sommets, > 0 pour faire
-     *               varier la taille proportionnellement au degré)
+     * @param factor Facteur d'agrandissement selon le degré d'un sommet (0 pour que la taille soit identique pour tous les sommets, > 0  pour faire varier la taille proportionnellement au degré)
      */
     void setDegreeScaleFactor(double factor);
 
     /**
      * Affiche les sommets dont le degré est supérieur ou égal à degree
-     * 
      * @param degree Degré minimum des sommets à afficher
      */
     void setMiniumDegree(int degree);
 
     /**
-     * @param rate Intervalle de temps entre chaque mise à jour du graphe (en
-     *             secondes)
+     * @param rate Intervalle de temps entre chaque mise à jour du graphe (en secondes)
      */
     void setRefreshRate(double rate);
 
@@ -115,11 +108,13 @@ public interface GraphSettings {
      */
     void setBackGroundColor(String hexaColor);
 
+
+
+
     // Options supplémentaires
 
     /**
      * Exporte le graphe en image PNG
-     * 
      * @param path Chemin de l'image PNG à exporter
      */
     void exportToPng(String path);

@@ -62,6 +62,7 @@
         <options>
             <option>-Xmx2G</option>
             <option>-Xms1G</option>
+            <option>-ea</option>
         </options>
                 </configuration>
             </plugin>
