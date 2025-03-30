@@ -3,65 +3,82 @@
 
 int mode_similitude = 0;
 
+void get_ij_from_task_index(int task_index, int num_rows, int *i, int *j) {
+    int row_count = num_rows - 1;
+    int row_start = 0;
+    while (task_index >= row_count) {
+        task_index -= row_count;
+        row_start++;
+        row_count--;
+    }
+    *i = row_start;
+    *j = row_start + task_index + 1;
+}
+
 void mean_similitude_job(void *args) {
     struct mean_similitude_args *data = (struct mean_similitude_args*) args;
     double somme = 0.0;
     int count = 0;
     int *local_histogram = data->thread_histograms[data->thread_id];
-    printf("Thread %d row %d à %d\n", data->thread_id, data->start_row, data->end_row);
-    int size_similarities = num_rows * (num_rows - 1) / 2;
-    for (int i = data->start_row; i < data->end_row; i++) {
-        for (int j = i + 1; j < num_rows; j++) {
-            double similarity = 0.0;
-            switch (data->choice) {
-                case 0:  // Corrélation
-                    similarity = correlation_similarity(i, j);
-                    break;
-                case 1:  // Distance Cosinus
-                    similarity = cosine_similarity(i, j);
-                    break;
-                case 2:  // Distance Euclidienne
-                    similarity = euclidean_distance(i, j);
-                    break;
-                case 3:  // Norme L1
-                    similarity = L1_norm(i, j);
-                    break;
-                case 4:  // Norme Linf
-                    similarity = Linf_norm(i, j);
-                    break;
-                case 5:  // KL Div
-                    similarity = KL_divergence(i, j);
-                    break;
-                default:
-                    printf("Choix non valide.\n");
-                    similarity = 0.0;
-                    break; 
-            }
+    int size_similarities = data->num_rows * (data->num_rows - 1) / 2;
 
-            int new_index = incr_or_max(data->counter, size_similarities);
-            if ( new_index < size_similarities ) {
-                data->similarities[new_index] = similarity;
-            }
-
-            if(!isnan(similarity)){
-                somme += similarity;
-            }
-            count++;
-
-            double scaled_similarity = (data->choice == 0 || data->choice == 1) 
-                ? (similarity + 1.0) / 2.0 
-                : similarity;
-
-            int bin_index = (int)(scaled_similarity * NUM_BINS);
-            if (bin_index >= NUM_BINS) bin_index = NUM_BINS - 1;
-            if (bin_index < 0) bin_index = 0;
-            local_histogram[bin_index]++;
+    while (1) {
+        int task_index = atomic_fetch_add(data->task_index, 1);
+        if (task_index >= size_similarities) {
+            break; 
         }
+
+        int i, j;
+        get_ij_from_task_index(task_index, data->num_rows, &i, &j);
+
+        double similarity = 0.0;
+        switch (data->choice) {
+            case 0: // Corrélation
+                similarity = correlation_similarity(i, j);
+                break;
+            case 1: // Distance Cosinus
+                similarity = cosine_similarity(i, j);
+                break;
+            case 2: // Distance Euclidienne
+                similarity = euclidean_distance(i, j);
+                break;
+            case 3: // Norme L1
+                similarity = L1_norm(i, j);
+                break;
+            case 4: // Norme Linf
+                similarity = Linf_norm(i, j);
+                break;
+            case 5: // KL Div
+                similarity = KL_divergence(i, j);
+                break;
+            default:
+                printf("Choix non valide.\n");
+                similarity = 0.0;
+                break;
+        }
+
+        if (task_index < size_similarities) {
+            data->similarities[task_index] = similarity;
+        }
+
+        if (!isnan(similarity)) {
+            somme += similarity;
+        }
+        count++;
+
+        double scaled_similarity = (data->choice == 0 || data->choice == 1)
+            ? (similarity + 1.0) / 2.0
+            : similarity;
+
+        int bin_index = (int)(scaled_similarity * NUM_BINS);
+        if (bin_index >= NUM_BINS) bin_index = NUM_BINS - 1;
+        if (bin_index < 0) bin_index = 0;
+        local_histogram[bin_index]++;
     }
 
     data->res[data->thread_id] = somme;
     data->cpt[data->thread_id] = count;
-    printf("Thread %d somme = %f count = %d\n", data->thread_id, somme, count);
+    printf("Thread MEAN SIMILITUDE %d somme = %f count = %d\n", data->thread_id, somme, count);
 }
 
 double calculate_mean_similitude_parallel(int choice, double* similarities) {
@@ -75,27 +92,19 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
         thread_histograms[t] = calloc(NUM_BINS, sizeof(int));
     }
 
-    _Atomic int counter = 0;
-
-    int rows_per_thread = num_rows / num_threads;
-    int remaining_rows = num_rows % num_threads;
+    _Atomic int task_index = 0;
 
     for (int t = 0; t < num_threads; t++) {
         struct mean_similitude_args *args = malloc(sizeof(struct mean_similitude_args));
         args->choice = choice;
         args->thread_id = t;
-        args->start_row = t * rows_per_thread;
-        args->end_row = (t + 1) * rows_per_thread;
         args->res = res;
         args->cpt = cpt;
         args->histogram = histogram;
         args->thread_histograms = thread_histograms;
         args->similarities = similarities;
-        args->counter = &counter;
-
-        if (t == num_threads - 1) {
-            args->end_row += remaining_rows;
-        }
+        args->task_index = &task_index;
+        args->num_rows = num_rows;
 
         struct Job task;
         task.j = mean_similitude_job;
@@ -111,14 +120,12 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
         }
     }
 
-
     double somme = 0.0;
     int count = 0;
     for (int t = 0; t < num_threads; t++) {
         somme += res[t];
         count += cpt[t];
     }
-
 
     printf("Histogram of Similarities (Normalized):\n");
     for (int bin = 0; bin < NUM_BINS; bin++) {
@@ -129,7 +136,6 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
 
     return (count > 0) ? somme / count : 0.0;
 }
-
 // Calcul de la corrélation entre deux vecteurs
 double correlation_similarity(int i, int j) {
     double mean_i = 0.0, mean_j = 0.0;
