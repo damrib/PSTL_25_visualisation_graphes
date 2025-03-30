@@ -86,7 +86,7 @@ extern int S[MAX_NODES];
 #define EPSILON 1e-12  // Pour éviter la division par 0
 
 extern int mode_similitude;
-
+extern double **similarity_matrix;
 // ForceAtlas
 
 extern int iteration;

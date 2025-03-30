@@ -58,6 +58,10 @@ void mean_similitude_job(void *args) {
                 break;
         }
 
+        similarity_matrix[i][j] = similarity;
+        similarity_matrix[j][i] = similarity;
+
+
         if (task_index < size_similarities) {
             data->similarities[task_index] = similarity;
         }

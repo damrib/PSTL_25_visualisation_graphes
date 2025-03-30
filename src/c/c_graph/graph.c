@@ -182,53 +182,27 @@ struct similarity_args {
     Barrier barrier;
 };
 
-void similarity_job(void * args){
+void similarity_job(void *args) {
+    struct similarity_args *data = (struct similarity_args*) args;
 
-    struct similarity_args * data = (struct similarity_args*) args;
+    for (int j = data->row + 1; j < num_rows; ++j) {
+        double similarity = similarity_matrix[data->row][j]; 
 
-    for ( int j = data->row + 1; j < num_rows; ++j)
-    {
-        double similarity = 0.0;
-
-        switch (data->choice) {
-            case 0:  // Corrélation
-                similarity = correlation_similarity(data->row, j);
-                break;
-            case 1:  // Distance Cosinus
-                similarity = cosine_similarity(data->row, j);
-                break;
-            case 2:  // Distance Euclidienne
-                similarity = euclidean_distance(data->row, j);
-                break;
-            case 3:  // Norme L1
-                similarity = L1_norm(data->row, j);
-                break;
-            case 4:  // Norme Linf
-                similarity = Linf_norm(data->row, j);
-                break;
-            case 5:  // KL Div
-                similarity = KL_divergence(data->row, j);
-                break;
-            default:
-                printf("Choix non valide.\n");
-        }
-        
         if (similarity > data->threshold && num_edges < MAX_EDGES) {
             int edge_index = incr_or_max(&num_edges, MAX_EDGES);
-            if ( edge_index < MAX_EDGES ){
+            if (edge_index < MAX_EDGES) {
                 edges[edge_index].node1 = data->row;
                 edges[edge_index].node2 = j;
                 edges[edge_index].weight = similarity;
             }
         } else if (similarity < data->antiseuil && num_antiedges < MAX_EDGES) {
             int antiedge_index = incr_or_max(&num_antiedges, MAX_EDGES);
-            if ( antiedge_index < MAX_EDGES ){
+            if (antiedge_index < MAX_EDGES) {
                 antiedges[antiedge_index].node1 = data->row;
                 antiedges[antiedge_index].node2 = j;
                 antiedges[antiedge_index].weight = similarity;
             }
         }
-
     }
 
     decrement_barrier(data->barrier, 1);

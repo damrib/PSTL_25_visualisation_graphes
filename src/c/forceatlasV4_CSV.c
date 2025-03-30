@@ -27,8 +27,7 @@ double Max_movementOld = 0;
 int max_iterations = 5000;
 
 short pause_updates = 0;
-
-
+double** similarity_matrix = NULL;
 /**
  * 
  * 
@@ -189,7 +188,13 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
 {
 
     InitPool(&pool, 1000, 8);
-
+    similarity_matrix = (double**) malloc(num_rows * sizeof(double*));
+    for (int i = 0; i < num_rows; i++) {
+      similarity_matrix[i] = (double*) malloc(num_rows * sizeof(double));
+      for (int j = 0; j < num_rows; j++) {
+        similarity_matrix[i][j] = -1.0; 
+      }
+    }
     num_nodes = num_rows;
 
     double threshold, antiseuil;
