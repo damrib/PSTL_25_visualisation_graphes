@@ -1,32 +1,23 @@
 package com.mongraphe.graphui;
 
-import javafx.collections.FXCollections;
+import java.io.File;
+import java.io.IOException;
+
+import com.mongraphe.graphui.GraphData.NodeCommunity;
+import com.mongraphe.graphui.GraphData.SimilitudeMode;
+
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
-import javafx.stage.Stage;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-
-import com.mongraphe.graphui.GraphData.SimilitudeMode;
-import com.mongraphe.graphui.ClusteringController;
-import com.mongraphe.graphui.GraphData.NodeCommunity;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.Stage;
 
 public class ConfigurationController {
 
@@ -194,7 +185,7 @@ public class ConfigurationController {
     private void updateButtonStates() {
         precedentButton.setDisable(currentView.equals("/fxml/ChoixSimilitude.fxml"));
         suivantButton.setDisable(currentView.equals("/fxml/Clustering.fxml"));
-        terminerButton.setDisable(!currentView.equals("/fxml/Clustering.fxml") || selectedMethod == null);
+        terminerButton.setDisable(!currentView.equals("/fxml/Clustering.fxml"));
     }
 
     private void showAlert(String title, String message) {
@@ -217,7 +208,7 @@ public class ConfigurationController {
             controller.initData(file, measure, upThresh, downThresh, method);
 
             Stage stage = (Stage) mainBorderPane.getScene().getWindow();
-            stage.setScene(new Scene(root, 2500, 800));
+            stage.setScene(new Scene(root, 1500, 800));
             stage.show();
 
         } catch (IOException e) {

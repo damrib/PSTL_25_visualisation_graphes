@@ -8,9 +8,9 @@
 extern "C" {
 #endif
 #undef com_mongraphe_graphui_Graph_MIN_ZOOM
-#define com_mongraphe_graphui_Graph_MIN_ZOOM 0.5
+#define com_mongraphe_graphui_Graph_MIN_ZOOM 0.0
 #undef com_mongraphe_graphui_Graph_MAX_ZOOM
-#define com_mongraphe_graphui_Graph_MAX_ZOOM 2.0
+#define com_mongraphe_graphui_Graph_MAX_ZOOM 10.0
 #undef com_mongraphe_graphui_Graph_ZOOM_FACTOR
 #define com_mongraphe_graphui_Graph_ZOOM_FACTOR 1.1
 /*

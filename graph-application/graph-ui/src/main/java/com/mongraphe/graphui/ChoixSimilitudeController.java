@@ -91,7 +91,8 @@ public class ChoixSimilitudeController {
                 ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
                 List<String> headers = new ArrayList<>();
 
-                while ((ligne = br.readLine()) != null) {
+                while (((ligne = br.readLine()) != null) && rowCount < 15) {
+                    // Limiter à 100 lignes pour éviter de surcharger l'affichage
                     String[] valeurs = ligne.split(",");
 
                     if (rowCount == 0) {

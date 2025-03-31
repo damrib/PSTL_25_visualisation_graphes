@@ -30,6 +30,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import javafx.util.Duration;
@@ -45,7 +46,7 @@ public class Graph implements GraphSettings {
     @FXML
     private AnchorPane previewPane;
     @FXML
-    private BorderPane graphContentPane;
+    private AnchorPane graphContainer;
     @FXML
     private ToggleGroup viewToggleGroup;
     @FXML
@@ -116,8 +117,8 @@ public class Graph implements GraphSettings {
     private void handleStartButton() {
         System.out.println("Bouton démarrer cliqué !");
         graphInit();
-        graphContentPane.getChildren().clear(); // Nettoyer le conteneur
-        graphContentPane.getChildren().add(root);
+        graphContainer.getChildren().clear(); // Nettoyer le conteneur
+        graphContainer.getChildren().add(root);
     }
 
     public Pane getGraphRoot() {
@@ -271,8 +272,8 @@ public class Graph implements GraphSettings {
     private NodeCommunity methodCode;
     private Pane root;
 
-    private static final double MIN_ZOOM = 0.5;
-    private static final double MAX_ZOOM = 2.0;
+    private static final double MIN_ZOOM = 0;
+    private static final double MAX_ZOOM = 10.0;
     private static final double ZOOM_FACTOR = 1.1;
 
     private DoubleProperty zoomFactor = new SimpleDoubleProperty(1.0);
@@ -293,8 +294,31 @@ public class Graph implements GraphSettings {
      */
     public void graphInit() {
 
-        // Création de la racine du graphe
         root = new Pane();
+
+        // Conteneur intermédiaire avec clip
+        Pane clippingContainer = new Pane(root);
+        graphContainer.getChildren().add(clippingContainer);
+
+        // Configuration du clip
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(graphContainer.widthProperty());
+        clip.heightProperty().bind(graphContainer.heightProperty());
+        clippingContainer.setClip(clip);
+
+        // Transformations
+        scale = new Scale(1.0, 1.0);
+        translate = new Translate(0, 0);
+        root.getTransforms().addAll(translate, scale);
+
+        // Contrôles des limites
+        scale.xProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.doubleValue() < 0.1)
+                scale.setX(0.1);
+            if (root.getBoundsInLocal().getWidth() * newVal.doubleValue() < clippingContainer.getWidth()) {
+                scale.setX(clippingContainer.getWidth() / root.getBoundsInLocal().getWidth());
+            }
+        });
 
         // Définir la couleur de fond
         background_color.addListener((obs, oldValue, newValue) -> {
@@ -510,6 +534,7 @@ public class Graph implements GraphSettings {
             lastMouseX[0] = event.getSceneX();
             lastMouseY[0] = event.getSceneY();
         });
+
     }
 
     private void disableDrag(Pane root) {
@@ -558,8 +583,8 @@ public class Graph implements GraphSettings {
     @Override
     public void constrainGraphToBounds() {
         // Calculer les limites visibles
-        double visibleWidth = graphContentPane.getWidth();
-        double visibleHeight = graphContentPane.getHeight();
+        double visibleWidth = graphContainer.getWidth();
+        double visibleHeight = graphContainer.getHeight();
 
         // Calculer les limites du contenu
         double contentWidth = root.getBoundsInLocal().getWidth() * zoomFactor.get();
