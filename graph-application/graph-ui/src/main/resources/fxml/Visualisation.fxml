@@ -129,12 +129,17 @@
             </AnchorPane>
 
             <!-- Panneau central -->
-            <AnchorPane fx:id="graphContentPane" 
-                       style="-fx-border-color: #FF5733; -fx-border-width: 2px;" 
+            <BorderPane fx:id="graphContentPane" 
+                       style="-fx-border-color: #FF5733; -fx-border-width: 2px; -fx-background-color: white;" 
                        GridPane.rowIndex="0" GridPane.columnIndex="1" 
                        GridPane.rowSpan="2">
-                <!-- Contenu du graphe -->
-            </AnchorPane>
+                <center>
+                    <ScrollPane fx:id="graphScrollPane" fitToWidth="true" fitToHeight="true" 
+                               hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED">
+                        <AnchorPane fx:id="graphContainer" minWidth="600" minHeight="500" />
+                    </ScrollPane>
+                </center>
+            </BorderPane>
 
             <!-- Panneau droit -->
             <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 

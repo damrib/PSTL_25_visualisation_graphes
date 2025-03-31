@@ -1,15 +1,5 @@
 package com.mongraphe.graphui;
 
-import javafx.fxml.FXML;
-
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -20,6 +10,15 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.mongraphe.graphui.GraphData.SimilitudeMode;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 
 public class ChoixSimilitudeController {
 
@@ -36,6 +35,7 @@ public class ChoixSimilitudeController {
 
     private File fichier;
     private Consumer<SimilitudeMode> onMeasureSelectedCallback;
+    private SimilitudeMode currentMeasure;
 
     @FXML
     public void initialize() {
@@ -43,12 +43,13 @@ public class ChoixSimilitudeController {
                 "Corrélation", "Distance Cosinus", "Distance Euclidienne",
                 "Norme L1", "Norme Linf", "KL divergence"));
 
-        // listener pour détecter les changements de sélection
         similarityMeasureComboBox.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldVal, newVal) -> {
-                    if (newVal != null && onMeasureSelectedCallback != null) {
-                        SimilitudeMode mode = getMeasureCode(newVal);
-                        onMeasureSelectedCallback.accept(mode);
+                    if (newVal != null) {
+                        this.currentMeasure = getMeasureCode(newVal);
+                        if (onMeasureSelectedCallback != null) {
+                            onMeasureSelectedCallback.accept(currentMeasure);
+                        }
                     }
                 });
     }
@@ -62,32 +63,47 @@ public class ChoixSimilitudeController {
         afficherContenu();
     }
 
+    public void setSelectedMeasure(SimilitudeMode measure) {
+        this.currentMeasure = measure;
+        if (measure != null) {
+            String measureName = getMeasureName(measure);
+            similarityMeasureComboBox.setValue(measureName);
+        }
+    }
+
+    private String getMeasureName(SimilitudeMode measure) {
+        return switch (measure) {
+            case CORRELATION -> "Corrélation";
+            case DISTANCE_COSINE -> "Distance Cosinus";
+            case DISTANCE_EUCLIDIENNE -> "Distance Euclidienne";
+            case NORME_L1 -> "Norme L1";
+            case NORME_LINF -> "Norme Linf";
+            case KL_DIVERGENCE -> "KL divergence";
+            default -> "Corrélation";
+        };
+    }
+
     private void afficherContenu() {
         if (fichier != null) {
             try (BufferedReader br = new BufferedReader(new FileReader(fichier))) {
                 String ligne;
                 int rowCount = 0;
-
                 ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
-                List<String> headers = new ArrayList<>(); // Pour stocker les en-têtes de colonnes
+                List<String> headers = new ArrayList<>();
 
                 while ((ligne = br.readLine()) != null) {
                     String[] valeurs = ligne.split(",");
 
                     if (rowCount == 0) {
-                        // La première ligne contient les en-têtes
                         headers.addAll(Arrays.asList(valeurs));
                     } else {
-                        // Les lignes suivantes contiennent les données
                         ObservableList<String> row = FXCollections.observableArrayList(valeurs);
                         data.add(row);
                     }
-
                     rowCount++;
                 }
 
                 if (!data.isEmpty()) {
-                    // Création des colonnes dynamiquement avec les en-têtes
                     tableView.getColumns().clear();
                     for (int i = 0; i < headers.size(); i++) {
                         TableColumn<ObservableList<String>, String> column = new TableColumn<>(headers.get(i));
@@ -105,19 +121,15 @@ public class ChoixSimilitudeController {
         }
     }
 
-    /**
-     * Convertit le nom de la mesure sélectionnée en un code numérique.
-     */
-    private GraphData.SimilitudeMode getMeasureCode(String measure) {
+    private SimilitudeMode getMeasureCode(String measure) {
         return switch (measure) {
-            case "Corrélation" -> GraphData.SimilitudeMode.CORRELATION;
-            case "Distance Cosinus" -> GraphData.SimilitudeMode.DISTANCE_COSINE;
-            case "Distance Euclidienne" -> GraphData.SimilitudeMode.DISTANCE_EUCLIDIENNE;
-            case "Norme L1" -> GraphData.SimilitudeMode.NORME_L1;
-            case "Norme Linf" -> GraphData.SimilitudeMode.NORME_LINF;
-            case "KL divergence" -> GraphData.SimilitudeMode.KL_DIVERGENCE;
-            default -> null; // Valeur par défaut en cas d'erreur
+            case "Corrélation" -> SimilitudeMode.CORRELATION;
+            case "Distance Cosinus" -> SimilitudeMode.DISTANCE_COSINE;
+            case "Distance Euclidienne" -> SimilitudeMode.DISTANCE_EUCLIDIENNE;
+            case "Norme L1" -> SimilitudeMode.NORME_L1;
+            case "Norme Linf" -> SimilitudeMode.NORME_LINF;
+            case "KL divergence" -> SimilitudeMode.KL_DIVERGENCE;
+            default -> null;
         };
     }
-
 }
