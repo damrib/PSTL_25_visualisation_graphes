@@ -25,7 +25,7 @@
     </columnConstraints>
     <rowConstraints>
         <RowConstraints prefHeight="25" maxHeight="25" /> <!-- Barre de menus -->
-        <RowConstraints prefHeight="35" maxHeight="35" /> <!-- Barre d'onglets -->
+        <RowConstraints prefHeight="40" maxHeight="40" /> <!-- Barre d'onglets -->
         <RowConstraints percentHeight="100" /> <!-- Contenu principal -->
     </rowConstraints>
 
@@ -68,21 +68,21 @@
         </fx:define>
         
         <ToggleButton text="Vue d'ensemble" 
-                 styleClass="custom-toggle"
-                 toggleGroup="$viewToggleGroup"
-                 onAction="#handleViewChange"
-                 userData="overview"
-                 selected="true"/>
-        <ToggleButton text="Laboratoire de Données" 
-                    styleClass="custom-toggle"
-                    toggleGroup="$viewToggleGroup"
-                    onAction="#handleViewChange"
-                    userData="data"/>
+                     toggleGroup="$viewToggleGroup"
+                     onAction="#handleViewChange"
+                     userData="overview"
+                     styleClass="button-8"
+                     selected="true"/>
+        <ToggleButton text="Données" 
+                     toggleGroup="$viewToggleGroup"
+                     onAction="#handleViewChange"
+                     styleClass="button-8"
+                     userData="data"/>
         <ToggleButton text="Prévisualisation" 
-                    styleClass="custom-toggle"
-                    toggleGroup="$viewToggleGroup"
-                    onAction="#handleViewChange"
-                    userData="preview"/>
+                     toggleGroup="$viewToggleGroup"
+                     onAction="#handleViewChange"
+                     styleClass="button-8"
+                     userData="preview"/>
     </HBox>
 
     <!-- Conteneur principal (ligne 2) -->
@@ -101,46 +101,47 @@
 
 
             <!-- Panneau gauche haut -->
-            <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
+            <BorderPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
                         GridPane.rowIndex="0" GridPane.columnIndex="0">
-                <VBox spacing="10" style="-fx-padding: 10;">
-                    <!-- Titre "Aspect du graphe" -->
+                    <center>
+                    <VBox spacing="10" style="-fx-padding: 10;">
+                    <HBox style="-fx-padding: 8;-fx-margin: 5; -fx-border-color:rgba(212, 204, 202, 0.55); -fx-border-width: 1px;">
                     <Label text="Aspect du graphe" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
-                    
+                    </HBox>
                     <!-- ToggleButtons pour Noeuds/Arêtes -->
-                    <HBox spacing="5">
+                    <HBox spacing="5" style =" -fx-border-color: transparent transparent rgba(212, 204, 202, 0.55) transparent;">
                     <fx:define>
-                    <ToggleGroup fx:id="elementToggleGroup"/>
-                </fx:define>
-                        <ToggleButton text="Noeuds" toggleGroup="$elementToggleGroup" userData="NODES" selected="true" onAction="#handleToggleNodes"/>
-                        <ToggleButton text="Arêtes" toggleGroup="$elementToggleGroup" userData="EDGES" onAction="#handleToggleEdges"/>
+                    <ToggleGroup fx:id="elementToggleGroup" />
+                    </fx:define>
+                        <ToggleButton text="Noeuds" styleClass="button-4" toggleGroup="$elementToggleGroup" userData="NODES" selected="true" onAction="#handleToggleNodes"/>
+                        <ToggleButton text="Arêtes" styleClass="button-4" toggleGroup="$elementToggleGroup" userData="EDGES" onAction="#handleToggleEdges"/>
                     </HBox>
                     
                     <!-- Contenu dynamique -->
                     <VBox spacing="8">
                         <!-- Sélection de couleur -->
                         <HBox spacing="5" alignment="CENTER_LEFT">
-                            <Label text="Couleur:"/>
-                            <ColorPicker fx:id="elementColorPicker" prefWidth="120"/>
+                            <ColorPicker fx:id="elementColorPicker" styleClass="combo-box" prefWidth="210" />
                         </HBox>
                         
                         <!-- Classement -->
                         <HBox spacing="5" alignment="CENTER_LEFT">
-                            <Label text="Classement:"/>
-                            <ComboBox fx:id="elementRankingCombo" prefWidth="120" />
+                            <ComboBox fx:id="elementRankingCombo" styleClass="combo-box" prefWidth="210" promptText="Classement des éléments"/>
                         </HBox>
                     </VBox>
-                    
+                    </VBox>
+                    </center>
                     <!-- Bouton Appliquer en bas à droite -->
-                    <HBox alignment="BOTTOM_RIGHT">
+                    <bottom>
+                    <HBox alignment="BOTTOM_RIGHT" spacing="5" style="-fx-padding: 8;-fx-margin: 5; -fx-border-color:rgba(212, 204, 202, 0.55); -fx-border-width: 1px;">
                         <Button text="Appliquer" onAction="#handleApply" 
-                                style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                                styleClass="button-8"/>
                         <Button text="Démarrer" onAction="#handleStartButton"
-                        style="-fx-opacity: 1; -fx-disabled-opacity: 1;"
+                        styleClass="button-8"
                         AnchorPane.topAnchor="10" AnchorPane.leftAnchor="10" />
                     </HBox>
-                </VBox>
-            </AnchorPane>
+                    </bottom>
+            </BorderPane>
 
             <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
                         GridPane.rowIndex="1" GridPane.columnIndex="0">
@@ -156,7 +157,7 @@
                     
                     <!-- Bouton Appliquer -->
                     <Button text="Appliquer" onAction="#applyMinDegree"
-                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+                            styleClass="button-8" />
 
                     <!-- Filtrage par taille des nœuds -->
 <!--                     <HBox spacing="5" alignment="CENTER_LEFT">
@@ -184,7 +185,7 @@
 
             <!-- Panneau central -->
            <BorderPane fx:id="graphContentPane" 
-           style="-fx-border-color: #FF5733; -fx-border-width: 2px; -fx-background-color: transparent;" 
+           style="-fx-border-color:rgb(163, 157, 156); -fx-border-width: 2px; -fx-background-color: transparent;" 
            GridPane.rowIndex="0" GridPane.columnIndex="1" 
            GridPane.rowSpan="2">
             <bottom>
@@ -193,20 +194,20 @@
                         <ToggleGroup fx:id="graphModeToggleGroup"/> 
                     </fx:define>
 
-                    <RadioButton text="Exécution (RUN)" 
+                    <RadioButton text="Exécuter" 
                                 toggleGroup="$graphModeToggleGroup"
                                 userData="RUN"
                                 selected="true"
                                 onAction="#handleApplyGraphMode"/>
-                    <RadioButton text="Sélection (SELECTION)" 
+                    <RadioButton text="Sélectionner" 
                                 toggleGroup="$graphModeToggleGroup"
                                 userData="SELECTION"
                                 onAction="#handleApplyGraphMode"/>
-                    <RadioButton text="Déplacement (MOVE)" 
+                    <RadioButton text="Déplacer" 
                                 toggleGroup="$graphModeToggleGroup"
                                 userData="MOVE"
                                 onAction="#handleApplyGraphMode"/>
-                    <RadioButton text="Suppression (DELETE)" 
+                    <RadioButton text="Supprimer" 
                                 toggleGroup="$graphModeToggleGroup"
                                 userData="DELETE"
                                 onAction="#handleApplyGraphMode"/>
@@ -230,24 +231,24 @@
                 <Label text="📊 Statistiques du Graphe" style="-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #333;" />
                 <Separator />
                 <HBox spacing="10">
-                    <Label text="Nœuds affichés:" style="-fx-font-weight: bold;" />
+                    <Label text="Nœuds affichés:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
                     <Label fx:id="nodesDisplayedLabel" text="0" style="-fx-text-fill: #2a9d8f;" />
                 </HBox>
                 <HBox spacing="10">
-                    <Label text="Nœuds supprimés:" style="-fx-font-weight: bold;" />
+                    <Label text="Nœuds supprimés:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
                     <Label fx:id="nodesDeletedLabel" text="0" style="-fx-text-fill: #e76f51;" />
                 </HBox>
                 <HBox spacing="10">
-                    <Label text="Arêtes affichées:" style="-fx-font-weight: bold;" />
+                    <Label text="Arêtes affichées:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
                     <Label fx:id="edgesDisplayedLabel" text="0" style="-fx-text-fill: #2a9d8f;" />
                 </HBox>
                 <HBox spacing="10">
-                    <Label text="Arêtes supprimées:" style="-fx-font-weight: bold;" />
+                    <Label text="Arêtes supprimées:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
                     <Label fx:id="edgesDeletedLabel" text="0" style="-fx-text-fill: #e76f51;" />
                 </HBox>
                 <Separator />
                 <HBox spacing="10">
-                    <Label text="Total éléments:" style="-fx-font-weight: bold;" />
+                    <Label text="Total éléments:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
                     <Label fx:id="totalElementsLabel" text="0" style="-fx-text-fill: #264653; -fx-font-size: 14;" />
                 </HBox>
             </VBox>

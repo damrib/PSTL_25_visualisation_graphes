@@ -3,6 +3,7 @@ package com.mongraphe.graphui;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.mongraphe.graphui.GraphData.NodeCommunity;
 import com.mongraphe.graphui.GraphData.SimilitudeMode;
@@ -74,16 +75,13 @@ public class Graph implements GraphSettings {
 
     // Nouveaux éléments FXML pour le panneau Aspect du graphe
 
-    @FXML
-    private ToggleGroup elementToggleGroup;
-    @FXML
-    private ToggleButton nodesToggleButton;
-    @FXML
-    private ToggleButton edgesToggleButton;
-    @FXML
-    private ColorPicker elementColorPicker;
-    @FXML
-    private ComboBox<String> elementRankingCombo;
+    @FXML private ToggleGroup elementToggleGroup;
+    @FXML private ToggleButton nodesToggleButton;
+    @FXML private ToggleButton edgesToggleButton;
+    @FXML private ColorPicker elementColorPicker;
+    @FXML private ComboBox<String> elementRankingCombo;
+    @FXML private Consumer<String> onRankingSelectedCallback;
+    private String currentRanking;
 
     // Propriétés pour les éléments du graphe
     private final BooleanProperty nodesSelected = new SimpleBooleanProperty(true);
@@ -114,6 +112,31 @@ public class Graph implements GraphSettings {
             nodesToggleButton.setToggleGroup(elementToggleGroup);
             edgesToggleButton.setToggleGroup(elementToggleGroup);
             nodesToggleButton.setSelected(true);
+        }
+
+          // Initialisation du ComboBox de classement des éléments (nouveau)
+        elementRankingCombo.setItems(FXCollections.observableArrayList(
+            "Classement Poids", "Classement Liens Entrant", "Classement Liens Sortant"));
+
+        elementRankingCombo.getSelectionModel().selectedItemProperty().addListener(
+                (obs, oldVal, newVal) -> {
+                    if (newVal != null) {
+                        this.currentRanking = newVal;
+                        if (onRankingSelectedCallback != null) {
+                            onRankingSelectedCallback.accept(currentRanking);
+                        }
+                    }
+                });
+    }
+
+    public void setOnRankingSelected(Consumer<String> callback) {
+        this.onRankingSelectedCallback = callback;
+    }
+    
+    public void setSelectedRanking(String ranking) {
+        this.currentRanking = ranking;
+        if (ranking != null) {
+            elementRankingCombo.setValue(ranking);
         }
     }
 
