@@ -13,14 +13,19 @@ import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
@@ -52,12 +57,147 @@ public class Graph implements GraphSettings {
     @FXML
     private ToggleGroup graphModeToggleGroup;
 
+
+    ///////////////////////
+
+    // Nouveaux éléments FXML pour le panneau Aspect du graphe
+   
+
+    @FXML private ToggleGroup elementToggleGroup;
+    @FXML private ToggleButton nodesToggleButton;
+    @FXML private ToggleButton edgesToggleButton;
+    @FXML private ColorPicker elementColorPicker;
+    @FXML private ComboBox<String> elementRankingCombo;
+
+    // Propriétés pour les éléments du graphe
+    private final BooleanProperty nodesSelected = new SimpleBooleanProperty(true);
+    private final ObjectProperty<Color> nodeColor = new SimpleObjectProperty<>(Color.BLUE);
+    private final ObjectProperty<Color> edgeColor = new SimpleObjectProperty<>(Color.GRAY);
+    private final StringProperty nodeRanking = new SimpleStringProperty("Par défaut");
+    private final StringProperty edgeRanking = new SimpleStringProperty("Par défaut");
+
+
+    @FXML
+    public void initialize() {
+        // Initialisation de ToggleGroup s'il n'est pas injecté automatiquement
+        if (elementToggleGroup == null) {
+            elementToggleGroup = new ToggleGroup();
+        }
+
+        elementToggleGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                updateElementProperties();
+            }
+        });
+
+        // valeurs par défaut
+        elementColorPicker.setValue(Color.BLUE);
+        elementRankingCombo.getSelectionModel().selectFirst();
+        
+        // Configurez les ToggleButtons
+        if (nodesToggleButton != null && edgesToggleButton != null) {
+            nodesToggleButton.setToggleGroup(elementToggleGroup);
+            edgesToggleButton.setToggleGroup(elementToggleGroup);
+            nodesToggleButton.setSelected(true);
+        }
+    }
+
+
+    @FXML
+    private void handleToggleNodes(ActionEvent event) {
+        nodesSelected.set(true);
+        updateElementProperties();
+    }
+
+    @FXML
+    private void handleToggleEdges(ActionEvent event) {
+        nodesSelected.set(false);
+        updateElementProperties();
+    }
+
+    private void updateElementProperties() {
+        if (nodesSelected.get()) {
+            elementColorPicker.setValue(nodeColor.get());
+            elementRankingCombo.setValue(nodeRanking.get());
+        } else {
+            elementColorPicker.setValue(edgeColor.get());
+            elementRankingCombo.setValue(edgeRanking.get());
+        }
+    }
+
+    @FXML
+    private void handleApply(ActionEvent event) {
+        if (nodesSelected.get()) {
+            nodeColor.set(elementColorPicker.getValue());
+            nodeRanking.set(elementRankingCombo.getValue());
+            applyNodeChanges();
+        } else {
+            edgeColor.set(elementColorPicker.getValue());
+            edgeRanking.set(elementRankingCombo.getValue());
+            applyEdgeChanges();
+        }
+    }
+
+    private void applyNodeChanges() {
+        // Implémentez la logique pour appliquer les changements aux nœuds
+        System.out.println("Application des propriétés des nœuds:");
+        System.out.println("- Couleur: " + nodeColor.get());
+        System.out.println("- Classement: " + nodeRanking.get());
+        
+        // Exemple: mettre à jour tous les nœuds dans le graphe
+        root.getChildren().stream()
+            .filter(node -> node instanceof Vertex)
+            .forEach(node -> {
+                Vertex vertex = (Vertex) node;
+                vertex.setFill(nodeColor.get());
+                // Appliquer le classement si nécessaire
+            });
+    }
+
+
+
+    private void applyRanking(String rankingType) {
+        switch (rankingType) {
+            case "Alphabétique":
+                // Implémentez le classement alphabétique
+                break;
+            case "Poids":
+                // Implémentez le classement par poids
+                break;
+            case "Degré":
+                // Implémentez le classement par degré
+                break;
+            default:
+                // Classement par défaut
+                break;
+        }
+    }
+
+    private void applyEdgeChanges() {
+        // Implémentez la logique pour appliquer les changements aux arêtes
+        System.out.println("Application des propriétés des arêtes:");
+        System.out.println("- Couleur: " + edgeColor.get());
+        System.out.println("- Classement: " + edgeRanking.get());
+        
+        // Exemple: mettre à jour toutes les arêtes dans le graphe
+        root.getChildren().stream()
+            .filter(edge -> edge instanceof Edge)
+            .forEach(edge -> {
+                Edge e = (Edge) edge;
+                e.setStroke(edgeColor.get());
+                // Appliquer le classement si nécessaire
+            });
+    }
+
+    //////////////////////
+
     public void handleQuit(ActionEvent event) {
         Platform.exit();
     }
 
     public void handleAbout(ActionEvent event) {
     }
+
 
     @FXML
     private void handleViewChange(ActionEvent event) {

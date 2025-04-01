@@ -6,6 +6,12 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ColorPicker?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.collections.FXCollections?>
 
 <GridPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
           fx:controller="com.mongraphe.graphui.Graph"
@@ -87,59 +93,95 @@
             </columnConstraints>
             <rowConstraints>
                 <RowConstraints percentHeight="30" />
-                <RowConstraints percentHeight="70" />
+                <RowConstraints percentHeight="60" />
             </rowConstraints>
 
 
             <!-- Panneau gauche haut -->
             <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
-                       GridPane.rowIndex="0" GridPane.columnIndex="0">
-                <Button text="Démarrer" onAction="#handleStartButton"
+                        GridPane.rowIndex="0" GridPane.columnIndex="0">
+                <VBox spacing="10" style="-fx-padding: 10;">
+                    <!-- Titre "Aspect du graphe" -->
+                    <Label text="Aspect du graphe" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                    
+                    <!-- ToggleButtons pour Noeuds/Arêtes -->
+                    <HBox spacing="5">
+                    <fx:define>
+                    <ToggleGroup fx:id="elementToggleGroup"/>
+                </fx:define>
+                        <ToggleButton text="Noeuds" toggleGroup="$elementToggleGroup" userData="NODES" selected="true" onAction="#handleToggleNodes"/>
+                        <ToggleButton text="Arêtes" toggleGroup="$elementToggleGroup" userData="EDGES" onAction="#handleToggleEdges"/>
+                    </HBox>
+                    
+                    <!-- Contenu dynamique -->
+                    <VBox spacing="8">
+                        <!-- Sélection de couleur -->
+                        <HBox spacing="5" alignment="CENTER_LEFT">
+                            <Label text="Couleur:"/>
+                            <ColorPicker fx:id="elementColorPicker" prefWidth="120"/>
+                        </HBox>
+                        
+                        <!-- Classement -->
+                        <HBox spacing="5" alignment="CENTER_LEFT">
+                            <Label text="Classement:"/>
+                            <ComboBox fx:id="elementRankingCombo" prefWidth="120" />
+                        </HBox>
+                    </VBox>
+                    
+                    <!-- Bouton Appliquer en bas à droite -->
+                    <HBox alignment="BOTTOM_RIGHT">
+                        <Button text="Appliquer" onAction="#handleApply" 
+                                style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                        <Button text="Démarrer" onAction="#handleStartButton"
                         style="-fx-opacity: 1; -fx-disabled-opacity: 1;"
                         AnchorPane.topAnchor="10" AnchorPane.leftAnchor="10" />
-                        
+                    </HBox>
+                </VBox>
             </AnchorPane>
 
             <!-- Panneau gauche bas -->
             <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
                        GridPane.rowIndex="1" GridPane.columnIndex="0">
-                <VBox GridPane.columnIndex="0" GridPane.rowIndex="1" spacing="10" style="-fx-padding: 10;">
-                    <Label text="Mode du graphe:" style="-fx-font-weight: bold;"/>
-                    
-                    <fx:define>
-                        <ToggleGroup fx:id="graphModeToggleGroup"/> 
-                    </fx:define>
-                    
-                    <RadioButton text="Exécution (RUN)" 
-                                toggleGroup="$graphModeToggleGroup"
-                                userData="RUN"
-                                selected="true"/>
-                    <RadioButton text="Sélection (SELECTION)" 
-                                toggleGroup="$graphModeToggleGroup"
-                                userData="SELECTION"/>
-                    <RadioButton text="Déplacement (MOVE)" 
-                                toggleGroup="$graphModeToggleGroup"
-                                userData="MOVE"/>
-                    <RadioButton text="Suppression (DELETE)" 
-                                toggleGroup="$graphModeToggleGroup"
-                                userData="DELETE"/>
-                    
-                    <Button text="Appliquer" onAction="#handleApplyGraphMode"/>
-                </VBox>
+               
             </AnchorPane>
 
             <!-- Panneau central -->
-            <BorderPane fx:id="graphContentPane" 
-                       style="-fx-border-color: #FF5733; -fx-border-width: 2px; -fx-background-color: white;" 
-                       GridPane.rowIndex="0" GridPane.columnIndex="1" 
-                       GridPane.rowSpan="2">
-                <center>
-                    <ScrollPane fx:id="graphScrollPane" fitToWidth="true" fitToHeight="true" 
-                               hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED">
-                        <AnchorPane fx:id="graphContainer" minWidth="600" minHeight="500" />
-                    </ScrollPane>
-                </center>
-            </BorderPane>
+           <BorderPane fx:id="graphContentPane" 
+           style="-fx-border-color: #FF5733; -fx-border-width: 2px; -fx-background-color: transparent;" 
+           GridPane.rowIndex="0" GridPane.columnIndex="1" 
+           GridPane.rowSpan="2">
+            <bottom>
+                <HBox spacing="10" alignment="CENTER" style="-fx-padding: 10;">
+                    <fx:define>
+                        <ToggleGroup fx:id="graphModeToggleGroup"/> 
+                    </fx:define>
+
+                    <RadioButton text="Exécution (RUN)" 
+                                toggleGroup="$graphModeToggleGroup"
+                                userData="RUN"
+                                selected="true"
+                                onAction="#handleApplyGraphMode"/>
+                    <RadioButton text="Sélection (SELECTION)" 
+                                toggleGroup="$graphModeToggleGroup"
+                                userData="SELECTION"
+                                onAction="#handleApplyGraphMode"/>
+                    <RadioButton text="Déplacement (MOVE)" 
+                                toggleGroup="$graphModeToggleGroup"
+                                userData="MOVE"
+                                onAction="#handleApplyGraphMode"/>
+                    <RadioButton text="Suppression (DELETE)" 
+                                toggleGroup="$graphModeToggleGroup"
+                                userData="DELETE"
+                                onAction="#handleApplyGraphMode"/>
+                </HBox>
+            </bottom>
+            <center>
+                <ScrollPane fx:id="graphScrollPane" fitToWidth="true" fitToHeight="true" 
+                        hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED">
+                    <AnchorPane fx:id="graphContainer" minWidth="600" minHeight="500" />
+                </ScrollPane>
+            </center>
+        </BorderPane>
 
             <!-- Panneau droit -->
             <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
