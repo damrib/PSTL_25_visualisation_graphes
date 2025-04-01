@@ -190,6 +190,8 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getEdges
     
     jobjectArray result = (*env)->NewObjectArray(env, num_edges, obj_class, initial_elem);
 
+    printf("arete %d %d\n", num_edges, num_antiedges);
+
     for (int i = 0; i < num_edges; ++i)
     {
         int node1 = edges[i].node1;

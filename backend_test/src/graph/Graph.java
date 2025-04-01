@@ -207,7 +207,7 @@ public class Graph extends Application implements GraphSettings {
         // Ajouter les sommets à la racine
         root.getChildren().addAll(vertices);
 
-        //testUpdatePosition(100);
+        testUpdatePosition(100);
         // Création du keyframe pour la mise à jour du graphe
         KeyFrame keyFrame = new KeyFrame(Duration.seconds(updateFrequency.get()), event -> {
 
@@ -465,7 +465,7 @@ public class Graph extends Application implements GraphSettings {
         // Déterminer le mode de détection de communautés à utiliser
         int modeCommunity = getModeCommunity(community);
 
-        metadata = initiliazeGraph(modeCommunity, recommendedThreshold, recommendedAntiThreshold);
+        metadata = initiliazeGraph(modeCommunity, init_metadata.getEdgeThreshold(), init_metadata.getAntiThreshold());
 
 
         return data;
