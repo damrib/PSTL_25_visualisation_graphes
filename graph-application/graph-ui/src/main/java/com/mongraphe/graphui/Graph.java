@@ -272,7 +272,7 @@ public class Graph implements GraphSettings {
     private NodeCommunity methodCode;
     private Pane root;
 
-    private static final double MIN_ZOOM = 0;
+    private static final double MIN_ZOOM = 0.5;
     private static final double MAX_ZOOM = 10.0;
     private static final double ZOOM_FACTOR = 1.1;
 

@@ -10,3 +10,56 @@
     -fx-border-color: #c0c0c0;
     -fx-border-width: 0 0 3 0;
 }
+
+/* Style du conteneur */
+.toggle-button-container {
+/*     -fx-padding: 2px;
+    -fx-background-color: #f4f4f4;
+    -fx-spacing: 10px; */
+}
+
+/* Style de base des ToggleButton */
+.custom-toggle {
+    -fx-min-width: 180px;
+    -fx-pref-width: 180px;
+    -fx-max-width: 180px;
+    
+    -fx-min-height: 10px;
+    -fx-pref-height: 15px;
+    -fx-max-height: 20px;
+    
+    -fx-background-radius: 5px;
+    -fx-border-radius: 3px;
+    -fx-border-width: 1px;
+    -fx-border-color: #777777;
+    
+    -fx-background-color: #fcfcfc;
+    -fx-text-fill: #333333;
+    -fx-font-size: 14px;
+    -fx-font-weight: normal;
+    
+    -fx-padding: 0 15px 0 40px; /* Espace pour l'icône */
+    -fx-content-display: left;
+    -fx-graphic-text-gap: 10px;
+}
+
+/* Style quand sélectionné */
+.custom-toggle:selected {
+    -fx-background-color: #d7d7d7;
+    -fx-text-fill: rgb(41, 41, 41);
+    -fx-border-color: #767676;
+}
+
+/* Style au survol */
+.custom-toggle:hover {
+    -fx-background-color: #d7d7d7;
+}
+
+.custom-toggle:selected:hover {
+    -fx-background-color: #c3c3c3;
+}
+
+/* Style des icônes */
+.custom-toggle .graphic {
+    -fx-padding: 0 0 0 5px;
+}
