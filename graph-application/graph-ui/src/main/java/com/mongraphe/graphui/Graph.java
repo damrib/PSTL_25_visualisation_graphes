@@ -139,18 +139,18 @@ public class Graph implements GraphSettings {
     }
 
     private void applyNodeChanges() {
-        // Implémentez la logique pour appliquer les changements aux nœuds
+        
         System.out.println("Application des propriétés des nœuds:");
         System.out.println("- Couleur: " + nodeColor.get());
         System.out.println("- Classement: " + nodeRanking.get());
         
-        // Exemple: mettre à jour tous les nœuds dans le graphe
+        // met à jour tous les nœuds dans le graphe
         root.getChildren().stream()
             .filter(node -> node instanceof Vertex)
             .forEach(node -> {
                 Vertex vertex = (Vertex) node;
                 vertex.setFill(nodeColor.get());
-                // Appliquer le classement si nécessaire
+                // On doit faire le classement ici ...
             });
     }
 
@@ -158,14 +158,9 @@ public class Graph implements GraphSettings {
 
     private void applyRanking(String rankingType) {
         switch (rankingType) {
-            case "Alphabétique":
-                // Implémentez le classement alphabétique
-                break;
             case "Poids":
-                // Implémentez le classement par poids
                 break;
             case "Degré":
-                // Implémentez le classement par degré
                 break;
             default:
                 // Classement par défaut
@@ -174,18 +169,17 @@ public class Graph implements GraphSettings {
     }
 
     private void applyEdgeChanges() {
-        // Implémentez la logique pour appliquer les changements aux arêtes
         System.out.println("Application des propriétés des arêtes:");
         System.out.println("- Couleur: " + edgeColor.get());
         System.out.println("- Classement: " + edgeRanking.get());
         
-        // Exemple: mettre à jour toutes les arêtes dans le graphe
+        // met à jour toutes les arêtes dans le graphe
         root.getChildren().stream()
             .filter(edge -> edge instanceof Edge)
             .forEach(edge -> {
                 Edge e = (Edge) edge;
                 e.setStroke(edgeColor.get());
-                // Appliquer le classement si nécessaire
+                // On doit faire le classement ici ...
             });
     }
 
