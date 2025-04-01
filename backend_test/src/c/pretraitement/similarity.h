@@ -20,14 +20,15 @@ double calculate_mean_similitude_parallel(int choice, double* similarities);
 struct mean_similitude_args {
     int choice;
     int thread_id;
-    int start_row;
-    int end_row;
+    int start_row;   
+    int end_row;     
+    int num_rows;   
+    int size_similarities;
     double *res;
     int *cpt;
-    int *histogram;
+    int *global_histogram;
     int **thread_histograms;
-    double * similarities;
-    _Atomic int* counter;
+    double *similarities;
+    _Atomic int *counter; 
 };
-
 #endif

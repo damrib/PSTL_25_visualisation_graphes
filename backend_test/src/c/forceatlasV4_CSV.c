@@ -257,6 +257,13 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
 {
 
     InitPool(&pool, 1000, 6);
+    similarity_matrix = (double**) malloc(num_rows * sizeof(double*));
+    for (int i = 0; i < num_rows; i++) {
+      similarity_matrix[i] = (double*) malloc(num_rows * sizeof(double));
+      for (int j = 0; j < num_rows; j++) {
+        similarity_matrix[i][j] = -1.0; 
+      }
+    }
 
     num_nodes = num_rows;
 
@@ -378,6 +385,11 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
         }
     }
     free_clusters();
+
+    for (int i = 0; i < num_rows; i++) {
+      free(similarity_matrix[i]);
+    }
+    free(similarity_matrix);
 
     FreePool(&pool);
 

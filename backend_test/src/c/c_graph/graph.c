@@ -13,6 +13,8 @@ _Atomic int num_antiedges = 0;
 double coeff_antiarete = 100; // Facteur de répulsion des antiarêtes
 Edge antiedges[MAX_EDGES];  // Pour les anti-arêtes
 
+double** similarity_matrix = NULL;
+
 int num_nodes = 0;
 double Lx = 300, Ly = 300;
 
