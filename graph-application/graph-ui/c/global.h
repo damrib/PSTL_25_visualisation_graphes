@@ -1,6 +1,7 @@
 #ifndef FORCEATLAS_GLOBAL_H
 #define FORCEATLAS_GLOBAL_H
 
+#include <jni.h>
 #include "c_graph/graph.h"
 
 #define MAX_NODES 50000
@@ -32,7 +33,7 @@ extern double amortissement;
 #include "c_graph/cluster.h"
 
 // Structures utilisées dans la méthode de Louvain
-extern int communities[MAX_NODES]; // Stocke les communautés détectées par Louvain
+extern jint communities[MAX_NODES]; // Stocke les communautés détectées par Louvain
 extern int clusters[MAX_NODES];
 extern float cluster_colors[MAX_NODES][3];
 extern double centers[MAX_NODES][2];
@@ -86,6 +87,8 @@ extern int S[MAX_NODES];
 #define EPSILON 1e-12  // Pour éviter la division par 0
 
 extern int mode_similitude;
+extern double **similarity_matrix;
+extern int global_histogram[NUM_BINS];
 
 // ForceAtlas
 
