@@ -24,6 +24,8 @@ double thresholdS = 1;
 
 double amortissement = 0.999;
 
+double** similarity_matrix = NULL;
+
 void toroidal_vector(Point *dir, Point p1, Point p2) {
     dir->x = p2.x - p1.x;
     dir->y = p2.y - p1.y;

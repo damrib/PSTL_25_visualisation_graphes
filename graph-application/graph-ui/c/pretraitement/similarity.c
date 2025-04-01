@@ -1,18 +1,19 @@
 #include "similarity.h"
 #include "../global.h"
-#include <stdio.h>
 
 int mode_similitude = 0;
+int global_histogram[NUM_BINS];
 
 void mean_similitude_job(void *args) {
     struct mean_similitude_args *data = (struct mean_similitude_args*) args;
     double somme = 0.0;
     int count = 0;
     int *local_histogram = data->thread_histograms[data->thread_id];
+    
     printf("Thread %d row %d à %d\n", data->thread_id, data->start_row, data->end_row);
-    int size_similarities = num_rows * (num_rows - 1) / 2;
+    
     for (int i = data->start_row; i < data->end_row; i++) {
-        for (int j = i + 1; j < num_rows; j++) {
+        for (int j = i + 1; j < data->num_rows; j++) {
             double similarity = 0.0;
             switch (data->choice) {
                 case 0:  // Corrélation
@@ -36,23 +37,26 @@ void mean_similitude_job(void *args) {
                 default:
                     printf("Choix non valide.\n");
                     similarity = 0.0;
-                    break; 
+                    break;
             }
 
-            int new_index = incr_or_max(data->counter, size_similarities);
-            if ( new_index < size_similarities ) {
+            similarity_matrix[i][j] = similarity;
+            similarity_matrix[j][i] = similarity;
+            
+            int new_index = incr_or_max(data->counter, data->size_similarities);
+            if (new_index < data->size_similarities) {
                 data->similarities[new_index] = similarity;
             }
-
-            if(!isnan(similarity)){
+            
+            if (!isnan(similarity)) {
                 somme += similarity;
             }
             count++;
-
+            
             double scaled_similarity = (data->choice == 0 || data->choice == 1) 
                 ? (similarity + 1.0) / 2.0 
                 : similarity;
-
+            
             int bin_index = (int)(scaled_similarity * NUM_BINS);
             if (bin_index >= NUM_BINS) bin_index = NUM_BINS - 1;
             if (bin_index < 0) bin_index = 0;
@@ -77,6 +81,7 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
     }
 
     _Atomic int counter = 0;
+    int size_similarities = num_rows * (num_rows - 1) / 2; 
 
     int rows_per_thread = num_rows / num_threads;
     int remaining_rows = num_rows % num_threads;
@@ -87,15 +92,17 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
         args->thread_id = t;
         args->start_row = t * rows_per_thread;
         args->end_row = (t + 1) * rows_per_thread;
+        args->num_rows = num_rows;
+        args->size_similarities = size_similarities;
         args->res = res;
         args->cpt = cpt;
-        args->histogram = histogram;
+        args->global_histogram = histogram;
         args->thread_histograms = thread_histograms;
         args->similarities = similarities;
-        args->counter = &counter;
+        args->counter = &counter; 
 
         if (t == num_threads - 1) {
-            args->end_row += remaining_rows;
+            args->end_row += remaining_rows; 
         }
 
         struct Job task;
@@ -112,7 +119,6 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
         }
     }
 
-
     double somme = 0.0;
     int count = 0;
     for (int t = 0; t < num_threads; t++) {
@@ -120,17 +126,16 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
         count += cpt[t];
     }
 
-
     printf("Histogram of Similarities (Normalized):\n");
     for (int bin = 0; bin < NUM_BINS; bin++) {
         double bin_start = (choice == 0 || choice == 1) ? -1.0 + (2.0 * bin) / NUM_BINS : (double)bin / NUM_BINS;
         double bin_end = (choice == 0 || choice == 1) ? -1.0 + (2.0 * (bin + 1)) / NUM_BINS : (double)(bin + 1) / NUM_BINS;
         printf("Bin [%.2f, %.2f): %d\n", bin_start, bin_end, histogram[bin]);
+        global_histogram[bin] = histogram[bin]; 
     }
 
     return (count > 0) ? somme / count : 0.0;
 }
-
 // Calcul de la corrélation entre deux vecteurs
 double correlation_similarity(int i, int j) {
     double mean_i = 0.0, mean_j = 0.0;

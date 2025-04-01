@@ -188,6 +188,14 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
 {
 
     InitPool(&pool, 1000, 8);
+    similarity_matrix = (double**) malloc(num_rows * sizeof(double*));
+    for (int i = 0; i < num_rows; i++) {
+      similarity_matrix[i] = (double*) malloc(num_rows * sizeof(double));
+      for (int j = 0; j < num_rows; j++) {
+        similarity_matrix[i][j] = -1.0; 
+      }
+    }
+
 
     num_nodes = num_rows;
 
@@ -294,7 +302,7 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
 
 }
 
-JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
+JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
   (JNIEnv * env, jobject obj)
 {
 
@@ -309,7 +317,13 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
     }
     free_clusters();
 
+    for (int i = 0; i < num_rows; i++) {
+      free(similarity_matrix[i]);
+    }
+    free(similarity_matrix);
+
     FreePool(&pool);
+
 }
 
 JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setSaut
