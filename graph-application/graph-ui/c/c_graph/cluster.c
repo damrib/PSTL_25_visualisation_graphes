@@ -17,76 +17,122 @@ double repulsion_coeff = 1;
 int saut = 10;
 int mode = 0;
 
+double squared_distance(double* center, Point p) {
+    double dx = p.x - center[0];
+    double dy = p.y - center[1]; 
+    return dx * dx + dy * dy;
+}
+
+struct map_arguments {
+    int num_clusters;
+    double Lx, Ly;
+    double ** new_centers;
+    int * counts, * labels;
+    int vertex_index;
+
+    pthread_mutex_t *lock;
+    Barrier barrier;
+};
+
+void kmeans_map(void * arg) {
+
+    struct map_arguments * arguments = (struct map_arguments*) arg;
+    double min_dist = DBL_MAX;
+    int best_cluster = 0;
+
+    for ( int i = 0; i < arguments->num_clusters; ++i ) {
+        double dist = squared_distance(centers[i], vertices[arguments->vertex_index]);
+
+        if (dist < min_dist) {
+            min_dist = dist;
+            best_cluster = i;
+        }
+
+    }
+
+    double adjusted_x = vertices[arguments->vertex_index].x;
+    double adjusted_y = vertices[arguments->vertex_index].y;
+
+    while (adjusted_x - centers[best_cluster][0] > arguments->Lx / 2) adjusted_x -= arguments->Lx;
+    while (centers[best_cluster][0] - adjusted_x > arguments->Lx / 2) adjusted_x += arguments->Lx;
+    while (adjusted_y - centers[best_cluster][1] > arguments->Ly / 2) adjusted_y -= arguments->Ly;
+    while (centers[best_cluster][1] - adjusted_y > arguments->Ly / 2) adjusted_y += arguments->Ly;
+
+    pthread_mutex_lock(arguments->lock);
+    arguments->new_centers[best_cluster][0] += adjusted_x;
+    arguments->new_centers[best_cluster][1] += adjusted_y;
+    arguments->counts[best_cluster]++;
+    pthread_mutex_unlock(arguments->lock);
+
+    arguments->labels[arguments->vertex_index] = best_cluster;
+
+    decrement_barrier(arguments->barrier, 1);
+}
+
 // Assigner des noeuds aux clusters et mettre à jour les centres en utilisant l'algorithme k-means
-void kmeans_iteration(int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly) {
+void kmeans_iteration(int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly, double* max_diff) {
 
     // Modification pour utiliser moins de memoire et eviter un seg fault
-    int* counts = (int*) malloc(sizeof(int) * num_nodes);
+    int counts[MAX_NODES] = {0};
     double ** new_centers = (double**) malloc(sizeof(double*) * num_clusters);  // Stocker les nouveaux centres calculés
 
-    for (int i = 0; i < num_nodes; ++i){
-        counts[i] = 0;
-    } 
-
-    for (int i = 0; i < num_clusters; ++i)
-    {
-        new_centers[i] = (double*) malloc(sizeof(double) * 2);
-        new_centers[i][0] = 0.;
-        new_centers[i][1] = 1.;
+    for (int i = 0; i < num_clusters; ++i) {
+        new_centers[i] = (double*) calloc(2, sizeof(double));
     }
+
+    struct barrier bar;
+    new_barrier(&bar, num_points);
+
+    pthread_mutex_t lck;
+    pthread_mutex_init(&lck, NULL);
 
     // Assigner chaque point au cluster le plus proche et mettre à jour les centres
     for (int i = 0; i < num_points; i++) {
-        double min_dist = DBL_MAX;
-        int best_cluster = 0;
+        struct map_arguments * arguments = (struct map_arguments*) malloc(sizeof(struct map_arguments));
+        arguments->Lx = Lx;
+        arguments->Ly = Ly;
+        arguments->vertex_index = i;
+        arguments->counts = counts;
+        arguments->new_centers = new_centers;
+        arguments->labels = labels;
+        arguments->num_clusters = num_clusters;
+        arguments->barrier = &bar;
+        arguments->lock = &lck;
 
-        for (int j = 0; j < num_clusters; j++) {
-            Point dir;
-            toroidal_vector(&dir, vertices[i], (Point){centers[j][0], centers[j][1]});
-            double dist = (dir.x * dir.x + dir.y * dir.y);
+        struct Job task;
+        task.j = kmeans_map;
+        task.args = arguments;
+        submit(&pool, task);
 
-            if (dist < min_dist) {
-                min_dist = dist;
-                best_cluster = j;
-            }
-        }
-
-        labels[i] = best_cluster;
-
-        // Ajuster les coordonnées du point pour qu'elles soient proches du centre du cluster
-        double adjusted_x = vertices[i].x;
-        double adjusted_y = vertices[i].y;
-
-        while (adjusted_x - centers[best_cluster][0] > Lx / 2) adjusted_x -= Lx;
-        while (centers[best_cluster][0] - adjusted_x > Lx / 2) adjusted_x += Lx;
-        while (adjusted_y - centers[best_cluster][1] > Ly / 2) adjusted_y -= Ly;
-        while (centers[best_cluster][1] - adjusted_y > Ly / 2) adjusted_y += Ly;
-
-        new_centers[best_cluster][0] += adjusted_x;
-        new_centers[best_cluster][1] += adjusted_y;
-        counts[best_cluster]++;
     }
+
+    wait_barrier(&bar);   
+    pthread_mutex_destroy(&lck);
 
     // Mise à jour des centres de clusters en fonction des nouvelles assignations
     for (int i = 0; i < num_clusters; i++) {
         if (counts[i] > 0) {
+            Point old_center;
+            old_center.x = centers[i][0];
+            old_center.y = centers[i][1];
+
             centers[i][0] = new_centers[i][0] / counts[i];
             centers[i][1] = new_centers[i][1] / counts[i];
 
-            // Ramener les centres dans l'espace torique
-            while (centers[i][0] < -Lx / 2) centers[i][0] += Lx;
-            while (centers[i][0] > Lx / 2) centers[i][0] -= Lx;
-            while (centers[i][1] < -Ly / 2) centers[i][1] += Ly;
-            while (centers[i][1] > Ly / 2) centers[i][1] -= Ly;
-        }
-    }
+            double dist = squared_distance(centers[i], old_center);
+            *max_diff = *max_diff < dist? dist : *max_diff;
 
-    for (int i = 0; i < num_clusters; ++i)
-    {
+            // Ramener les centres dans l'espace torique
+            while ( centers[i][0] < -Lx / 2) centers[i][0] += Lx;
+            while ( centers[i][0] > Lx / 2 ) centers[i][0] -= Lx;
+            while ( centers[i][1] < -Ly / 2) centers[i][1] += Ly;
+            while ( centers[i][1] > Ly / 2 ) centers[i][1] -= Ly;
+        }
+
         free(new_centers[i]);
     }
+
     free(new_centers);
-    free(counts);
 }
 
 // probablement privé utilisée dans update_positions
@@ -111,7 +157,7 @@ void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY)
                     
                     double rep_force;
                     if ( mode == 1 ) { 
-                        rep_force = repulsion_coeff/ dist_squared*dist_squared;
+                        rep_force = repulsion_coeff/(dist_squared*dist_squared);
                     } else if (mode == 2 && communities[i] != communities[j]) {//printf("extra repulsion %d, %d \n",i,j);
                         rep_force = 100000*repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;
                     } else { // mode == 0 est le mode par defaut
@@ -144,24 +190,17 @@ void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY)
 // etape 4 dans update_positions
 void update_clusters()
 {
-    if (iteration % (saut * (1+espacement)) == 0) {
+
+    if (iteration % (saut * (1 + 0 * espacement)) == 0) {
         int centers_converged = 0;
 
         while (centers_converged == 0) {
-            double old_centers[MAX_NODES][2];
-            memcpy(old_centers, centers, sizeof(centers));
+            // the biggest difference between the former centers and the new ones
+            double max_movement = 0;
 
-            kmeans_iteration(num_nodes, n_clusters, clusters, centers, Lx, Ly);
+            kmeans_iteration(num_nodes, n_clusters, clusters, centers, Lx, Ly, &max_movement);
 
-            centers_converged = 1;
-            for (int i = 0; i < n_clusters; i++) {
-                double dx = centers[i][0] - old_centers[i][0];
-                double dy = centers[i][1] - old_centers[i][1];
-                if ((dx * dx + dy * dy) > epsilon) {
-                    centers_converged = 0;
-                    break;
-                }
-            }
+            centers_converged = max_movement <= epsilon;
         }
         clear_clusters();
 
@@ -170,6 +209,7 @@ void update_clusters()
             add_node_to_cluster(best_cluster, i);
         }
     }
+
 }
 
 void clear_clusters() {
