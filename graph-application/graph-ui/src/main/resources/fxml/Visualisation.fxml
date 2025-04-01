@@ -68,18 +68,21 @@
         </fx:define>
         
         <ToggleButton text="Vue d'ensemble" 
-                     toggleGroup="$viewToggleGroup"
-                     onAction="#handleViewChange"
-                     userData="overview"
-                     selected="true"/>
-        <ToggleButton text="Données" 
-                     toggleGroup="$viewToggleGroup"
-                     onAction="#handleViewChange"
-                     userData="data"/>
+                 styleClass="custom-toggle"
+                 toggleGroup="$viewToggleGroup"
+                 onAction="#handleViewChange"
+                 userData="overview"
+                 selected="true"/>
+        <ToggleButton text="Laboratoire de Données" 
+                    styleClass="custom-toggle"
+                    toggleGroup="$viewToggleGroup"
+                    onAction="#handleViewChange"
+                    userData="data"/>
         <ToggleButton text="Prévisualisation" 
-                     toggleGroup="$viewToggleGroup"
-                     onAction="#handleViewChange"
-                     userData="preview"/>
+                    styleClass="custom-toggle"
+                    toggleGroup="$viewToggleGroup"
+                    onAction="#handleViewChange"
+                    userData="preview"/>
     </HBox>
 
     <!-- Conteneur principal (ligne 2) -->
@@ -139,10 +142,44 @@
                 </VBox>
             </AnchorPane>
 
-            <!-- Panneau gauche bas -->
             <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
-                       GridPane.rowIndex="1" GridPane.columnIndex="0">
-               
+                        GridPane.rowIndex="1" GridPane.columnIndex="0">
+                <VBox spacing="10" style="-fx-padding: 10;">
+                    <Label text="Paramètres du graphe" style="-fx-font-weight: bold; -fx-font-size: 14;" />
+
+                    <!-- Slider pour modifier le degré minimum des nœuds -->
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Degré Min:" />
+                        <Slider fx:id="degreeMinSlider" min="0" max="100" value="3" blockIncrement="1" />
+                        <Label fx:id="degreeMinValue" text="3" />
+                    </HBox>
+                    
+                    <!-- Bouton Appliquer -->
+                    <Button text="Appliquer" onAction="#applyMinDegree"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+
+                    <!-- Filtrage par taille des nœuds -->
+<!--                     <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Filtrer Taille:" />
+                        <ComboBox fx:id="sizeFilterComboBox">
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="Tous" />
+                                    <String fx:value="Petits" />
+                                    <String fx:value="Moyens" />
+                                    <String fx:value="Grands" />
+                                </FXCollections>
+                            </items>
+                        </ComboBox>
+                    </HBox> -->
+
+                    <!-- Affichage des nœuds isolés -->
+<!--                     <CheckBox fx:id="showIsolatedNodesCheckbox" text="Afficher nœuds isolés" selected="true"/>
+ -->
+                    <!-- Bouton de réinitialisation -->
+<!--                     <Button text="Réinitialiser" onAction="#resetGraphSettings"
+                            style="-fx-background-color: #d9534f; -fx-text-fill: white;" /> -->
+                </VBox>
             </AnchorPane>
 
             <!-- Panneau central -->
@@ -178,16 +215,43 @@
             <center>
                 <ScrollPane fx:id="graphScrollPane" fitToWidth="true" fitToHeight="true" 
                         hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED">
-                    <AnchorPane fx:id="graphContainer" minWidth="600" minHeight="500" />
+                    <AnchorPane fx:id="graphContainer" />
                 </ScrollPane>
             </center>
         </BorderPane>
 
             <!-- Panneau droit -->
-            <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
-                       GridPane.rowIndex="0" GridPane.columnIndex="2">
-                <!-- Statistiques -->
-            </AnchorPane>
+            <!-- Panneau des statistiques en haut à droite -->
+        <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px; -fx-background-color: #ffffff; -fx-padding: 10;" 
+                    GridPane.rowIndex="0" GridPane.columnIndex="2">
+            <!-- Section statistiques -->
+            <VBox alignment="TOP_CENTER" spacing="8" style="-fx-background-color: #f9f9f9; -fx-padding: 1; -fx-border-radius: 5; -fx-border-color: #ccc; -fx-border-width: 1px;" 
+                AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+                <Label text="📊 Statistiques du Graphe" style="-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #333;" />
+                <Separator />
+                <HBox spacing="10">
+                    <Label text="Nœuds affichés:" style="-fx-font-weight: bold;" />
+                    <Label fx:id="nodesDisplayedLabel" text="0" style="-fx-text-fill: #2a9d8f;" />
+                </HBox>
+                <HBox spacing="10">
+                    <Label text="Nœuds supprimés:" style="-fx-font-weight: bold;" />
+                    <Label fx:id="nodesDeletedLabel" text="0" style="-fx-text-fill: #e76f51;" />
+                </HBox>
+                <HBox spacing="10">
+                    <Label text="Arêtes affichées:" style="-fx-font-weight: bold;" />
+                    <Label fx:id="edgesDisplayedLabel" text="0" style="-fx-text-fill: #2a9d8f;" />
+                </HBox>
+                <HBox spacing="10">
+                    <Label text="Arêtes supprimées:" style="-fx-font-weight: bold;" />
+                    <Label fx:id="edgesDeletedLabel" text="0" style="-fx-text-fill: #e76f51;" />
+                </HBox>
+                <Separator />
+                <HBox spacing="10">
+                    <Label text="Total éléments:" style="-fx-font-weight: bold;" />
+                    <Label fx:id="totalElementsLabel" text="0" style="-fx-text-fill: #264653; -fx-font-size: 14;" />
+                </HBox>
+            </VBox>
+        </AnchorPane>
         </GridPane>
 
         <!-- Vue Données -->

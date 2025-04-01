@@ -24,9 +24,12 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
@@ -53,21 +56,34 @@ public class Graph implements GraphSettings {
     @FXML
     private AnchorPane graphContainer;
     @FXML
+    private Label nodesDeletedLabel;
+    @FXML
+    private Label nodesDisplayedLabel;
+    @FXML
+    private Label edgesDisplayedLabel;
+    @FXML
+    private Label edgesDeletedLabel;
+    @FXML
+    private Label totalElementsLabel;
+    @FXML
     private ToggleGroup viewToggleGroup;
     @FXML
     private ToggleGroup graphModeToggleGroup;
 
-
     ///////////////////////
 
     // Nouveaux éléments FXML pour le panneau Aspect du graphe
-   
 
-    @FXML private ToggleGroup elementToggleGroup;
-    @FXML private ToggleButton nodesToggleButton;
-    @FXML private ToggleButton edgesToggleButton;
-    @FXML private ColorPicker elementColorPicker;
-    @FXML private ComboBox<String> elementRankingCombo;
+    @FXML
+    private ToggleGroup elementToggleGroup;
+    @FXML
+    private ToggleButton nodesToggleButton;
+    @FXML
+    private ToggleButton edgesToggleButton;
+    @FXML
+    private ColorPicker elementColorPicker;
+    @FXML
+    private ComboBox<String> elementRankingCombo;
 
     // Propriétés pour les éléments du graphe
     private final BooleanProperty nodesSelected = new SimpleBooleanProperty(true);
@@ -75,7 +91,6 @@ public class Graph implements GraphSettings {
     private final ObjectProperty<Color> edgeColor = new SimpleObjectProperty<>(Color.GRAY);
     private final StringProperty nodeRanking = new SimpleStringProperty("Par défaut");
     private final StringProperty edgeRanking = new SimpleStringProperty("Par défaut");
-
 
     @FXML
     public void initialize() {
@@ -93,7 +108,7 @@ public class Graph implements GraphSettings {
         // valeurs par défaut
         elementColorPicker.setValue(Color.BLUE);
         elementRankingCombo.getSelectionModel().selectFirst();
-        
+
         // Configurez les ToggleButtons
         if (nodesToggleButton != null && edgesToggleButton != null) {
             nodesToggleButton.setToggleGroup(elementToggleGroup);
@@ -101,7 +116,6 @@ public class Graph implements GraphSettings {
             nodesToggleButton.setSelected(true);
         }
     }
-
 
     @FXML
     private void handleToggleNodes(ActionEvent event) {
@@ -139,22 +153,20 @@ public class Graph implements GraphSettings {
     }
 
     private void applyNodeChanges() {
-        
+
         System.out.println("Application des propriétés des nœuds:");
         System.out.println("- Couleur: " + nodeColor.get());
         System.out.println("- Classement: " + nodeRanking.get());
-        
+
         // met à jour tous les nœuds dans le graphe
         root.getChildren().stream()
-            .filter(node -> node instanceof Vertex)
-            .forEach(node -> {
-                Vertex vertex = (Vertex) node;
-                vertex.setFill(nodeColor.get());
-                // On doit faire le classement ici ...
-            });
+                .filter(node -> node instanceof Vertex)
+                .forEach(node -> {
+                    Vertex vertex = (Vertex) node;
+                    vertex.setFill(nodeColor.get());
+                    // On doit faire le classement ici ...
+                });
     }
-
-
 
     private void applyRanking(String rankingType) {
         switch (rankingType) {
@@ -172,15 +184,15 @@ public class Graph implements GraphSettings {
         System.out.println("Application des propriétés des arêtes:");
         System.out.println("- Couleur: " + edgeColor.get());
         System.out.println("- Classement: " + edgeRanking.get());
-        
+
         // met à jour toutes les arêtes dans le graphe
         root.getChildren().stream()
-            .filter(edge -> edge instanceof Edge)
-            .forEach(edge -> {
-                Edge e = (Edge) edge;
-                e.setStroke(edgeColor.get());
-                // On doit faire le classement ici ...
-            });
+                .filter(edge -> edge instanceof Edge)
+                .forEach(edge -> {
+                    Edge e = (Edge) edge;
+                    e.setStroke(edgeColor.get());
+                    // On doit faire le classement ici ...
+                });
     }
 
     //////////////////////
@@ -191,7 +203,6 @@ public class Graph implements GraphSettings {
 
     public void handleAbout(ActionEvent event) {
     }
-
 
     @FXML
     private void handleViewChange(ActionEvent event) {
@@ -253,6 +264,53 @@ public class Graph implements GraphSettings {
         graphInit();
         graphContainer.getChildren().clear(); // Nettoyer le conteneur
         graphContainer.getChildren().add(root);
+        /*
+         * AnchorPane.setTopAnchor(root, 0.0);
+         * AnchorPane.setBottomAnchor(root, 0.0);
+         * AnchorPane.setLeftAnchor(root, 0.0);
+         * AnchorPane.setRightAnchor(root, 0.0);
+         */
+
+    }
+
+    /*
+     ** Gère l'action du bouton "Appliquer le degré minimum".
+     * Met à jour le degré minimum et rafraîchit le graphe.
+     * Le degré minimum est défini par un curseur.
+     * Le texte affiché est mis à jour en conséquence.
+     */
+    @FXML
+    private Slider degreeMinSlider;
+    @FXML
+    private Label degreeMinValue;
+    @FXML
+    private ComboBox<String> sizeFilterComboBox;
+    @FXML
+    private CheckBox showIsolatedNodesCheckbox;
+
+    @FXML
+    private void applyMinDegree() {
+        int newDegreeMin = (int) degreeMinSlider.getValue();
+        minimumDegree.set(newDegreeMin);
+        degreeMinValue.setText(String.valueOf(newDegreeMin));
+        System.out.println("Nouveau degré minimum : " + newDegreeMin);
+
+        // Mettre à jour le graphe en fonction du nouveau degré min
+        /* refreshGraph(); */
+    }
+
+    // Réinitialiser les paramètres du graphe
+    @FXML
+    private void resetGraphSettings() {
+        degreeMinSlider.setValue(3);
+        degreeMinValue.setText("3");
+        minimumDegree.set(3);
+
+        sizeFilterComboBox.getSelectionModel().select("Tous");
+        showIsolatedNodesCheckbox.setSelected(true);
+
+        // Rafraîchir l'affichage
+        /* refreshGraph(); */
     }
 
     public Pane getGraphRoot() {
@@ -413,6 +471,10 @@ public class Graph implements GraphSettings {
     private DoubleProperty zoomFactor = new SimpleDoubleProperty(1.0);
     private DoubleProperty translateX = new SimpleDoubleProperty(0.0);
     private DoubleProperty translateY = new SimpleDoubleProperty(0.0);
+    private int compteurNodesReel;
+    private int compteurNodesSup;
+    private int edgesDisplayed;
+    private int edgesDeleted;
 
     public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold,
             NodeCommunity methodCode) {
@@ -429,40 +491,56 @@ public class Graph implements GraphSettings {
     public void graphInit() {
 
         root = new Pane();
+        root.setId("dynamicPane");
+        root.setLayoutX(0);
+        root.setLayoutY(0);
 
-        // Conteneur intermédiaire avec clip
-        Pane clippingContainer = new Pane(root);
-        graphContainer.getChildren().add(clippingContainer);
-
-        // Configuration du clip
-        Rectangle clip = new Rectangle();
-        clip.widthProperty().bind(graphContainer.widthProperty());
-        clip.heightProperty().bind(graphContainer.heightProperty());
-        clippingContainer.setClip(clip);
+        /*
+         * // Conteneur intermédiaire avec clip
+         * Pane clippingContainer = new Pane(root);
+         * graphContainer.getChildren().add(clippingContainer);
+         * 
+         * // Ajuster la taille du clippingContainer
+         * clippingContainer.prefWidthProperty().bind(graphContainer.widthProperty());
+         * clippingContainer.prefHeightProperty().bind(graphContainer.heightProperty());
+         * 
+         * // Configuration du clip
+         * Rectangle clip = new Rectangle();
+         * clip.widthProperty().bind(graphContainer.widthProperty());
+         * clip.heightProperty().bind(graphContainer.heightProperty());
+         * clippingContainer.setClip(clip);
+         */
 
         // Transformations
         scale = new Scale(1.0, 1.0);
         translate = new Translate(0, 0);
         root.getTransforms().addAll(translate, scale);
 
-        // Contrôles des limites
-        scale.xProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal.doubleValue() < 0.1)
-                scale.setX(0.1);
-            if (root.getBoundsInLocal().getWidth() * newVal.doubleValue() < clippingContainer.getWidth()) {
-                scale.setX(clippingContainer.getWidth() / root.getBoundsInLocal().getWidth());
-            }
-        });
+        // S'assurer que root reste visible dans graphContainer
+        /*
+         * AnchorPane.setTopAnchor(clippingContainer, 0.0);
+         * AnchorPane.setLeftAnchor(clippingContainer, 0.0);
+         * AnchorPane.setRightAnchor(clippingContainer, 0.0);
+         * AnchorPane.setBottomAnchor(clippingContainer, 0.0);
+         */
+
+        /*
+         * // Contrôles des limites
+         * scale.xProperty().addListener((obs, oldVal, newVal) -> {
+         * if (newVal.doubleValue() < 0.1)
+         * scale.setX(0.1);
+         * if (root.getBoundsInLocal().getWidth() * newVal.doubleValue() <
+         * clippingContainer.getWidth()) {
+         * scale.setX(clippingContainer.getWidth() /
+         * root.getBoundsInLocal().getWidth());
+         * }
+         * });
+         */
 
         // Définir la couleur de fond
         background_color.addListener((obs, oldValue, newValue) -> {
             scene.setFill(Color.web(newValue));
         });
-
-        // Ajouter les transformations de zoom et de translation
-        scale = new Scale(1.0, 1.0);
-        translate = new Translate(0, 0);
-        root.getTransforms().addAll(translate, scale);
 
         // Ajouter les listeners pour les différents modes du graphe
         isRunMode.addListener((obs, oldValue, newValue) -> {
@@ -490,6 +568,7 @@ public class Graph implements GraphSettings {
 
         // Récupérer les sommets
         List<Vertex> vertices = List.of(getPositions());
+        System.out.println("Nombre de sommets : " + vertices.size());
 
         // Récupérer les couleurs des clusters
         float[][] color = getClusterColors();
@@ -520,6 +599,7 @@ public class Graph implements GraphSettings {
 
             // Ajouter les arêtes à la racine
             root.getChildren().add(e);
+
         }
 
         // Ajuster les rayons des sommets selon leur degré
@@ -542,6 +622,10 @@ public class Graph implements GraphSettings {
             }
 
             List<Vertex> updatedVertices = List.of(getPositions());
+            this.compteurNodesReel = 0;
+            this.compteurNodesSup = 0;
+            this.edgesDisplayed = 0;
+            this.edgesDeleted = 0;
             for (int i = 0; i < updatedVertices.size(); i++) {
                 // Mise à jour des coordonnées des sommets
                 vertices.get(i).updatePosition(updatedVertices.get(i).getX(), updatedVertices.get(i).getY());
@@ -549,19 +633,42 @@ public class Graph implements GraphSettings {
                 // Mise à jour du degré minimum des sommets
                 int min_degree = minimumDegree.get();
                 if (vertices.get(i).getDegree() >= min_degree && !root.getChildren().contains(vertices.get(i))) {
+                    compteurNodesReel++;
                     root.getChildren().add(vertices.get(i));
-                    for (Edge e : vertices.get(i).getEdges())
+                    for (Edge e : vertices.get(i).getEdges()) {
                         if (!root.getChildren().contains(e) && e.getStart().getDegree() >= min_degree
-                                && e.getEnd().getDegree() >= min_degree)
+                                && e.getEnd().getDegree() >= min_degree) {
                             root.getChildren().add(e);
+                        }
+                        edgesDisplayed++;
+                    }
+                    compteurNodesSup = vertices.size() - compteurNodesReel;
+
                 } else if (vertices.get(i).getDegree() < minimumDegree.get()) {
+                    compteurNodesSup++;
                     root.getChildren().remove(vertices.get(i));
-                    for (Edge e : vertices.get(i).getEdges())
+                    for (Edge e : vertices.get(i).getEdges()) {
                         root.getChildren().remove(e);
+                        edgesDeleted++;
+                    }
+                    compteurNodesReel = vertices.size() - compteurNodesSup;
+
+                } else {
+                    compteurNodesReel = vertices.size() - compteurNodesSup;
+                    for (Edge e : vertices.get(i).getEdges()) {
+                        if (!root.getChildren().contains(e) && e.getStart().getDegree() >= min_degree
+                                && e.getEnd().getDegree() >= min_degree) {
+                            root.getChildren().add(e);
+                        }
+                        edgesDisplayed++;
+                    }
                 }
 
             }
-
+            // Met à jour dynamiquement l'affichage des statistiques
+            updateStatistics();
+            System.out.println("Nombre de sommets affichés : " + compteurNodesReel);
+            System.out.println("Nombre de sommets supprimés : " + compteurNodesSup);
             System.out.println("Refresh");
         });
 
@@ -587,6 +694,18 @@ public class Graph implements GraphSettings {
         setUpscale(5); // Facteur d'agrandissement pour le graphe
         setInitialNodeSize(3); // Taille initiale d'un sommet
         setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un sommet
+    }
+
+    // Méthode pour mettre à jour dynamiquement les statistiques affichées
+    private void updateStatistics() {
+        nodesDisplayedLabel.setText(String.valueOf(compteurNodesReel));
+        System.out.println("update af  : " + compteurNodesReel);
+        nodesDeletedLabel.setText(String.valueOf(compteurNodesSup));
+        System.out.println("update sup : " + compteurNodesSup);
+
+        edgesDisplayedLabel.setText(String.valueOf(edgesDisplayed));
+        edgesDeletedLabel.setText(String.valueOf(edgesDeleted));
+        totalElementsLabel.setText(String.valueOf(compteurNodesReel + compteurNodesSup));
     }
 
     /**
