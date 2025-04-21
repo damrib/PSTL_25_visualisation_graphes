@@ -25,8 +25,9 @@ int modeA=0; //mode pour afficher des noeuds en fonction de classe
 int iteration = 0;
 double Max_movementOld = 0;
 int max_iterations = 5000;
-
 short pause_updates = 0;
+
+jobjectArray names;
 
 #ifdef _DEBUG_
   int cpt_samples = 0;
@@ -190,12 +191,12 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getEdges
     
     jobjectArray result = (*env)->NewObjectArray(env, num_edges, obj_class, initial_elem);
 
-    printf("arete %d %d\n", num_edges, num_antiedges);
-
     for (int i = 0; i < num_edges; ++i)
     {
         int node1 = edges[i].node1;
         int node2 = edges[i].node2;
+        //if ( node1 < 0 || node2 < 0 )
+          //printf("%d -- %d\n", node1, node2);
         double weight = edges[i].weight;
         jobject edge = (*env)->NewObject(env, obj_class, edge_constructor, node1, node2, weight);
     
@@ -233,9 +234,11 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
     srand(time(NULL));
 
     jboolean b = JNI_FALSE;
-    const char* str = (*env)->GetStringUTFChars(env, filepath, &b);
+    const char* str = (*env)->GetStringUTFChars(env, filepath, &b); 
 
     load_csv_data(str);
+
+    (*env)->ReleaseStringUTFChars(env, filepath, str);
 
     jclass obj_class = (*env)->FindClass(env, "[D");
     jobjectArray result = (*env)->NewObjectArray(env, num_rows, obj_class, 0);
@@ -247,8 +250,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
 
         (*env)->SetObjectArrayElement(env, result, i, double_array);
     }
-
-    (*env)->ReleaseStringUTFChars(env, filepath, str); 
 
     return result;
 
@@ -301,6 +302,56 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
     return res;
 }
 
+JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
+  (JNIEnv *env, jobject obj, jstring filepath, jint md)
+{
+  srand(time(NULL));
+
+  jboolean b = JNI_FALSE;
+  const char* str = (*env)->GetStringUTFChars(env, filepath, &b);
+
+  parse_dot_file(str);
+  compact_label();
+
+  modeA=0;
+  if (md == 0) {
+      num_communities = louvain_method();
+  } else if (md == 1) {
+      num_communities = louvain_methodC();
+  } else if (md == 2) {
+      num_communities = leiden_method();
+  } else if (md == 3) {
+      num_communities = leiden_method_CPM();
+  } else if (md == 4) {
+      // TODO 
+      //int nbValeurs;
+      //int S[MAX_NODES]={0};
+      num_communities = leiden_method_CPM();
+      // Demander le chemin du fichier à l'utilisateur
+      lireColonneCSV(S, &nbValeurs);
+      // Afficher les valeurs lues
+      printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
+      modeA = 1;
+      compute_ratio_S(S);
+  } else {
+      printf("Option invalide\n");
+  }
+
+  initialize_community_colors();
+  compute_average_vectors();
+  
+  for (int i = 0; i < num_nodes; i++) {
+    random_point_in_center(i);
+  }
+
+  jclass res_class = (*env)->FindClass(env, "graph/Metadata");
+  jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDD)V");
+  jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, 0., 0., 0.);
+
+  (*env)->ReleaseStringUTFChars(env, filepath, str); 
+
+  return res;
+}
 
 JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
   (JNIEnv *env, jobject obj, jint md, jdouble thresh, jdouble anti_thresh)
@@ -318,6 +369,13 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
     #else
         calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
     #endif
+
+    for (int i = 0; i < num_rows; i++) {
+      free(similarity_matrix[i]);
+    }
+    free(similarity_matrix);
+
+    printf("\n\nHELP\n\n");
 
     modeA=0;
     if (md == 0) {
@@ -344,6 +402,8 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
     }
     initialize_community_colors();
 
+    printf("\n\nHELP\n\n");
+
     #ifdef _DEBUG_
         printf("Fin Calcul Communaute");
     #endif
@@ -369,6 +429,8 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDIII)V");
     jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, thresh, anti_thresh, num_edges, num_antiedges, n_clusters);
 
+    printf("\n\nHelp\n\n");
+
     return res;   
 
 }
@@ -387,11 +449,6 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
         }
     }
     free_clusters();
-
-    for (int i = 0; i < num_rows; i++) {
-      free(similarity_matrix[i]);
-    }
-    free(similarity_matrix);
 
     FreePool(&pool);
 
@@ -486,4 +543,16 @@ JNIEXPORT void JNICALL Java_graph_Graph_SetNumberClusters
     initialize_centers();
     assign_cluster_colors();
   }
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_deleteNode
+  (JNIEnv * env, jobject obj, int index)
+{
+  vertices[index].deleted = 1;
+}
+
+JNIEXPORT void JNICALL Java_graph_Graph_restoreNode
+(JNIEnv * env, jobject obj, int index)
+{
+  vertices[index].deleted = 0;
 }

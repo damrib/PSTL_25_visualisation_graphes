@@ -6,6 +6,7 @@ double **data = NULL;
 int num_rows = 0, num_columns = 0;
 char delimiter[1] = "\0";
 int S[MAX_NODES]={0};
+char *node_names[MAX_NODES];
 
 short str_is_number(char* line)
 {
@@ -173,73 +174,211 @@ void lireColonneCSV(int *S,int *nbValeurs) {
     fclose(fichier);
 }
 
+void split_str(char * line, size_t size, char* delimiters, int nb_delimiter) {
+    
+    for (int i = 0; i < size; ++i) {
+
+        for (int j = 0; j < nb_delimiter; ++j) {
+            if ( *line == delimiters[j] ) {
+                *line = '\0';
+            }
+        }
+        ++line;
+    }
+
+}
+
+char* next_str(char** line, size_t* s) {
+
+    while ( **line == '\0' ) { 
+        ++*line; 
+        --*s;
+    }
+
+    char * start = *line;
+    int cpt = 0;
+    while ( **line != '\0' && *s > 0) {
+        ++cpt;
+        ++*line;
+        --*s;
+    }
+
+    char* res = NULL;
+    if ( cpt != 0 ) {
+
+        res = (char*) malloc(sizeof(char) * (cpt + 1));
+        for (int i = 0; i < cpt; ++i) {
+            res[i] = start[i];
+        }
+        res[cpt] = '\0';
+    }
+
+    return res;
+}
+
+char* find_parameter(char** line, const char* parameter, size_t* size) {
+
+    while (*size > 0) {
+        char* next = next_str(line, size);
+
+        if ( *size > 0 && strcmp(next, parameter) == 0 ) {
+            printf("parameter: %s %ld\n", next, *size);
+            return next_str(line, size);
+        }
+    }
+    
+    return NULL;
+}
+
+int hash_string(char* label) {
+
+    int cpt = 0;
+    while ( *label != '\0' ) {
+        cpt += (int) *label;
+        ++label;
+    }
+
+    return cpt;
+}
+
+int put_node_names(int index, char *label) {
+
+    index = index % MAX_NODES;
+    int cpt = 0;
+    while ( node_names[index] != NULL ) {
+        if ( strcmp(node_names[index], label) == 0 ) {
+            free(label);
+            return index;
+        }
+
+        index = (index + 1) % MAX_NODES;
+
+        if ( ++cpt == MAX_NODES ) {
+            free(label);
+            return -1;
+        }
+    }
+
+    node_names[index] = label;
+    ++num_nodes;
+
+    return index;
+}
+
+void parse_dot_line(char * ptr, size_t size) {
+
+    int node1 = -1, node2;
+    double weight = 1.0;
+
+    if ( strstr(ptr, "->") || strstr(ptr, "--") ) {
+        char delimiters[5] = {' ', '[', ']', '=', ';'};
+
+        split_str(ptr, size, delimiters, 5);
+            
+        // reading the first node label
+        char* next = next_str(&ptr, &size);
+        if ( next != NULL )
+            node1 = put_node_names(hash_string(next), next);
+        if ( node1 == -1 ) { 
+            fprintf(stderr, "Warning: Maximum number of nodes reached\n");
+            return ; 
+        }
+            
+        // we can ignore it as it should be either "->" or "--"
+        next = next_str(&ptr, &size);
+        free(next); 
+
+
+        next = next_str(&ptr, &size);
+        if ( next != NULL )
+            node2 = put_node_names(hash_string(next), next);
+        if ( node2 == -1 ) { 
+            fprintf(stderr, "Warning: Maximum number of nodes reached\n");
+            return ; 
+        }
+
+        next = find_parameter(&ptr, "weight", &size);
+        if ( next != NULL ) {
+            sscanf(next, "%lf", &weight);
+            free(next);
+        }
+        
+        if ( num_edges < MAX_EDGES ) {
+            edges[num_edges].node1 = node1;
+            edges[num_edges].node2 = node2;
+            edges[num_edges].weight = weight;
+
+            ++num_edges;
+        } else {
+            fprintf(stderr, "Warning: Number of edges exceeds MAX_EDGES\n");
+            return ;
+        }
+            
+    }
+
+}
+
 void parse_dot_file(const char *filename) {
-    printf("fichier %s bientôt ouvert",filename);
-    fflush(stdout);
     FILE *file = fopen(filename, "r");
+    printf("%s\n", filename);
     if (file == NULL) {
         perror("Error opening file");
-        return;
+        exit(1);
     }
 
-    char line[10000];
-    //int current_node = 0;
-    printf("fichier %s ouvert",filename);
-    fflush(stdout);
-    while (fgets(line, sizeof(line), file)) {
-        // Remove leading and trailing whitespace
-        char *start = line;
-        while (isspace(*start)) start++;
-        char *end = start + strlen(start) - 1;
-        while (end > start && isspace(*end)) end--;
-        *(end + 1) = '\0';
-
-        int node1, node2;
-        double weight = 1.0; // Default weight if not provided
-
-        // Check for directed edges (->)
-        if (strstr(start, "->")) {
-            // Extract nodes for directed edge
-            if (sscanf(start, "%d -> %d", &node1, &node2) == 2) {
-                // Update num_nodes
-                if (node1 >= num_nodes) num_nodes = node1 + 1;
-                if (node2 >= num_nodes) num_nodes = node2 + 1;
-
-                // Add directed edge
-                if (num_edges < MAX_EDGES) {
-                    edges[num_edges].node1 = node1;
-                    edges[num_edges].node2 = node2;
-                    edges[num_edges].weight = weight;
-                    num_edges++;
-                } else {
-                    fprintf(stderr, "Warning: Number of edges exceeds MAX_EDGES\n");
-                }
-            } else {
-                fprintf(stderr, "Warning: Failed to parse directed edge line: %s\n", start);
-            }
-        }
-        // Check for undirected edges (--)
-        else if (strstr(start, "--")) {
-            // Extract nodes for undirected edge
-            if (sscanf(start, "%d -- %d", &node1, &node2) == 2) {
-                // Update num_nodes
-                if (node1 >= num_nodes) {num_nodes = node1 + 1;}
-                if (node2 >= num_nodes) {num_nodes = node2 + 1;}
-
-                // Add undirected edge (could be treated the same as directed in storage)
-                if (num_edges < MAX_EDGES) {
-                    edges[num_edges].node1 = node1;
-                    edges[num_edges].node2 = node2;
-                    edges[num_edges].weight = weight;
-                    num_edges++;
-                } else {
-                    fprintf(stderr, "Warning: Number of edges exceeds MAX_EDGES\n");
-                }
-            } else {
-                fprintf(stderr, "Warning: Failed to parse undirected edge line: %s\n", start);
-            }
-        }
+    for (int i = 0; i < MAX_NODES; ++i){
+        node_names[i] = NULL;
     }
+
+    char* line = NULL;
+    size_t size = 0;
+
+    while ( getline(&line, &size, file) != -1 ) {
+        parse_dot_line(line, size);
+        free(line);
+        line = NULL;
+    }
+
+    printf("FIN: %d", num_nodes);
+    fflush(NULL);
 
     fclose(file);
+}
+
+void replace_edge_index(int index, int new_id) {
+
+    for (int i = 0; i < num_edges; ++i) {
+        if ( edges[i].node1 == index ) {
+            edges[i].node1 = new_id;
+        } 
+        if ( edges[i].node2 == index ) {
+            edges[i].node2 = new_id;
+        }
+    }
+
+}
+
+void compact_label() {
+
+    int cpt = 0;
+    for (int i = 0; i < MAX_NODES && cpt < num_nodes; ++i) {
+
+        if ( node_names[i] == NULL ) {
+
+            int flag = 1;
+            for (int j = i + 1; flag && j < MAX_NODES; ++j) {
+                if ( node_names[j] != NULL ) {
+                    node_names[i] = node_names[j];
+                    node_names[j] = NULL;
+                    replace_edge_index(j, i);
+                    flag = 0;
+                }
+            }
+
+        }
+
+        cpt += 1;
+
+    }
+
 }

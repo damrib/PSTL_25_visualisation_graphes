@@ -388,7 +388,7 @@ void add_edge_to_adjacency_list(int node, int neighbor, double weight) {
 
 // Fonction pour marquer une composante (DFS ou BFS)
 // Fonction DFS pour marquer les nœuds d'une composante
-void mark_component(int node, int component) {
+/*void mark_component(int node, int component) {
     // Marquer le nœud comme appartenant à la composante courante
     node_community_map[node].component = component;
     component_sizes[component]++;  // Incrémenter la taille de la composante
@@ -403,6 +403,65 @@ void mark_component(int node, int component) {
         }
         neighbor = neighbor->next;
     }
+}*/
+
+void push(int** next_nodes, int* size, int* capacity, int node) {
+    if ( *size >= *capacity - 2 ) {
+        *capacity *= 2;
+        int* new_next;
+        new_next = realloc(*next_nodes, sizeof(int) * *capacity);
+        *next_nodes = new_next;
+    }
+    (*next_nodes)[(*size)++] = node;
+}
+
+int pop(int** next_nodes, int* size, int* capacity) {
+    if ( *size < *capacity / 4 - 1) {
+        int* new_next;
+        *capacity /= 2;
+
+        new_next = realloc(*next_nodes, sizeof(int) * *capacity);
+        *next_nodes = new_next;
+    }
+
+    return (*next_nodes)[--*size];
+}
+
+void mark_component(int node, int component) {
+
+    // we simulate the stack of recursive function with this array
+    int length_next = 4;
+    int * next_nodes = (int*) calloc(length_next, sizeof(int));
+    next_nodes[0] = node;
+    int size = 1;
+
+
+    while ( size > 0 ) {
+        int next_node = pop(&next_nodes, &size, &length_next);
+        node_community_map[next_node].component = component;
+        component_sizes[component]++;  // Incrémenter la taille de la composante
+
+        Neighbor* neighbor = adjacency_list[next_node].head;
+        if ( neighbor != NULL ) {
+            int neighbor_node = neighbor->node;
+
+            while ( neighbor->next != NULL ) {
+                neighbor = neighbor->next;
+                int next_neighbor = neighbor->node;
+                if ( node_community_map[next_neighbor].component == -1 ) {
+                    push(&next_nodes, &size, &length_next, next_neighbor);
+                }
+            }
+
+            if ( node_community_map[neighbor_node].component == -1 ) {
+                push(&next_nodes, &size, &length_next, neighbor_node);
+            }
+
+        }
+              
+    }
+
+    free(next_nodes);
 }
 
 // Fonction pour compter et retourner le nombre de communautés uniques

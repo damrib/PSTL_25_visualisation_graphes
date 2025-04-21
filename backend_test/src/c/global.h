@@ -4,8 +4,8 @@
 #include <jni.h>
 #include "c_graph/graph.h"
 
-#define MAX_NODES 50000
-#define MAX_EDGES 1000000
+#define MAX_NODES 100000
+#define MAX_EDGES 150000
 
 extern Edge edges[MAX_EDGES]; // Pour les arêtes normales
 extern char *node_names[MAX_NODES]; // Array to store node names as strings      
@@ -80,6 +80,7 @@ extern double **data;  // Stocker les données CSV
 extern int num_rows, num_columns;
 extern char delimiter[1];
 extern int S[MAX_NODES];
+
 
 #include "pretraitement/similarity.h"
 

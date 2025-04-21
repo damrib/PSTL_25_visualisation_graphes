@@ -71,6 +71,39 @@ void initialize_centers_plus() {
 
 }
 
+int grid_clustering(
+    int num_points, 
+    int num_clusters, 
+    int *labels, 
+    double Lx, 
+    double Ly,
+    double threshold) {
+
+    int grid_length = (int) sqrt(num_clusters); 
+
+    int empty_counter = grid_length * grid_length;
+    int* grid_contains = (int*) calloc(sizeof(int),empty_counter);
+
+    double grid_width = Lx / grid_length;
+    double grid_height = Ly / grid_length;
+
+    for (int i = 0; i < num_points; ++i) {
+        if ( vertices[i].deleted == 0 ) {
+            int grid_i = vertices[i].x / grid_width;
+            int grid_j = vertices[i].y / grid_height;
+
+            labels[i] = grid_i * grid_length + grid_j;
+
+            if ( grid_contains[labels[i]] == 0 ) {
+                grid_contains[labels[i]] = 1;
+                --empty_counter;
+            }
+        }
+    }
+
+    return empty_counter > threshold;
+}
+
 struct map_arguments {
     int num_clusters;
     double Lx, Ly;
@@ -222,22 +255,25 @@ void kmeans_iteration(int num_points, int num_clusters, int *labels, double cent
 
     // Assigner chaque point au cluster le plus proche et mettre à jour les centres
     for (int i = 0; i < num_points; i++) {
-        struct map_arguments * arguments = (struct map_arguments*) malloc(sizeof(struct map_arguments));
-        arguments->Lx = Lx;
-        arguments->Ly = Ly;
-        arguments->vertex_index = i;
-        arguments->counts = counts;
-        arguments->new_centers = new_centers;
-        arguments->labels = labels;
-        arguments->num_clusters = num_clusters;
-        arguments->barrier = &bar;
-        arguments->lock = &lck;
+        if ( vertices[i].deleted == 0 ) {
+            struct map_arguments * arguments = (struct map_arguments*) malloc(sizeof(struct map_arguments));
+            arguments->Lx = Lx;
+            arguments->Ly = Ly;
+            arguments->vertex_index = i;
+            arguments->counts = counts;
+            arguments->new_centers = new_centers;
+            arguments->labels = labels;
+            arguments->num_clusters = num_clusters;
+            arguments->barrier = &bar;
+            arguments->lock = &lck;
 
-        struct Job task;
-        task.j = kmeans_map;
-        task.args = arguments;
-        submit(&pool, task);
-
+            struct Job task;
+            task.j = kmeans_map;
+            task.args = arguments;
+            submit(&pool, task);
+        } else {
+            decrement_barrier(&bar, 1);
+        }
     }
 
     wait_barrier(&bar);   
@@ -279,42 +315,44 @@ void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY)
         for (int i = 0; i < size; i++) {
             int node_i = cluster_nodes[cluster].nodes[i];
     
-            Point pi = vertices[i];
-            for (int j = i + 1; j < size; j++) {
-                int node_j = cluster_nodes[cluster].nodes[j];
-                Point dir;
-                toroidal_vector(&dir, pi, vertices[i]);
-    
-                double dist_squared = dir.x * dir.x + dir.y * dir.y;
-                if (dist_squared > seuilrep) { // Assume a minimum distance to avoid division by zero
-                    //double dist = sqrt(dist_squared);
-                    
-                    double rep_force;
-                    if ( mode == 1 ) { 
-                        rep_force = repulsion_coeff/ (dist_squared*dist_squared);
-                    } else if (mode == 2 && communities[i] != communities[j]) {//printf("extra repulsion %d, %d \n",i,j);
-                        rep_force = 100000*repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;
-                    } else { // mode == 0 est le mode par defaut
-                            rep_force = repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;
-                    } 
-                                        
-                    forces[node_i].x -= dir.x * rep_force;
-                    forces[node_i].y -= dir.y * rep_force;
-                    forces[node_j].x += dir.x * rep_force;
-                    forces[node_j].y += dir.y * rep_force;
-                } else {
-                    double rep_force = repulsion_coeff / seuilrep;
-                                        
-                    forces[node_i].x -= dir.x * rep_force;
-                    forces[node_i].y -= dir.y * rep_force;
-                    forces[node_j].x += dir.x * rep_force;
-                    forces[node_j].y += dir.y * rep_force;
+            Point pi = vertices[node_i];
+            if ( pi.deleted == 0 ) {
+                for (int j = i + 1; j < size; j++) {
+                    int node_j = cluster_nodes[cluster].nodes[j];
+                    Point dir;
+                    toroidal_vector(&dir, pi, vertices[node_j]);
+        
+                    double dist_squared = dir.x * dir.x + dir.y * dir.y;
+                    if (dist_squared > seuilrep) { // Assume a minimum distance to avoid division by zero
+                        //double dist = sqrt(dist_squared);
+                        
+                        double rep_force;
+                        if ( mode == 1 ) { 
+                            rep_force = repulsion_coeff/ (dist_squared*dist_squared);
+                        } else if (mode == 2 && communities[i] != communities[j]) {//printf("extra repulsion %d, %d \n",i,j);
+                            rep_force = 100000*repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;
+                        } else { // mode == 0 est le mode par defaut
+                                rep_force = repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;
+                        } 
+                                            
+                        forces[node_i].x -= dir.x * rep_force;
+                        forces[node_i].y -= dir.y * rep_force;
+                        forces[node_j].x += dir.x * rep_force;
+                        forces[node_j].y += dir.y * rep_force;
+                    } else {
+                        double rep_force = repulsion_coeff / seuilrep;
+                                            
+                        forces[node_i].x -= dir.x * rep_force;
+                        forces[node_i].y -= dir.y * rep_force;
+                        forces[node_j].x += dir.x * rep_force;
+                        forces[node_j].y += dir.y * rep_force;
+                    }
                 }
+                    // capper les forces d'attractions
+            forces[node_i].x = fmax(fmin(forces[node_i].x, FMaxX), -FMaxX);
+            forces[node_i].y = fmax(fmin(forces[node_i].y, FMaxY), -FMaxY);
+        
             }
-                // capper les forces d'attractions
-        forces[node_i].x = fmax(fmin(forces[node_i].x, FMaxX), -FMaxX);
-        forces[node_i].y = fmax(fmin(forces[node_i].y, FMaxY), -FMaxY);
-    
         }
     }
 
@@ -340,7 +378,9 @@ void update_clusters()
 
         for (int i = 0; i < num_nodes; i++) {
             int best_cluster = clusters[i];
-            add_node_to_cluster(best_cluster, i);
+            if ( vertices[i].deleted == 0 ) {
+                add_node_to_cluster(best_cluster, i);
+            }
         }
     }
 

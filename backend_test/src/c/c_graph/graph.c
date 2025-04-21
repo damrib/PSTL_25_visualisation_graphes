@@ -3,8 +3,7 @@
 
 Point vertices[MAX_NODES];
 
-Edge edges[MAX_EDGES]; // Pour les arêtes normales
-char *node_names[MAX_NODES]; // Array to store node names as strings      
+Edge edges[MAX_EDGES]; // Pour les arêtes normales     
 Point velocities[MAX_NODES];
 int node_degrees[MAX_NODES];
 
@@ -41,22 +40,32 @@ double toroidal_distance(Point p1, Point p2) {
 }
 
 // Calculer les degrés de chaque noeud
+// Works with dot files
 void calculate_node_degrees(void) {
     for (int i = 0; i < num_nodes; i++) {
         node_degrees[i] = 0;
     }
+
     for (int i = 0; i < num_edges; i++) {
-        node_degrees[edges[i].node1]++;
-        node_degrees[edges[i].node2]++;
+        int node1 = edges[i].node1;
+        int node2 = edges[i].node2;
+
+        if ( vertices[node1].deleted == 0 && vertices[node2].deleted == 0) {
+            node_degrees[node1]++;
+            node_degrees[node2]++;
+        }
     }
+
 }
 
 // Générer un point aléatoire près du centre
 void random_point_in_center(int index) {
+    //printf("%d\n", index);
     double center_width = Lx * 0.5;
     double center_height = Ly * 0.5;
     vertices[index].x = (rand() / (double)RAND_MAX) * center_width - center_width / 2;
     vertices[index].y = (rand() / (double)RAND_MAX) * center_height - center_height / 2;
+    vertices[index].deleted = 1;
 }
 
 void translate_positions(double dx, double dy) {
@@ -86,17 +95,19 @@ void repulsion_edges(Point* forces)
         int node1 = edges[edge_index].node1;
         int node2 = edges[edge_index].node2;
     
-        Point dir;
-        toroidal_vector(&dir, vertices[node1], vertices[node2]);
-    
-        double dist_squared = dir.x * dir.x + dir.y * dir.y;
-        double att_force = attraction_coeff; //*dist_squared;
+        if ( vertices[node1].deleted == 0 && vertices[node2].deleted == 0 ) {
+            Point dir;
+            toroidal_vector(&dir, vertices[node1], vertices[node2]);
         
-        if (dist_squared > thresholdA) {            
-            forces[node1].x += dir.x * att_force;
-            forces[node1].y += dir.y * att_force;
-            forces[node2].x -= dir.x * att_force;
-            forces[node2].y -= dir.y * att_force;
+            double dist_squared = dir.x * dir.x + dir.y * dir.y;
+            double att_force = attraction_coeff; //*dist_squared;
+            
+            if (dist_squared > thresholdA) {            
+                forces[node1].x += dir.x * att_force;
+                forces[node1].y += dir.y * att_force;
+                forces[node2].x -= dir.x * att_force;
+                forces[node2].y -= dir.y * att_force;
+            }
         }
     }
 
@@ -111,23 +122,25 @@ void repulsion_anti_edges(Point* forces)
         int node1 = antiedges[edge_index].node1;
         int node2 = antiedges[edge_index].node2;
     
-        Point dir;
-        toroidal_vector(&dir, vertices[node1], vertices[node2]);
-    
-        double dist = sqrt(dir.x * dir.x + dir.y * dir.y);
-        if (dist > seuilrep) {
-            double rep_force = coeff_antiarete/(dist*dist);
-            forces[node1].x -= (dir.x / dist) * rep_force;
-            forces[node1].y -= (dir.y / dist) * rep_force;
-            forces[node2].x += (dir.x / dist) * rep_force;
-            forces[node2].y += (dir.y / dist) * rep_force;
-        } else {
-            double rep_force = coeff_antiarete/ seuilrep;
-                                        
-            forces[node1].x -= dir.x * rep_force;
-            forces[node1].y -= dir.y * rep_force;
-            forces[node2].x += dir.x * rep_force;
-            forces[node2].y += dir.y * rep_force;
+        if ( vertices[node1].deleted == 0 && vertices[node2].deleted == 0 ) {
+            Point dir;
+            toroidal_vector(&dir, vertices[node1], vertices[node2]);
+        
+            double dist = sqrt(dir.x * dir.x + dir.y * dir.y);
+            if (dist > seuilrep) {
+                double rep_force = coeff_antiarete/(dist*dist);
+                forces[node1].x -= (dir.x / dist) * rep_force;
+                forces[node1].y -= (dir.y / dist) * rep_force;
+                forces[node2].x += (dir.x / dist) * rep_force;
+                forces[node2].y += (dir.y / dist) * rep_force;
+            } else {
+                double rep_force = coeff_antiarete/ seuilrep;
+                                            
+                forces[node1].x -= dir.x * rep_force;
+                forces[node1].y -= dir.y * rep_force;
+                forces[node2].x += dir.x * rep_force;
+                forces[node2].y += dir.y * rep_force;
+            }
         }
     }
 
@@ -142,24 +155,26 @@ double update_position_forces(Point* forces, double PasMaxX, double PasMaxY, dou
 
     double new_max_movement = 0.0;
     for (int i = 0; i < num_nodes; i++) {
-        velocities[i].x = (velocities[i].x + forces[i].x) * friction;
-        velocities[i].y = (velocities[i].y + forces[i].y) * friction;
-        velocities[i].x = fmin(fmax(velocities[i].x, -PasMaxX), PasMaxX); // Capper la force en x à 1
-        velocities[i].y = fmin(fmax(velocities[i].y, -PasMaxY), PasMaxY); // Capper la force en y à 1
+        if ( vertices[i].deleted == 0 ) {
+            velocities[i].x = (velocities[i].x + forces[i].x) * friction;
+            velocities[i].y = (velocities[i].y + forces[i].y) * friction;
+            velocities[i].x = fmin(fmax(velocities[i].x, -PasMaxX), PasMaxX); // Capper la force en x à 1
+            velocities[i].y = fmin(fmax(velocities[i].y, -PasMaxY), PasMaxY); // Capper la force en y à 1
 
-        double x = vertices[i].x + velocities[i].x;
-        double y = vertices[i].y + velocities[i].y;
-        // Appliquer les conditions aux limites toroïdales
+            double x = vertices[i].x + velocities[i].x;
+            double y = vertices[i].y + velocities[i].y;
+            // Appliquer les conditions aux limites toroïdales
 
-        while ( x < -half_Lx) { x += Lx; }
-        while ( x > half_Lx)  { x -= Lx; }
-        while ( y < -half_Ly) { y += Ly; }
-        while ( y > half_Ly)  { y -= Ly; }
+            while ( x < -half_Lx) { x += Lx; }
+            while ( x > half_Lx)  { x -= Lx; }
+            while ( y < -half_Ly) { y += Ly; }
+            while ( y > half_Ly)  { y -= Ly; }
 
-        vertices[i].x = x;
-        vertices[i].y = y;
+            vertices[i].x = x;
+            vertices[i].y = y;
 
-        new_max_movement = fmax(Max_movement, velocities[i].x * velocities[i].x + velocities[i].y * velocities[i].y);
+            new_max_movement = fmax(Max_movement, velocities[i].x * velocities[i].x + velocities[i].y * velocities[i].y);
+        }
     }
 
     return new_max_movement;
@@ -184,53 +199,27 @@ struct similarity_args {
     Barrier barrier;
 };
 
-void similarity_job(void * args){
+void similarity_job(void *args) {
+    struct similarity_args *data = (struct similarity_args*) args;
 
-    struct similarity_args * data = (struct similarity_args*) args;
+    for (int j = data->row + 1; j < num_rows; ++j) {
+        double similarity = similarity_matrix[data->row][j]; 
 
-    for ( int j = data->row + 1; j < num_rows; ++j)
-    {
-        double similarity = 0.0;
-
-        switch (data->choice) {
-            case 0:  // Corrélation
-                similarity = correlation_similarity(data->row, j);
-                break;
-            case 1:  // Distance Cosinus
-                similarity = cosine_similarity(data->row, j);
-                break;
-            case 2:  // Distance Euclidienne
-                similarity = euclidean_distance(data->row, j);
-                break;
-            case 3:  // Norme L1
-                similarity = L1_norm(data->row, j);
-                break;
-            case 4:  // Norme Linf
-                similarity = Linf_norm(data->row, j);
-                break;
-            case 5:  // KL Div
-                similarity = KL_divergence(data->row, j);
-                break;
-            default:
-                printf("Choix non valide.\n");
-        }
-        
         if (similarity > data->threshold && num_edges < MAX_EDGES) {
             int edge_index = incr_or_max(&num_edges, MAX_EDGES);
-            if ( edge_index < MAX_EDGES ){
+            if (edge_index < MAX_EDGES) {
                 edges[edge_index].node1 = data->row;
                 edges[edge_index].node2 = j;
                 edges[edge_index].weight = similarity;
             }
         } else if (similarity < data->antiseuil && num_antiedges < MAX_EDGES) {
             int antiedge_index = incr_or_max(&num_antiedges, MAX_EDGES);
-            if ( antiedge_index < MAX_EDGES ){
+            if (antiedge_index < MAX_EDGES) {
                 antiedges[antiedge_index].node1 = data->row;
                 antiedges[antiedge_index].node2 = j;
                 antiedges[antiedge_index].weight = similarity;
             }
         }
-
     }
 
     decrement_barrier(data->barrier, 1);
@@ -263,5 +252,5 @@ void calculate_similitude_and_edges(int md, double threshold, double antiseuil) 
     }
     // main thread wait for the thread to finish processing the previous calculation
     wait_barrier(&bar);
-
+    printf("\n\nHELP\n\n");
 }

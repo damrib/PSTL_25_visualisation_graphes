@@ -117,7 +117,9 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
         for (int bin = 0; bin < NUM_BINS; bin++) {
             histogram[bin] += thread_histograms[t][bin];
         }
+        free(thread_histograms[t]);
     }
+    free(thread_histograms);
 
     double somme = 0.0;
     int count = 0;
@@ -136,6 +138,7 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
 
     return (count > 0) ? somme / count : 0.0;
 }
+
 // Calcul de la corrélation entre deux vecteurs
 double correlation_similarity(int i, int j) {
     double mean_i = 0.0, mean_j = 0.0;

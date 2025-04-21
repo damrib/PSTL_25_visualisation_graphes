@@ -16,6 +16,7 @@ typedef struct {
 typedef struct {
     double x;
     double y;
+    short deleted;
 } Point;
 
 // Calculer un vecteur avec un enroulement toroïdal
