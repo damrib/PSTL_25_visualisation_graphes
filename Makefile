@@ -1,11 +1,8 @@
-CC = gcc-14
-FLAGS = -Wall -g -lGL -lGLU -lglut -fPIC -lm -lc -shared
-JNI_FLAGS = -I/usr/lib/jvm/java-21-openjdk-amd64/include -I/usr/lib/jvm/java-21-openjdk-amd64/include/linux -fPIC
-
+CC = gcc
+#FLAG est envoyé par le bash script "build.sh" comme cela depend de l'OS
+JNI_FLAGS = -I$(shell /usr/libexec/java_home)/include -I$(shell /usr/libexec/java_home)/include/darwin -fPIC
 SRC_DIR = src
 OUT_DIR = out
-
-JAVAFX_DIR = lib/javafx-sdk-23.0.2/lib
 JAVAFX_MODULES = javafx.controls,javafx.fxml
 
 GRAPH_JAVA = $(SRC_DIR)/*/*.java
