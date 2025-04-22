@@ -65,9 +65,9 @@ JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
    static Point forces[MAX_NODES] = {0};
 
    if ( pause_updates == 0 ){
-        repulsion_edges(forces);
+        parallel_repulsion_edges(forces);
         repulsion_intra_clusters(forces, FMaxX, FMaxY);
-        repulsion_anti_edges(forces);
+        parallel_repulsion_anti_edges(forces);
         
         Max_movementOld = Max_movement;
         Max_movement = update_position_forces(forces, PasMaxX, PasMaxY, Max_movement);
@@ -122,9 +122,9 @@ JNIEXPORT void JNICALL Java_graph_Graph_testUpdatePosition
     double PasMaxY = Ly / 10.;
 
 
-    repulsion_edges(forces);
+    parallel_repulsion_edges(forces);
     repulsion_intra_clusters(forces, FMaxX, FMaxY);
-    repulsion_anti_edges(forces);
+    parallel_repulsion_anti_edges(forces);
     Max_movementOld = Max_movement;
     Max_movement = update_position_forces(forces, PasMaxX, PasMaxY, Max_movement);
     

@@ -27,7 +27,9 @@ void translate_positions(double dx, double dy);
 double toroidal_distance(Point p1, Point p2);
 
 // Fonction update_position
+void parallel_repulsion_edges(Point* forces);
 void repulsion_edges(Point* forces);
+void parallel_repulsion_anti_edges(Point* forces);
 void repulsion_anti_edges(Point* forces);
 double update_position_forces(Point* forces, double PasMaxX, double PasMaxY, double Max_movement);
 void normalize(Point *p);

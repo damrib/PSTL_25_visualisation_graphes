@@ -84,15 +84,20 @@ int grid_clustering(
     int empty_counter = grid_length * grid_length;
     int* grid_contains = (int*) calloc(sizeof(int),empty_counter);
 
+    double center_width = Lx * 0.5;
+    double center_height = Ly * 0.5;
+
     double grid_width = Lx / grid_length;
     double grid_height = Ly / grid_length;
 
     for (int i = 0; i < num_points; ++i) {
         if ( vertices[i].deleted == 0 ) {
-            int grid_i = vertices[i].x / grid_width;
-            int grid_j = vertices[i].y / grid_height;
+            double x = vertices[i].x + center_width / 2 < 0 ? 0 : vertices[i].x + center_width / 2;
+            double y = vertices[i].y + center_height / 2 < 0 ? 0 : vertices[i].y + center_height / 2;
+            int grid_i = x / grid_width;
+            int grid_j = y / grid_height;
 
-            labels[i] = grid_i * grid_length + grid_j;
+            labels[i] = grid_j * grid_length + grid_i;
 
             if ( grid_contains[labels[i]] == 0 ) {
                 grid_contains[labels[i]] = 1;
@@ -100,6 +105,8 @@ int grid_clustering(
             }
         }
     }
+
+    free(grid_contains);
 
     return empty_counter > threshold;
 }
@@ -363,7 +370,7 @@ void repulsion_intra_clusters(Point* forces, double FMaxX, double FMaxY)
 void update_clusters()
 {
 
-    if (iteration % (saut * (1 + 0 * espacement)) == 0) {
+    if (iteration % (saut * (10 + 0 * espacement)) == 0) {
         int centers_converged = 0;
 
         while (centers_converged == 0) {
@@ -374,6 +381,7 @@ void update_clusters()
 
             centers_converged = max_movement <= epsilon;
         }
+        //grid_clustering(num_nodes, n_clusters, clusters, Lx, Ly, 10);
         clear_clusters();
 
         for (int i = 0; i < num_nodes; i++) {
