@@ -30,7 +30,7 @@ public class Graph extends Application implements GraphSettings {
     public native EdgeC[] getEdges();
     public native Vertex[] getPositions();
     public native double[][] startsProgram(String filename);
-    public native Metadata computeThreshold(int modeSimilitude);
+    public native Metadata computeThreshold(int modeSimilitude, int edge_factor);
     public native Metadata initiliazeGraph(int modeCommunity, double threshold, double anti_threshold);
 
     // A modifier quand le graphe est en pause
@@ -79,11 +79,12 @@ public class Graph extends Application implements GraphSettings {
     */
     public native void setAmortissement(double amortissement);
     public native void setNodePosition(int index, double x, double y);
-
     public native void freeAllocatedMemory();
-
-    public native void testUpdatePosition(int n);
-
+    public native void testUpdatePosition(int n); 
+    public native void setdeleteNode(int index);
+    public native void restoreNode(int index);
+    public native void setKmeansMode(boolean md);
+    public native int[] getHistogram();
 
     public static double WIDTH = 1500; // Largeur de la fenêtre
     public static double HEIGHT = 800; // Hauteur de la fenêtre
@@ -110,9 +111,6 @@ public class Graph extends Application implements GraphSettings {
     private Timeline timeline;
     private Scale scale;
     private Translate translate;
-
-
-
 
     public static void main(String[] args) {
         launch();
@@ -448,7 +446,7 @@ public class Graph extends Application implements GraphSettings {
         // Déterminer le mode de similitude à utiliser
         int modeSimilitude = getModeSimilitude(mode);
 
-        init_metadata = computeThreshold(modeSimilitude);
+        init_metadata = computeThreshold(modeSimilitude, 10);
         if (init_metadata == null)
             throw new RuntimeException("Une erreur est survenue lors du calcul des seuils.");
 
@@ -459,14 +457,14 @@ public class Graph extends Application implements GraphSettings {
         System.out.println("Seuil recommandé pour les anti-arêtes : " + recommendedAntiThreshold);
 
         // Valeurs imposées pour le moment (à modifier)
-        recommendedThreshold = 0.966;
-        recommendedAntiThreshold = 0.6;
+        // recommendedThreshold = 0.966;
+        // recommendedAntiThreshold = 0.6;
 
         // Déterminer le mode de détection de communautés à utiliser
         int modeCommunity = getModeCommunity(community);
 
         metadata = initiliazeGraph(modeCommunity, init_metadata.getEdgeThreshold(), init_metadata.getAntiThreshold());
-
+        testUpdatePosition(100);
 
         return data;
     }

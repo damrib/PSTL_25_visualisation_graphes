@@ -1,5 +1,5 @@
 CC = gcc
-FLAGS = -Wall -g -lGL -lGLU -lglut -fPIC -lm -lc -shared -latomic
+FLAGS = -Wall -g -lGL -lGLU -lglut -fPIC -lm -lc -shared
 JNI_FLAGS = -I/usr/lib/jvm/java-21-openjdk-amd64/include -I/usr/lib/jvm/java-21-openjdk-amd64/include/linux -fPIC
 
 SRC_DIR = src
@@ -84,15 +84,6 @@ all: $(CONCURRENT) $(GRAPH_C) $(PRETRAITEMENT)
 	$(CC) $(FORCE_ATLAS_OUT) $(CONCURRENT) $(GRAPH_C) $(PRETRAITEMENT) -o $(LIBNATIVE_OUT) $(FLAGS)
 
 	java -Djava.library.path=$(JOGL_DIR) --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) $(JAVA_EXPORTS) $(GRAPH_JAVA_OUT)
-
-debug: $(DEBUG) $(CONCURRENT) $(GRAPH_C) $(PRETRAITEMENT)
-	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) -d $(OUT_DIR) $(GRAPH_JAVA)
-	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) -h $(OUT_DIR) -d $(OUT_DIR) $(GRAPH_JAVA)
-
-	$(CC) $(JNI_FLAGS) -c $(FORCE_ATLAS) -D_DEBUG_ -o $(FORCE_ATLAS_OUT)
-	$(CC) $(FORCE_ATLAS_OUT) $(CONCURRENT) $(GRAPH_C) $(DEBUG) $(PRETRAITEMENT) -D_DEBUG_ -o $(LIBNATIVE_OUT) $(FLAGS)
-
-	java -Djava.library.path=. --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) $(GRAPH_JAVA_OUT) $(DIR_SAMPLE)
 
 clean:
 	- rm -rf $(OUT_DIR)/*.o

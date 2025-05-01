@@ -15,6 +15,7 @@ Edge antiedges[MAX_EDGES];  // Pour les anti-arêtes
 double** similarity_matrix = NULL;
 
 int num_nodes = 0;
+int live_nodes = 0;
 double Lx = 300, Ly = 300;
 
 double friction = 0.1;
@@ -24,6 +25,8 @@ double seuilrep = 0;
 double thresholdS = 1;
 
 double amortissement = 0.999;
+
+short modified_graph = 0;
 
 void toroidal_vector(Point *dir, Point p1, Point p2) {
     dir->x = p2.x - p1.x;
@@ -60,12 +63,10 @@ void calculate_node_degrees(void) {
 
 // Générer un point aléatoire près du centre
 void random_point_in_center(int index) {
-    //printf("%d\n", index);
     double center_width = Lx * 0.5;
     double center_height = Ly * 0.5;
     vertices[index].x = (rand() / (double)RAND_MAX) * center_width - center_width / 2;
     vertices[index].y = (rand() / (double)RAND_MAX) * center_height - center_height / 2;
-    printf("%lf, %lf\n", vertices[index].x, vertices[index].y);
     vertices[index].deleted = 0;
 }
 
@@ -89,7 +90,7 @@ void translate_positions(double dx, double dy) {
 
 struct repulsion_args {
     int start, end;
-    Point* forces;
+    double(*forces)[2];
     pthread_mutex_t* forces_lock;
     Barrier barrier;
 };
@@ -111,10 +112,10 @@ void repulsionTask_Edge(void* args) {
             
             if (dist_squared > thresholdA) {
                 pthread_mutex_lock(arguments->forces_lock);     
-                arguments->forces[node1].x += dir.x * att_force;
-                arguments->forces[node1].y += dir.y * att_force;
-                arguments->forces[node2].x -= dir.x * att_force;
-                arguments->forces[node2].y -= dir.y * att_force;
+                arguments->forces[node1][0] += dir.x * att_force;
+                arguments->forces[node1][1] += dir.y * att_force;
+                arguments->forces[node2][0] -= dir.x * att_force;
+                arguments->forces[node2][1] -= dir.y * att_force;
                 pthread_mutex_unlock(arguments->forces_lock);  
             }
         }
@@ -140,19 +141,19 @@ void repulsionTask_AntiEdge(void *args) {
                 double rep_force = coeff_antiarete/(dist*dist);
 
                 pthread_mutex_lock(arguments->forces_lock);
-                arguments->forces[node1].x -= (dir.x / dist) * rep_force;
-                arguments->forces[node1].y -= (dir.y / dist) * rep_force;
-                arguments->forces[node2].x += (dir.x / dist) * rep_force;
-                arguments->forces[node2].y += (dir.y / dist) * rep_force;
+                arguments->forces[node1][0] -= (dir.x / dist) * rep_force;
+                arguments->forces[node1][1] -= (dir.y / dist) * rep_force;
+                arguments->forces[node2][0] += (dir.x / dist) * rep_force;
+                arguments->forces[node2][1] += (dir.y / dist) * rep_force;
                 pthread_mutex_unlock(arguments->forces_lock);
             } else {
                 double rep_force = coeff_antiarete/ seuilrep;
                      
                 pthread_mutex_lock(arguments->forces_lock);
-                arguments->forces[node1].x -= dir.x * rep_force;
-                arguments->forces[node1].y -= dir.y * rep_force;
-                arguments->forces[node2].x += dir.x * rep_force;
-                arguments->forces[node2].y += dir.y * rep_force;
+                arguments->forces[node1][0] -= dir.x * rep_force;
+                arguments->forces[node1][1] -= dir.y * rep_force;
+                arguments->forces[node2][0] += dir.x * rep_force;
+                arguments->forces[node2][1] += dir.y * rep_force;
                 pthread_mutex_unlock(arguments->forces_lock);
             }
         }
@@ -161,7 +162,7 @@ void repulsionTask_AntiEdge(void *args) {
     decrement_barrier(arguments->barrier, 1);
 }
 
-void submit_repulsionTask(int start, int end, Point* forces, Barrier b, pthread_mutex_t* lk, job j) {
+void submit_repulsionTask(int start, int end, double(*forces)[2], Barrier b, pthread_mutex_t* lk, job j) {
     struct repulsion_args* args = (struct repulsion_args*) malloc(sizeof(struct repulsion_args));
     args->start = start;
     args->end = end;
@@ -175,7 +176,7 @@ void submit_repulsionTask(int start, int end, Point* forces, Barrier b, pthread_
     submit(&pool, task);
 }
 
-void parallel_repulsion(Point* forces, job j) {
+void parallel_repulsion(double(*forces)[2], job j) {
     struct barrier b;
     new_barrier(&b, pool.nb_threads);
 
@@ -197,7 +198,7 @@ void parallel_repulsion(Point* forces, job j) {
 
 // probablement privé utilisée dans update_positions
 // Étape 1 : Forces d'attraction basées sur les arêtes
-void repulsion_edges(Point* forces)
+void repulsion_edges(double(*forces)[2])
 {
 
     for (int edge_index = 0; edge_index < num_edges; edge_index++) {
@@ -212,27 +213,27 @@ void repulsion_edges(Point* forces)
             double att_force = attraction_coeff; //*dist_squared;
             
             if (dist_squared > thresholdA) {            
-                forces[node1].x += dir.x * att_force;
-                forces[node1].y += dir.y * att_force;
-                forces[node2].x -= dir.x * att_force;
-                forces[node2].y -= dir.y * att_force;
+                forces[node1][0] += dir.x * att_force;
+                forces[node1][1] += dir.y * att_force;
+                forces[node2][0] -= dir.x * att_force;
+                forces[node2][1] -= dir.y * att_force;
             }
         }
     }
 
 }
 
-void parallel_repulsion_edges(Point* forces) {
+void parallel_repulsion_edges(double(*forces)[2]) {
     parallel_repulsion(forces, repulsionTask_Edge);
 }
 
-void parallel_repulsion_anti_edges(Point* forces) {
+void parallel_repulsion_anti_edges(double(*forces)[2]) {
     parallel_repulsion(forces, repulsionTask_AntiEdge);
 }
 
 // probablement privé utilisé dans update_positions
 // Étape 2 bis : Mettre à jour les positions en fonction des forces
-void repulsion_anti_edges(Point* forces)
+void repulsion_anti_edges(double(*forces)[2])
 {
 
     for (int edge_index = 0; edge_index < num_antiedges; edge_index++) {
@@ -246,17 +247,17 @@ void repulsion_anti_edges(Point* forces)
             double dist = sqrt(dir.x * dir.x + dir.y * dir.y);
             if (dist > seuilrep) {
                 double rep_force = coeff_antiarete/(dist*dist);
-                forces[node1].x -= (dir.x / dist) * rep_force;
-                forces[node1].y -= (dir.y / dist) * rep_force;
-                forces[node2].x += (dir.x / dist) * rep_force;
-                forces[node2].y += (dir.y / dist) * rep_force;
+                forces[node1][0] -= (dir.x / dist) * rep_force;
+                forces[node1][1] -= (dir.y / dist) * rep_force;
+                forces[node2][0] += (dir.x / dist) * rep_force;
+                forces[node2][1] += (dir.y / dist) * rep_force;
             } else {
                 double rep_force = coeff_antiarete/ seuilrep;
                                             
-                forces[node1].x -= dir.x * rep_force;
-                forces[node1].y -= dir.y * rep_force;
-                forces[node2].x += dir.x * rep_force;
-                forces[node2].y += dir.y * rep_force;
+                forces[node1][0] -= dir.x * rep_force;
+                forces[node1][1] -= dir.y * rep_force;
+                forces[node2][0] += dir.x * rep_force;
+                forces[node2][1] += dir.y * rep_force;
             }
         }
     }
@@ -265,7 +266,7 @@ void repulsion_anti_edges(Point* forces)
 
 // probablement privé utilisé dans update_positions
 // Étape 3 : Mettre à jour les positions des sommets du graphe en fonction des forces
-double update_position_forces(Point* forces, double PasMaxX, double PasMaxY, double Max_movement)
+double update_position_forces(double(*forces)[2], double PasMaxX, double PasMaxY, double Max_movement)
 {
     double half_Lx = Lx / 2.0;
     double half_Ly = Ly / 2.0;
@@ -273,8 +274,8 @@ double update_position_forces(Point* forces, double PasMaxX, double PasMaxY, dou
     double new_max_movement = 0.0;
     for (int i = 0; i < num_nodes; i++) {
         if ( vertices[i].deleted == 0 ) {
-            velocities[i].x = (velocities[i].x + forces[i].x) * friction;
-            velocities[i].y = (velocities[i].y + forces[i].y) * friction;
+            velocities[i].x = (velocities[i].x + forces[i][0]) * friction;
+            velocities[i].y = (velocities[i].y + forces[i][1]) * friction;
             velocities[i].x = fmin(fmax(velocities[i].x, -PasMaxX), PasMaxX); // Capper la force en x à 1
             velocities[i].y = fmin(fmax(velocities[i].y, -PasMaxY), PasMaxY); // Capper la force en y à 1
 
@@ -305,8 +306,6 @@ void normalize(Point *p) {
         p->y /= norm;
     }
 }
-
-
 
 struct similarity_args {
     double threshold;
@@ -369,5 +368,4 @@ void calculate_similitude_and_edges(int md, double threshold, double antiseuil) 
     }
     // main thread wait for the thread to finish processing the previous calculation
     wait_barrier(&bar);
-    printf("\n\nHELP\n\n");
 }
