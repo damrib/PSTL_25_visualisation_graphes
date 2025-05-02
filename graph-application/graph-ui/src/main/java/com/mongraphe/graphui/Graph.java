@@ -34,12 +34,10 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import javafx.util.Duration;
@@ -75,12 +73,18 @@ public class Graph implements GraphSettings {
 
     // Nouveaux éléments FXML pour le panneau Aspect du graphe
 
-    @FXML private ToggleGroup elementToggleGroup;
-    @FXML private ToggleButton nodesToggleButton;
-    @FXML private ToggleButton edgesToggleButton;
-    @FXML private ColorPicker elementColorPicker;
-    @FXML private ComboBox<String> elementRankingCombo;
-    @FXML private Consumer<String> onRankingSelectedCallback;
+    @FXML
+    private ToggleGroup elementToggleGroup;
+    @FXML
+    private ToggleButton nodesToggleButton;
+    @FXML
+    private ToggleButton edgesToggleButton;
+    @FXML
+    private ColorPicker elementColorPicker;
+    @FXML
+    private ComboBox<String> elementRankingCombo;
+    @FXML
+    private Consumer<String> onRankingSelectedCallback;
     private String currentRanking;
 
     // Propriétés pour les éléments du graphe
@@ -114,9 +118,9 @@ public class Graph implements GraphSettings {
             nodesToggleButton.setSelected(true);
         }
 
-          // Initialisation du ComboBox de classement des éléments (nouveau)
+        // Initialisation du ComboBox de classement des éléments (nouveau)
         elementRankingCombo.setItems(FXCollections.observableArrayList(
-            "Classement Poids", "Classement Liens Entrant", "Classement Liens Sortant"));
+                "Classement Poids", "Classement Liens Entrant", "Classement Liens Sortant"));
 
         elementRankingCombo.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldVal, newVal) -> {
@@ -132,7 +136,7 @@ public class Graph implements GraphSettings {
     public void setOnRankingSelected(Consumer<String> callback) {
         this.onRankingSelectedCallback = callback;
     }
-    
+
     public void setSelectedRanking(String ranking) {
         this.currentRanking = ranking;
         if (ranking != null) {
@@ -455,7 +459,7 @@ public class Graph implements GraphSettings {
 
     public native void freeAllocatedMemory();
 
-    public static double WIDTH = 1500; // Largeur de la fenêtre
+    public static double WIDTH = 800; // Largeur de la fenêtre
     public static double HEIGHT = 800; // Hauteur de la fenêtre
 
     // Propriétés pour les différents modes du graphe
@@ -1201,5 +1205,4 @@ public class Graph implements GraphSettings {
             throw new RuntimeException("Mode de détection de communautés non reconnu.");
         return modeCommunity;
     }
-
 }
