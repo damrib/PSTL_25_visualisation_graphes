@@ -6,7 +6,7 @@ double **data = NULL;
 int num_rows = 0, num_columns = 0;
 char delimiter[1] = "\0";
 int S[MAX_NODES]={0};
-char *node_names[MAX_NODES];
+char **node_names = NULL;
 
 short str_is_number(char* line)
 {
@@ -174,6 +174,16 @@ void lireColonneCSV(int *S,int *nbValeurs) {
     fclose(fichier);
 }
 
+/**
+ * We use this to store the name and the index of the node
+ * in the vertices array
+ */
+struct HashPair {
+    int index;
+    char* label;
+}
+
+
 void split_str(char * line, size_t size, char* delimiters, int nb_delimiter) {
     
     for (int i = 0; i < size; ++i) {
@@ -216,18 +226,27 @@ char* next_str(char** line, size_t* s) {
     return res;
 }
 
-char* find_parameter(char** line, const char* parameter, size_t* size) {
+void find_parameters
+    (char** line, size_t* size, double* weight, char** node_name) 
+{
 
     while (*size > 0) {
         char* next = next_str(line, size);
 
-        if ( *size > 0 && strcmp(next, parameter) == 0 ) {
-            printf("parameter: %s %ld\n", next, *size);
-            return next_str(line, size);
+        if ( weight != NULL && *size > 0 && strcmp(next, "weight") == 0 ) {
+            char* next = next_str(line, size);
+            if ( next != NULL ) {
+                sscanf(next, "%lf", weight);
+                free(next);
+            }
+        } else if ( node_name != NULL && *size > 0 && strcmp(next, "label") == 0 ) {
+            char* next = next_str(line, size);
+            if ( next != NULL ) {
+                *node_name = next;
+            }
         }
     }
     
-    return NULL;
 }
 
 int hash_string(char* label) {
@@ -241,144 +260,473 @@ int hash_string(char* label) {
     return cpt;
 }
 
-int put_node_names(int index, char *label) {
-
-    index = index % MAX_NODES;
-    int cpt = 0;
-    while ( node_names[index] != NULL ) {
-        if ( strcmp(node_names[index], label) == 0 ) {
-            free(label);
-            return index;
+int map_put(HashPair** map, int* capacity, char* key) {
+    
+    if ( *capacity <= num_nodes ) {
+        int new_capacity = 2 * *capacity;
+        HashPair* new_map = (HashPair*) malloc(sizeof(HashPair) * new_capacity);
+        for (int i = 0; i < *capacity; ++i) {
+            int new_index = hash_string((*map)[i].label) % new_capacity;
+            new_map[new_index].label = (*map)[i].label;
+            new_map[new_index].index = (*map)[i].index;
         }
+        free(*map);
+        *map = new_map;
+        *capacity = new_capacity;
+    }
 
-        index = (index + 1) % MAX_NODES;
+    int ind = hash_string(key) % *capacity;
 
-        if ( ++cpt == MAX_NODES ) {
-            free(label);
-            return -1;
+    while( (*map)[ind].index != -1 ) {
+        if ( strcmp(key, map[ind].label) == 0 ) {
+            free((*map)[ind].label);
+        } else {
+            ind = (ind + 1) % *capacity;
         }
     }
 
-    node_names[index] = label;
-    ++num_nodes;
+    (*map)[ind].index = num_nodes++;
+    (*map)[ind].label = key;
 
-    return index;
+    return (*map)[ind].index;
 }
 
-void parse_dot_line(char * ptr, size_t size) {
+void parse_node_stmt(char * ptr, size_t size, HashPair* map, char* delimiters) {
+    char delimiters[5] = {' ', '[', ']', '=', ';'}; 
+    // we replace spaces by null
+    split_str(ptr, size, delimiters, 1);
+
+    char * label = next_str(&ptr, &size);
+    if ( label == NULL || label[0] == '[' ) {
+        free(label);
+        return;
+    }
+
+    char * next = next_str(&ptr, &size);
+    while ( next != NULL && next[0] != '[' ) {
+        free(next);
+        next = next_str(&line, &size);
+    }
+
+    int index = map_put(map, label);
+
+    if ( next != NULL ) {
+        split_str(ptr, size, delimiters, 5);
+        if ( strcmp(next + 1, "label") == 0 ) {
+            char* node_name = next_str(&line, &size);
+            if ( node_name != NULL ) {
+                node_names[index] = node_name;
+            }
+        } else {
+            find_parameters(&ptr, &size, NULL, node_names + index);
+        }
+        free(next);
+    }
+
+}
+
+void parse_edge_stmt(char* ptr, size_t size, HashPair* map, char* delimiters) {
+    char delimiters[5] = {' ', '[', ']', '=', ';'};
+    split_str(ptr, size, delimiters, 5);
+            
+    // reading the first node label
+    char* next = next_str(&ptr, &size);
+    if ( next != NULL ) {
+        node1 = map_put(map, next);
+    }
+            
+    // we can ignore the next as it should be either "->" or "--"
+    next = next_str(&ptr, &size);
+    free(next); 
+
+    next = next_str(&ptr, &size);
+    if ( next != NULL ) {
+        node2 = map_put(map, next);
+    }
+
+    find_parameters(&ptr, &size, &weight, NULL);
+
+    if ( num_edges < MAX_EDGES ) {
+        edges[num_edges].node1 = node1;
+        edges[num_edges].node2 = node2;
+        edges[num_edges].weight = weight;
+
+        ++num_edges;
+    } else {
+        fprintf(stderr, "Warning: Number of edges exceeds MAX_EDGES\n");
+        return ;
+    }
+}
+
+void parse_dot_line(char * ptr, size_t size, HashPair* map) {
 
     int node1 = -1, node2;
     double weight = 1.0;
 
     if ( strstr(ptr, "->") || strstr(ptr, "--") ) {
-        char delimiters[5] = {' ', '[', ']', '=', ';'};
-
-        split_str(ptr, size, delimiters, 5);
-            
-        // reading the first node label
-        char* next = next_str(&ptr, &size);
-        if ( next != NULL )
-            node1 = put_node_names(hash_string(next), next);
-        if ( node1 == -1 ) { 
-            fprintf(stderr, "Warning: Maximum number of nodes reached\n");
-            return ; 
-        }
-            
-        // we can ignore it as it should be either "->" or "--"
-        next = next_str(&ptr, &size);
-        free(next); 
-
-
-        next = next_str(&ptr, &size);
-        if ( next != NULL )
-            node2 = put_node_names(hash_string(next), next);
-        if ( node2 == -1 ) { 
-            fprintf(stderr, "Warning: Maximum number of nodes reached\n");
-            return ; 
-        }
-
-        next = find_parameter(&ptr, "weight", &size);
-        if ( next != NULL ) {
-            sscanf(next, "%lf", &weight);
-            free(next);
-        }
+        parse_edge_stmt(ptr, size, map);
+    } else if ( strstr(ptr, "{") ) {
         
-        if ( num_edges < MAX_EDGES ) {
-            edges[num_edges].node1 = node1;
-            edges[num_edges].node2 = node2;
-            edges[num_edges].weight = weight;
-
-            ++num_edges;
-        } else {
-            fprintf(stderr, "Warning: Number of edges exceeds MAX_EDGES\n");
-            return ;
-        }
-            
+    } else if ( ! strstr(ptr, "}") ) {
+        parse_node_stmt(ptr, size, map);
     }
 
 }
 
 void parse_dot_file(const char *filename) {
     FILE *file = fopen(filename, "r");
-    printf("%s\n", filename);
+    
     if (file == NULL) {
         perror("Error opening file");
         exit(1);
     }
 
-    for (int i = 0; i < MAX_NODES; ++i){
+    // num_rows will be greater than num_nodes
+    num_rows = 0;
+    for ( char c = fgetc(file); c != EOF; c = fgetc ) {
+        if ( c == '\n' ) {
+            ++num_rows;
+        }
+    }
+
+    HashPair* map = (HashPair*) malloc(sizeof(HashPair) * num_rows) 
+
+    node_names = (char**) malloc(sizeof(char*) * num_rows);
+    for (int i = 0; i < num_rows; ++i){
         node_names[i] = NULL;
+        map[i].index = -1;
     }
 
     char* line = NULL;
     size_t size = 0;
 
+    rewind(file);
+
+    getline(&line, &size, file);
+    // skip first line for now
+    free(line);
+    line = NULL;
+
     while ( getline(&line, &size, file) != -1 ) {
-        parse_dot_line(line, size);
+        parse_dot_line(line, size, map);
         free(line);
         line = NULL;
     }
 
-    printf("FIN: %d", num_nodes);
+    free(map);
     fflush(NULL);
 
     fclose(file);
 }
 
-void replace_edge_index(int index, int new_id) {
+int isKeyword(char* str) {
+    const char* keywords[] = {
+        "digraph", "strict", "graph", "subgraph",
+        "node", "edge"
+    };
+    int nb_keywords = 6;
+    return belongs(str, keywords, size)
+}
 
-    for (int i = 0; i < num_edges; ++i) {
-        if ( edges[i].node1 == index ) {
-            edges[i].node1 = new_id;
-        } 
-        if ( edges[i].node2 == index ) {
-            edges[i].node2 = new_id;
+int belongs(char* str, const char** keywords, int size) {
+    for (int i = 0; i < nb_keywords; ++i) {
+        if ( strcmp(str, keywords[i]) == 0 ) {
+            return 1;
         }
+    }
+    return 0;
+}
+
+int isCompass(char* str) {
+    const char* compass[] = {
+        "n", "ne", "nw", "s", "se", "sw", "e", "w", "c", "_"
+    }
+    size_t nb_compass = 10;
+    return belongs(str, compass, nb_compass);
+}
+
+int hasEdgeOperator(char c1, char c2) {
+    return c1 == '-' && (c2 == '>' || c2 == '-');
+}
+
+int isDelimiter(char c) {
+    const char delimiters[] = {
+        ' ', '[', ']', '{', '}', '=', ';', ',', ':', '"', '\n', '\r'
+    }   
+    size_t nb_delimiter = 12;
+    for (int i = 0; i < nb_delimiter; ++i) {
+        if ( delimiters[i] == c ) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int isHtmlString(const char *s, size_t size) {
+    return size >= 2 && s[0] == '<' && s[size-1] == '>';
+}
+
+int isQuoteString(const char* s, size_t size) {
+
+    if ( size < 2 && s[0] != '"' && s[size-1] != '"' ) {
+        return 0;
+    }
+
+    for (int i = 0; i < size - 1; ++i) {
+        if ( s[i] == '\\' && s[i+1] == '"' ) {
+            ++i;
+        } else if ( s[i] == '"' ) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int isAlpha(const char* s, size_t size) {
+    if ( s[0] != '_' && ! isdigit(s[0]) )
+        return 0;
+
+    for (int i = 0; i < size; ++i) {
+        if ( ! isalnum(s[i]) && (200 > s[i] || s[i] > 255) && s[i] != '_' )
+            return 0;
+    }
+    return 1;
+}
+
+/**
+ * checks if s respects the Identifier format of dot files
+ * s should be null terminated
+ */
+int isId(const char *s, size_t size) {
+    return 
+    isHtmlString(s, size) 
+    || str_is_number(s)
+    || isQuoteString(s, size)
+    || isAlpha(s, size);
+}
+
+int isParameter(const char* s) {
+    const char* parameters[] = {
+        "weight", "label"
+    }
+    int nb_parameters = 2;
+    return belongs(s, parameters, nb_parameters);
+}
+
+int next_token(FILE* file, char * buffer, size_t* size, int inQuotes) {
+
+    int c;
+
+    while ( (c = fgetc(file)) != EOF  ) {
+        if ( (inQuotes && (c != '"' || *size > 0 && buffer[*size-1] != '\\') ) 
+        || ! isDelimiter(c) ) {
+            buffer[*size] = c;
+            ++*size;
+        } else if ( *size > 0 ) {
+            break;
+        }
+    }
+
+    buffer[*size] = '\0';
+
+    return c;
+}
+
+struct vect {
+    int * content;
+    int capacity, size;
+};
+typedef struct vect* Vect;
+
+
+
+void add_elem_list(
+    Vect nodes,
+    int elem)
+{
+    if ( nodes->size >= nodes->capacity ) {
+        nodes->content = (int*) realloc(nodes->content, nodes->capacity * sizeof(int) * 2);
+        *nodes->capacity *= 2;
+    } 
+    (nodes->content)[nodes->size] = elem;
+    ++nodes->size;
+}
+
+int add_new_edge(
+    Vect nodes,
+    Vect tmp) 
+{
+    int latest_node = nodes->content[nodes->size-1];
+    if ( tmp ) {
+
+        for (int i = 0; i < tmp->size; ++i) {
+            if ( num_edges >= MAX_EDGES ) return -1
+
+            edges[num_edges].node1 = tmp->content[i];
+            edges[num_edges].node2 = latest_node;
+            ++num_edges;
+
+            add_elem_list(nodes, tmp->content[i]);
+        }
+    } else if ( num_edges < MAX_EDGES ){
+        edges[num_edges].node1 = (nodes->content)[nodes->size-2];
+        edges[num_edges].node2 = (nodes->content)[nodes->size-1];
+        num_edges = num_edges + 1;
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+struct vect newVect(int capacity) {
+    struct vect res;
+    res.capacity = capacity;
+    res.content = (int*) malloc(sizeof(int) * capacity);
+    res.size = 0;
+    return res;
+} 
+
+void freeVect(Vect v) {
+
+    if ( v != NULL ) {
+        if ( v->content != NULL ) {
+            free(v->content);
+        }
+        free(v);
     }
 
 }
 
-void compact_label() {
+Vect parse_stmt_list(
+    FILE *file, 
+    char* buffer, 
+    HashPair** map, 
+    size_t* capacity) {
 
-    int cpt = 0;
-    for (int i = 0; i < MAX_NODES && cpt < num_nodes; ++i) {
+    size_t size = 0;
+    int c = next_token(file, buffer, &size, 0);
+    int flag = 1;
+    int side_edge = 0;
+    int inQuote = 0;
 
-        if ( node_names[i] == NULL ) {
+    struct vect node_list1 = newVect(4);
+    Vect node_list_tmp1 = NULL;
+    Vect node_list_tmp2 = NULL;
 
-            int flag = 1;
-            for (int j = i + 1; flag && j < MAX_NODES; ++j) {
-                if ( node_names[j] != NULL ) {
-                    node_names[i] = node_names[j];
-                    node_names[j] = NULL;
-                    replace_edge_index(j, i);
-                    flag = 0;
-                }
+    int last_edge = num_edges;
+
+    int edge_overflow = 0;
+
+    while ( flag ) {
+
+        if ( size > 0 && ! isKeyword(buffer) && isId(buffer, size) && ! isCompass(buffer) ) {
+            int index = map_put(map, capacity, buffer);
+            add_elem_list(&node_list1, index);
+
+            if ( side_edge ) {
+                last_edge = num_edges;
+                edge_overflow |= add_new_edge(&node_list1, node_list_tmp1);
+                freeVect(node_list_tmp1);
+                node_list_tmp1 = NULL;
             }
 
+            side_edge = 0;
         }
 
-        cpt += 1;
+        switch (c)
+        {
+        case '}':
+            flag = 0;
+            break;
+        case '{':
+            node_list_tmp2 = parse_stmt_list(file, buffer, map, capacity);
+            if ( side_edge ) {
+            
+                if ( node_list_tmp1 ) {
+                    last_edge = num_edges; 
+                    for (int i = 0; i < node_list_tmp1; ++i) {
+                        for (int j = 0; j < node_list_tmp2; ++j) {
+                            edges[num_edges].node1 = node_list_tmp1->content[i];
+                            edges[num_edges].node2 = node_list_tmp2->content[j];
+                            ++num_edges;
+                        }
+                    }
 
+                } else {
+                    for (int i = 0; i < node_list_tmp2; ++i) {
+
+                    }
+                }
+
+            } else {
+
+            }
+            freeVect(node_list_tmp1);
+            node_list_tmp1 = NULL;
+        case '-':
+            size = 0;
+            c = next_token(file, buffer, &size, 0);
+            if ( c == '>' || c == '-' ) {
+                side_edge = 1;
+            }
+            break;
+        case '"':
+            inQuote = inQuote ^ 1;
+            break;
+        case '[':
+            
+            break;
+        default:
+            break;
+        }
+
+        c = next_token(file, buffer, inQuote);
     }
 
+    Vect res = (Vect) malloc(sizeof(struct vector));
+    res->content = node_list1.content;
+    res->capacity = node
+
+    return node_list1;
+}
+
+#define MAXBUF 1024
+
+void parse_graph(const char filename) {
+    FILE *file = fopen(filename, "r");
+    
+    if (file == NULL) {
+        perror("Error opening file");
+    }
+
+    char buf[MAXBUF];
+    size_t size = 0;
+
+    int c = next_token(file, buf, &size, 0);
+    while ( c != EOF || c != '{' ) {
+        size = 0;
+        c = next_token(file, buf, &size, 0);
+    }
+
+    switch(c) {
+        case '{':
+            parse_stmt_list(file, buf);
+            break;
+        default:
+            break;    
+    }
+    
+    fclose(file);
+}
+
+void freeNodeNames() {
+    if ( node_names != NULL ) {
+
+        for (int i = 0; i < num_rows; ++i) {
+            if ( node_names[i] != NULL ) {
+                free(node_names[i]);
+            }
+        }
+        free(node_names);
+    }
 }

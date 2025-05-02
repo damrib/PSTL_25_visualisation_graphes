@@ -351,7 +351,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
   const char* str = (*env)->GetStringUTFChars(env, filepath, &b);
 
   parse_dot_file(str);
-  compact_label();
 
   modeA = 0;
   if (md == 0) {
@@ -472,6 +471,8 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
         }
     }
     free_clusters();
+
+    freeNodeNames();
 
     FreePool(&pool);
 
