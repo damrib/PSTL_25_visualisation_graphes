@@ -7,48 +7,107 @@
 
     <parent>
         <groupId>com.mongraphe</groupId>
-        <artifactId>graph-application</artifactId> <!-- Ton projet parent -->
+        <artifactId>graph-application</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>graph-ui</artifactId>
     <packaging>jar</packaging>
+    
+    <repositories>
+        <repository>
+            <id>jogamp</id>
+            <name>JogAmp Repository</name>
+            <url>https://jogamp.org/deployment/maven</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
 
     <dependencies>
-        <!-- JavaFX Controls -->
+        <!-- JavaFX -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>21</version> <!-- Mets la version correspondant à ton JDK -->
+            <version>21</version>
         </dependency>
-
-        <!-- JavaFX FXML (si tu utilises FXML) -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>21</version>
         </dependency>
 
-        <!-- Dépendance vers graph-core pour récupérer les données -->
+        <!-- Modules internes -->
         <dependency>
             <groupId>com.mongraphe</groupId>
             <artifactId>graph-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
-        	<groupId>com.mongraphe</groupId>
-        	<artifactId>graph-layout</artifactId>
-        	<version>0.0.1-SNAPSHOT</version>
+            <groupId>com.mongraphe</groupId>
+            <artifactId>graph-layout</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <!-- JOGL avec natives -->
+        <dependency>
+            <groupId>org.jogamp.jogl</groupId>
+            <artifactId>jogl-all</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jogamp.gluegen</groupId>
+            <artifactId>gluegen-rt</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jogamp.jogl</groupId>
+            <artifactId>jogl-all</artifactId>
+            <version>2.4.0</version>
+            <classifier>natives-linux-amd64</classifier>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Plugin pour exécuter une application JavaFX -->
+            <!-- Configuration JavaFX + JOGL -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
+                <configuration>
+                    <mainClass>com.mongraphe.graphui.MainApp</mainClass>
+                    <options>
+                        <!-- Options JVM pour JOGL -->
+                        <option>--add-exports</option>
+                        <option>javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED</option>
+                        <option>--add-exports</option>
+                        <option>javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED</option>
+                        <option>--add-exports</option>
+                        <option>javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</option>
+                        <option>--add-exports</option>
+                        <option>javafx.graphics/com.sun.glass.ui=ALL-UNNAMED</option>
+                        <option>--add-exports</option>
+                        <option>javafx.graphics/com.sun.javafx.tk.quantum=ALL-UNNAMED</option>
+                        <option>--add-opens</option>
+                        <option>javafx.graphics/javafx.stage=ALL-UNNAMED</option>
+                        <option>--add-opens</option>
+                        <option>javafx.base/javafx.collections=ALL-UNNAMED</option>
+                        <option>--add-opens</option>
+                        <option>javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED</option>
+                        <option>--add-opens</option>
+                        <option>javafx.graphics/com.sun.glass.ui=ALL-UNNAMED</option>
+                        <option>--add-opens</option>
+                        <option>javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</option>
+                        
+                        <!-- Options mémoire -->
+                        <option>-Xmx2G</option>
+                        <option>-Xms1G</option>
+                        <option>-ea</option>
+                    </options>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -56,25 +115,33 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <mainClass>com.mongraphe.graphui.MainApp</mainClass>
-        <executable>java</executable>
-        <options>
-            <option>-Xmx2G</option>
-            <option>-Xms1G</option>
-            <option>-ea</option>
-        </options>
-                </configuration>
             </plugin>
 
-            <!-- Configuration de la compilation avec Java 21 -->
+            <!-- Compilation Java 21 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
+                <version>3.11.0</version>
                 <configuration>
-                    <source>21</source> <!-- Source compatibility avec Java 21 -->
-                    <target>21</target> <!-- Target compatibility avec Java 21 -->
+                    <source>21</source>
+                    <target>21</target>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <!-- Plugin pour exécution alternative -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.mongraphe.graphui.MainApp</mainClass>
+                    <arguments>
+                        <argument>--module-path</argument>
+                        <argument>${project.build.directory}/libs</argument>
+                    </arguments>
                 </configuration>
             </plugin>
         </plugins>

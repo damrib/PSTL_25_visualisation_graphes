@@ -14,7 +14,7 @@
 <?import javafx.collections.FXCollections?>
 
 <GridPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-          fx:controller="com.mongraphe.graphui.Graph"
+          fx:controller="com.mongraphe.graphui.GraphVue"
           stylesheets="@../css/visualisation.css">
     
     <!-- Configuration des colonnes et lignes -->
@@ -109,13 +109,7 @@
                     <Label text="Aspect du graphe" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
                     </HBox>
                     <!-- ToggleButtons pour Noeuds/Arêtes -->
-                    <HBox spacing="5" style =" -fx-border-color: transparent transparent rgba(212, 204, 202, 0.55) transparent;">
-                    <fx:define>
-                    <ToggleGroup fx:id="elementToggleGroup" />
-                    </fx:define>
-                        <ToggleButton text="Noeuds" styleClass="button-4" toggleGroup="$elementToggleGroup" userData="NODES" selected="true" onAction="#handleToggleNodes"/>
-                        <ToggleButton text="Arêtes" styleClass="button-4" toggleGroup="$elementToggleGroup" userData="EDGES" onAction="#handleToggleEdges"/>
-                    </HBox>
+                    
                     
                     <!-- Contenu dynamique -->
                     <VBox spacing="8">
@@ -134,8 +128,6 @@
                     <!-- Bouton Appliquer en bas à droite -->
                     <bottom>
                     <HBox alignment="BOTTOM_RIGHT" spacing="5" style="-fx-padding: 8;-fx-margin: 5; -fx-border-color:rgba(212, 204, 202, 0.55); -fx-border-width: 1px;">
-                        <Button text="Appliquer" onAction="#handleApply" 
-                                styleClass="button-8"/>
                         <Button text="Démarrer" onAction="#handleStartButton"
                         styleClass="button-8"
                         AnchorPane.topAnchor="10" AnchorPane.leftAnchor="10" />

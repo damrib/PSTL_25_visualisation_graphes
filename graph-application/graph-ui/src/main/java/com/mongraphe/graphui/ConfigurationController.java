@@ -204,7 +204,7 @@ public class ConfigurationController {
             loader.setLocation(getClass().getResource("/fxml/Visualisation.fxml"));
             Parent root = loader.load();
 
-            Graph controller = loader.getController();
+            GraphVue controller = loader.getController();
             controller.initData(file, measure, upThresh, downThresh, method);
 
             Stage stage = (Stage) mainBorderPane.getScene().getWindow();

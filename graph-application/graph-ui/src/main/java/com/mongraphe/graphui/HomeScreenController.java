@@ -22,7 +22,7 @@ public class HomeScreenController {
     private void handleNewProject() {
         try {
             // Créer une instance de la classe Graph
-            Graph graph = new Graph();
+            GraphVue graph = new GraphVue();
 
             // Définir le fichier à utiliser
             File file = new File(System.getProperty("user.dir") + "/samples/iris.csv");

@@ -55,6 +55,11 @@ PRETRAITEMENT_OBJ = $(patsubst $(PRETRAITEMENT_DIR)/%.c, $(OUT_DIR)/%.o, $(PRETR
 FORCE_ATLAS_SRC = c/forceatlasV4_CSV.c
 FORCE_ATLAS_OBJ = $(OUT_DIR)/forceatlas.o
 
+JOGL_DIR = lib/jogl
+JOGL_JARS = $(JOGL_DIR)/jogl-all.jar:$(JOGL_DIR)/gluegen-rt.jar
+JOGL_NATIVE_LIBS = $(JOGL_DIR)/jogl-all-natives-linux-amd64.jar:$(JOGL_DIR)/gluegen-rt-natives-linux-amd64.jar
+CLASSPATH = $(JOGL_JARS):$(JOGL_NATIVE_LIBS)
+
 OBJ_FILES = $(GRAPH_C_OBJ) $(DEBUG_OBJ) $(CONCURRENT_OBJ) $(PRETRAITEMENT_OBJ) $(FORCE_ATLAS_OBJ)
 
 # Vérifier si le dossier de sortie existe
@@ -85,8 +90,12 @@ $(OUT_DIR)/forceatlas.o: $(FORCE_ATLAS_SRC)
 
 # Compilation Java
 java:
-	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) -d $(OUT_DIR) $(SRC_DIR)/*.java
-	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) -h $(OUT_DIR) -d $(OUT_DIR) $(SRC_DIR)/*.java
+	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) \
+	      -cp $(CLASSPATH) \
+	      -d $(OUT_DIR) $(SRC_DIR)/*.java
+	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) \
+	      -cp $(CLASSPATH) \
+	      -h $(OUT_DIR) -d $(OUT_DIR) $(SRC_DIR)/*.java
 
 # Nettoyage
 clean:
