@@ -20,10 +20,7 @@
     #include "debug/debug_time.h"
 #endif
 
-#include "../out/com_mongraphe_graphui_Graph.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../lib/stb_image_write.h"
+#include "../out/linux/com_mongraphe_graphui_Graph.h"
 
 
 int modeA=0; //mode pour afficher des noeuds en fonction de classe
@@ -50,7 +47,7 @@ JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
  (JNIEnv * env, jobject obj)
 {
    double Max_movementOld = 0.0;
-   double Max_movement;
+   double Max_movement = 0.0;
    double FMaxX = Lx/(friction*1000);
    double FMaxY = Ly/(friction*1000);
    thresholdS = (Lx/4000)*(Ly/4000);
@@ -61,7 +58,6 @@ JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
    double PasMaxX = Lx / 10.;
    double PasMaxY = Ly / 10.;
 
-   iteration = 0;
    static Point forces[MAX_NODES] = {0};
 
    if ( pause_updates == 0 ){
@@ -92,18 +88,7 @@ JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
 }
 
 JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getCommunities(JNIEnv *env, jobject obj) {
-    // 1. Déclarer communities avec le type jint (et non int)
-    jint communities[MAX_NODES]; 
-
-    // 2. Remplir le tableau (exemple simplifié)
-    for (int i = 0; i < MAX_NODES; i++) {
-        communities[i] = i; // Remplacez par votre logique réelle
-    }
-
-    // 3. Créer le tableau Java
     jintArray result = (*env)->NewIntArray(env, MAX_NODES);
-
-    // 4. Copier les données
     (*env)->SetIntArrayRegion(env, result, 0, MAX_NODES, communities);
 
     return result;
@@ -203,6 +188,14 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
 {
 
     InitPool(&pool, 1000, 8);
+    similarity_matrix = (double**) malloc(num_rows * sizeof(double*));
+    for (int i = 0; i < num_rows; i++) {
+      similarity_matrix[i] = (double*) malloc(num_rows * sizeof(double));
+      for (int j = 0; j < num_rows; j++) {
+        similarity_matrix[i][j] = -1.0; 
+      }
+    }
+
 
     num_nodes = num_rows;
 
@@ -309,7 +302,7 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
 
 }
 
-JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
+JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
   (JNIEnv * env, jobject obj)
 {
 
@@ -324,7 +317,13 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
     }
     free_clusters();
 
+    for (int i = 0; i < num_rows; i++) {
+      free(similarity_matrix[i]);
+    }
+    free(similarity_matrix);
+
     FreePool(&pool);
+
 }
 
 JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setSaut

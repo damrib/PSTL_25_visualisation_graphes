@@ -8,6 +8,14 @@ ifeq ($(UNAME_S),Linux)
     LIBNATIVE_OUT = $(OUT_DIR)/libnative.so
     RM = rm -rf
     CLASSPATH_SEP = :
+else ifeq ($(UNAME_S),Darwin)
+    OS_TYPE = macOS
+    OUT_DIR = out/macos
+    JNI_FLAGS = -I$(shell /usr/libexec/java_home)/include -I$(shell /usr/libexec/java_home)/include/darwin -fPIC
+    FLAGS = -Wall -g -framework OpenGL -framework GLUT -dynamiclib
+    LIBNATIVE_OUT = $(OUT_DIR)/libnative.dylib
+    RM = rm -rf
+    CLASSPATH_SEP = :
 else
     OS_TYPE = Windows
     OUT_DIR = out/windows
