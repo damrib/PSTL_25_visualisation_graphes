@@ -1205,4 +1205,5 @@ public class Graph implements GraphSettings {
             throw new RuntimeException("Mode de détection de communautés non reconnu.");
         return modeCommunity;
     }
+
 }
