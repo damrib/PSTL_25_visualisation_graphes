@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.jogamp.newt.event.WindowAdapter;
 import com.jogamp.newt.javafx.NewtCanvasJFX;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.GLCapabilities;
@@ -14,7 +13,6 @@ import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.util.FPSAnimator;
 import com.mongraphe.graphui.GraphData.NodeCommunity;
 import com.mongraphe.graphui.GraphData.SimilitudeMode;
-
 
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
@@ -25,7 +23,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
@@ -70,13 +67,19 @@ public class GraphVue {
 
 	// Nouveaux éléments FXML pour le panneau Aspect du graphe
 
-	@FXML private ToggleGroup elementToggleGroup;
-	@FXML private ToggleButton nodesToggleButton;
-	@FXML private ToggleButton edgesToggleButton;
-	@FXML private ColorPicker elementColorPicker;
-	@FXML private ComboBox<String> elementRankingCombo;
-	@FXML private Consumer<String> onRankingSelectedCallback;
-	
+	@FXML
+	private ToggleGroup elementToggleGroup;
+	@FXML
+	private ToggleButton nodesToggleButton;
+	@FXML
+	private ToggleButton edgesToggleButton;
+	@FXML
+	private ColorPicker elementColorPicker;
+	@FXML
+	private ComboBox<String> elementRankingCombo;
+	@FXML
+	private Consumer<String> onRankingSelectedCallback;
+
 	private Graph graph;
 
 	public void handleQuit(ActionEvent event) {
@@ -99,15 +102,15 @@ public class GraphVue {
 		previewPane.setVisible(false);
 
 		switch (viewType) {
-		case "overview":
-			overviewPane.setVisible(true);
-			break;
-		case "data":
-			dataPane.setVisible(true);
-			break;
-		case "preview":
-			previewPane.setVisible(true);
-			break;
+			case "overview":
+				overviewPane.setVisible(true);
+				break;
+			case "data":
+				dataPane.setVisible(true);
+				break;
+			case "preview":
+				previewPane.setVisible(true);
+				break;
 		}
 	}
 
@@ -120,18 +123,18 @@ public class GraphVue {
 		String mode = (String) selected.getUserData();
 
 		switch (mode) {
-		case "RUN":
-			graph.setMode(GraphData.GraphMode.RUN);
-			break;
-		case "SELECTION":
-			graph.setMode(GraphData.GraphMode.SELECTION);
-			break;
-		case "MOVE":
-			graph.setMode(GraphData.GraphMode.MOVE);
-			break;
-		case "DELETE":
-			graph.setMode(GraphData.GraphMode.DELETE);
-			break;
+			case "RUN":
+				graph.setMode(GraphData.GraphMode.RUN);
+				break;
+			case "SELECTION":
+				graph.setMode(GraphData.GraphMode.SELECTION);
+				break;
+			case "MOVE":
+				graph.setMode(GraphData.GraphMode.MOVE);
+				break;
+			case "DELETE":
+				graph.setMode(GraphData.GraphMode.DELETE);
+				break;
 		}
 
 		System.out.println("Mode changé : " + mode);
@@ -142,11 +145,14 @@ public class GraphVue {
 	 */
 	@FXML
 	private void handleStartButton() {
-		graph =new Graph();
+		graph = new Graph();
 		System.out.println("Bouton démarrer cliqué !");
+		graphContainer.getChildren().clear();
 		graphInit();
-		graphContainer.getChildren().clear(); // Nettoyer le conteneur
-		graphContainer.getChildren().add(root);
+		/*
+		 * graphContainer.getChildren().clear(); // Nettoyer le conteneur
+		 * graphContainer.getChildren().add(root);
+		 */
 	}
 
 	/**
@@ -185,13 +191,15 @@ public class GraphVue {
 				communities.put(community_id, new Community(community_id, color[i][0], color[i][1], color[i][2]));
 			}
 			graph.vertices.get(i).setId(i); // Attribution d'un identifiant unique à chaque sommet
-			graph.vertices.get(i).setCommunity(communities.get(community_id)); // Attribution de la communauté à chaque sommet
+			graph.vertices.get(i).setCommunity(communities.get(community_id)); // Attribution de la communauté à chaque
+																				// sommet
 		}
 
 		graph.edges = new ArrayList<>();
 		EdgeC[] edgesC = graph.getEdges();
 		for (EdgeC edgeC : edgesC) {
-			Edge e = new Edge(graph.vertices.get(edgeC.getStart()), graph.vertices.get(edgeC.getEnd()), edgeC.getWeight());
+			Edge e = new Edge(graph.vertices.get(edgeC.getStart()), graph.vertices.get(edgeC.getEnd()),
+					edgeC.getWeight());
 			graph.edges.add(e);
 		}
 
@@ -210,7 +218,7 @@ public class GraphVue {
 
 		// Créer un GLWindow (OpenGL)
 		graph.glWindow = GLWindow.create(capabilities);
-		
+
 		graph.glWindow.addGLEventListener(graph);
 
 		// Créer un NewtCanvasJFX pour intégrer OpenGL dans JavaFX
@@ -222,12 +230,16 @@ public class GraphVue {
 		graph.addMouseListeners();
 
 		// Créer la scène JavaFX avec le SwingNode
-		root.getChildren().add(newtCanvas);
+		/* root.getChildren().add(newtCanvas); */
+		AnchorPane.setTopAnchor(newtCanvas, 0.0);
+		AnchorPane.setBottomAnchor(newtCanvas, 0.0);
+		AnchorPane.setLeftAnchor(newtCanvas, 0.0);
+		AnchorPane.setRightAnchor(newtCanvas, 0.0);
+		graphContainer.getChildren().add(newtCanvas);
 
 		// Démarrer l'animation
 		graph.animator = new FPSAnimator(graph.glWindow, 60);
 		graph.animator.start();
-		
 
 	}
 
@@ -240,7 +252,8 @@ public class GraphVue {
 		graph.setScreenSize(WIDTH, HEIGHT);
 
 		graph.setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
-		graph.setBackgroundColor(0.0f, 0.0f, 0.0f);; // Couleur de fond du graphe (au format hexadécimal)
+		graph.setBackgroundColor(0.0f, 0.0f, 0.0f);
+		; // Couleur de fond du graphe (au format hexadécimal)
 		graph.setUpscale(5); // Facteur d'agrandissement pour le graphe
 		graph.setInitialNodeSize(3); // Taille initiale d'un sommet
 		graph.setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un sommet
@@ -281,7 +294,6 @@ public class GraphVue {
 
 	}
 
-
 	public static int WIDTH = 1500; // Largeur de la fenêtre
 	public static int HEIGHT = 800; // Hauteur de la fenêtre
 
@@ -299,12 +311,11 @@ public class GraphVue {
 	private NodeCommunity methodCode;
 	private Pane root;
 
-
 	public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold,
 			NodeCommunity methodCode) {
 		this.fichier = fichier;
 		this.measureCode = measureCode;
 		this.methodCode = methodCode;
 	}
-	    
+
 }

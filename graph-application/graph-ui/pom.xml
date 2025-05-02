@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -13,7 +14,7 @@
 
     <artifactId>graph-ui</artifactId>
     <packaging>jar</packaging>
-    
+
     <repositories>
         <repository>
             <id>jogamp</id>
@@ -25,6 +26,12 @@
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
     </repositories>
+
+    <properties>
+        <!-- Version JogAmp utilisée -->
+        <jogamp.version>2.4.0</jogamp.version>
+        <jogamp.classifier>natives-linux-amd64</jogamp.classifier>
+    </properties>
 
     <dependencies>
         <!-- JavaFX -->
@@ -51,28 +58,58 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
-        <!-- JOGL avec natives -->
+        <!-- JOGL + GlueGen (Java) -->
         <dependency>
             <groupId>org.jogamp.jogl</groupId>
             <artifactId>jogl-all</artifactId>
-            <version>2.4.0</version>
+            <version>${jogamp.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jogamp.gluegen</groupId>
             <artifactId>gluegen-rt</artifactId>
-            <version>2.4.0</version>
+            <version>${jogamp.version}</version>
         </dependency>
+
+        <!-- JOGL + GlueGen natives Linux AMD64 -->
         <dependency>
             <groupId>org.jogamp.jogl</groupId>
             <artifactId>jogl-all</artifactId>
-            <version>2.4.0</version>
-            <classifier>natives-linux-amd64</classifier>
+            <version>${jogamp.version}</version>
+            <classifier>${jogamp.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.jogamp.gluegen</groupId>
+            <artifactId>gluegen-rt</artifactId>
+            <version>${jogamp.version}</version>
+            <classifier>${jogamp.classifier}</classifier>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Configuration JavaFX + JOGL -->
+            <!-- Copie des natives JOGL/GlueGen dans target/natives -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-jogamp-natives</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeClassifiers>${jogamp.classifier}</includeClassifiers>
+                            <includeArtifactIds>jogl-all,gluegen-rt</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/natives</outputDirectory>
+                            <stripVersion>true</stripVersion>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Plugin JavaFX (lance votre MainApp et pointe vers les natives) -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -80,7 +117,7 @@
                 <configuration>
                     <mainClass>com.mongraphe.graphui.MainApp</mainClass>
                     <options>
-                        <!-- Options JVM pour JOGL -->
+                        <!-- Export/Open pour JavaFX interne -->
                         <option>--add-exports</option>
                         <option>javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED</option>
                         <option>--add-exports</option>
@@ -101,11 +138,14 @@
                         <option>javafx.graphics/com.sun.glass.ui=ALL-UNNAMED</option>
                         <option>--add-opens</option>
                         <option>javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</option>
-                        
-                        <!-- Options mémoire -->
+
+                        <!-- Options mémoire et assertions -->
                         <option>-Xmx2G</option>
                         <option>-Xms1G</option>
                         <option>-ea</option>
+
+                        <!-- Indique où la JVM doit charger les .so -->
+                        <option>-Djava.library.path=${project.build.directory}/natives</option>
                     </options>
                 </configuration>
                 <executions>
@@ -131,7 +171,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Plugin pour exécution alternative -->
+            <!-- Exécution alternative (exec) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
