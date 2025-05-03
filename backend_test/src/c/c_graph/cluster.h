@@ -41,7 +41,7 @@ void init_clusters(int num_clusters);
 // Ajouter un noeud à un cluster, redimensionner si nécessaire
 void add_node_to_cluster(int cluster_id, int node);
 void random_point_in_plane(Point *p);
-
+void noverlap_force(double (*forces)[2], int * labels);
 
 #endif
 

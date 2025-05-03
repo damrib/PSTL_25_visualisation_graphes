@@ -16,9 +16,6 @@
 
 #include "../../out/graph_Graph.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../../lib/stb_image_write.h"
-
 
 int modeA=0; //mode pour afficher des noeuds en fonction de classe
 
@@ -136,7 +133,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_testUpdatePosition
       parallel_repulsion_edges(forces);
       chr_pause(&chrono_repulsionE);
     #else
-      parallel_repulsion_edges(forces);
+      repulsion_edges(forces);
     #endif
 
     repulsion_intra_clusters(forces, FMaxX, FMaxY);
@@ -145,7 +142,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_testUpdatePosition
       parallel_repulsion_anti_edges(forces);
       chr_pause(&chrono_repulsionAE);
     #else
-      parallel_repulsion_anti_edges(forces);
+      repulsion_anti_edges(forces);
     #endif
 
 

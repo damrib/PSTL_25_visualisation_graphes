@@ -8,7 +8,7 @@ int clusters[MAX_NODES];
 struct spatialCell {
     int* nodes;
     int size;
-}
+};
 typedef struct spatialCell* SpatialCell;
 SpatialCell grid_list = NULL;
 void freeSpatialCell(SpatialCell cell, int size) {
@@ -127,14 +127,14 @@ void grid_clustering(
 
     grid_list = (SpatialCell) malloc(sizeof(struct spatialCell) * grid_size);
     for (int i = 0; i < grid_size; ++i) {
-        grid_list[i]->nodes = (int*) malloc(sizeof(int) * grid_contains[i]);
-        grid_list[i]->size = grid_contains[i];
+        grid_list[i].nodes = (int*) malloc(sizeof(int) * grid_contains[i]);
+        grid_list[i].size = grid_contains[i];
     }
 
     for (int i = 0; i < num_points; ++i) {
         if ( vertices[i].deleted == 0 ) {
             grid_contains[labels[i]] -= 1;
-            grid_list[labels[i]]->nodes[grid_contains[i]] = i;
+            grid_list[labels[i]].nodes[grid_contains[i]] = i;
         }
     }
 
@@ -149,9 +149,9 @@ void apply_noverlap(void * args) {
 
 void noverlap_sequential(double (*forces)[2], int node_index, int grid_index) {
 
-    for (int i = 0; i < grid_list[grid_index]->size; ++i) {
+    for (int i = 0; i < grid_list[grid_index].size; ++i) {
 
-        int grid_node = grid_list[grid_index]->nodes[i];
+        int grid_node = grid_list[grid_index].nodes[i];
 
         double node_size = compute_node_size(node_index);
         double grid_node_size = compute_node_size(grid_node);
@@ -184,12 +184,12 @@ void noverlap_force(double (*forces)[2], int * labels) {
           
             int u_y = (grid_index - grid_length) < 0 ? -1 : (grid_index - grid_length);
             int d_y = (grid_index + grid_length) >= grid_size ? -1 : (grid_index + grid_length); 
-            int l_x = grid_index - 1 < 0 : -1 : (grid_index - 1);
-            int r_x = grid_index + 1 > : grid_index : (grid_index + 1);
-            int lu  = u_y == -1 || l_x == -1 ? -1 : u_y - 1;
-            int ru  = u_y == -1 || r_x == -1 ? -1 : u_y + 1;
-            int ld  = d_y == -1 || l_x == -1 ? -1 : d_y - 1;
-            int rd  = d_y == -1 || r_x == -1 ? -1 : d_y + 1;
+            int l_x = grid_index - 1 < 0 ? -1 : (grid_index - 1);
+            int r_x = grid_index + 1 > grid_length ? grid_index : (grid_index + 1);
+            int lu  = (u_y == -1 || l_x == -1) ? -1 : u_y - 1;
+            int ru  = (u_y == -1 || r_x == -1) ? -1 : u_y + 1;
+            int ld  = (d_y == -1 || l_x == -1) ? -1 : d_y - 1;
+            int rd  = (d_y == -1 || r_x == -1) ? -1 : d_y + 1;
 
             if ( lu != -1 ) noverlap_sequential(forces, i, lu);
             if ( u_y != -1 ) noverlap_sequential(forces, i, u_y);
@@ -203,24 +203,6 @@ void noverlap_force(double (*forces)[2], int * labels) {
 
         }
 
-    }
-
-    for (int i = 0; i < grid_size; ++i) {
-        
-        int u_y = (i - grid_length) < 0 ? -1 : (i - grid_length);
-        int d_y = (i + grid_length) >= grid_size ? -1 : (i + grid_length); 
-        int l_x = i - 1 < 0 : i : (i - 1);
-        int r_x = i + 1 > : i : (i + 1);
-        int lu  = u_y == -1 || l_x == -1 ? -1 : u_y - 1;
-        int ru  = u_y == -1 || r_x == -1 ? -1 : u_y + 1;
-        int ld  = d_y == -1 || l_x == -1 ? -1 : d_y - 1;
-        int rd  = d_y == -1 || r_x == -1 ? -1 : d_y + 1;
-
-        for (int j = 0; j < grid_list[i]->size; ++i) {
-
-
-
-        }
     }
 
 }
@@ -506,7 +488,7 @@ void update_clusters()
         }
         modified = 1;
     } else if ( kmeans_mode == 0 ) {
-        grid_clustering(num_nodes, n_clusters, clusters, Lx, Ly, 10);
+        grid_clustering(num_nodes, n_clusters, clusters, Lx, Ly);
         modified = 1;
     }
 
