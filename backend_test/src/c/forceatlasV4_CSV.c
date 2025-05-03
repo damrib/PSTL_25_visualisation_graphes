@@ -275,7 +275,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
 
     jboolean b = JNI_FALSE;
     const char* str = (*env)->GetStringUTFChars(env, filepath, &b); 
-
+    init_S(num_nodes);
     load_csv_data(str);
 
     (*env)->ReleaseStringUTFChars(env, filepath, str);
@@ -437,7 +437,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
         // Demander le chemin du fichier à l'utilisateur
         lireColonneCSV(S, &nbValeurs);
         // Afficher les valeurs lues
-        printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
+        //printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
         modeA =1;
         compute_ratio_S(S);
     } else {
@@ -477,7 +477,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
       }
   }
   free_clusters();
-  freeNodeNames();
+  freeNodeNames();    free_S();
   FreePool(&pool);
 
   num_nodes = 0;

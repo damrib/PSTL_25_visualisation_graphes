@@ -9,7 +9,7 @@
 
 extern Edge edges[MAX_EDGES]; // Pour les arêtes normales
 extern char **node_names; // Array to store node names as strings      
-extern int S[MAX_NODES];
+extern int *S;
 extern Point vertices[MAX_NODES];
 extern Point velocities[MAX_NODES];
 extern int node_degrees[MAX_NODES];
@@ -81,7 +81,6 @@ extern int nbValeurs;
 extern double **data;  // Stocker les données CSV
 extern int num_rows, num_columns;
 extern char delimiter[1];
-extern int S[MAX_NODES];
 
 
 #include "pretraitement/similarity.h"
