@@ -197,57 +197,6 @@ void split_str(char * line, size_t size, char* delimiters, int nb_delimiter) {
 
 }
 
-char* next_str(char** line, size_t* s) {
-
-    while ( **line == '\0' ) { 
-        ++*line; 
-        --*s;
-    }
-
-    char * start = *line;
-    int cpt = 0;
-    while ( **line != '\0' && *s > 0) {
-        ++cpt;
-        ++*line;
-        --*s;
-    }
-
-    char* res = NULL;
-    if ( cpt != 0 ) {
-
-        res = (char*) malloc(sizeof(char) * (cpt + 1));
-        for (int i = 0; i < cpt; ++i) {
-            res[i] = start[i];
-        }
-        res[cpt] = '\0';
-    }
-
-    return res;
-}
-
-void find_parameters
-    (char** line, size_t* size, double* weight, char** node_name) 
-{
-
-    while (*size > 0) {
-        char* next = next_str(line, size);
-
-        if ( weight != NULL && *size > 0 && strcmp(next, "weight") == 0 ) {
-            char* next = next_str(line, size);
-            if ( next != NULL ) {
-                sscanf(next, "%lf", weight);
-                free(next);
-            }
-        } else if ( node_name != NULL && *size > 0 && strcmp(next, "label") == 0 ) {
-            char* next = next_str(line, size);
-            if ( next != NULL ) {
-                *node_name = next;
-            }
-        }
-    }
-    
-}
-
 int hash_string(char* label) {
 
     int cpt = 0;

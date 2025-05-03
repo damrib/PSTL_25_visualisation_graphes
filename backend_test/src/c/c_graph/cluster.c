@@ -4,6 +4,17 @@
 int communities[MAX_NODES]; // Stocke les communautés détectées par Louvain
 
 int clusters[MAX_NODES];
+
+struct spatialCell {
+    int* nodes;
+    int size;
+}
+typedef struct spatialCell* SpatialCell;
+SpatialCell grid_list = NULL;
+void freeSpatialCell(SpatialCell cell, int size) {
+    free(cell->nodes);
+}
+
 float cluster_colors[MAX_NODES][3];
 double centers[MAX_NODES][2];
 Cluster *cluster_nodes = NULL;  // Tableau de clusters
@@ -13,10 +24,21 @@ int kmeans_mode = 0;
 double epsilon = 0.1;
 int espacement = 1;
 
+int no_overlap = 0;
+double initial_node_size = 0.;
+double degree_scale_factor = 0.;
+
 // modifiable par utilisateur
 double repulsion_coeff = 1;
 int saut = 1;
 int mode = 0;
+
+double compute_node_size(int node_index) {
+    if ( degree_scale_factor < 0 )
+        degree_scale_factor = 0;
+    
+    return initial_node_size + degree_scale_factor * node_degrees[node_index];
+}
 
 double squared_distance(double* center, Point p) {
     double dx = p.x - center[0];
@@ -72,18 +94,17 @@ void initialize_centers_plus() {
 
 }
 
-int grid_clustering(
+void grid_clustering(
     int num_points, 
     int num_clusters, 
     int *labels, 
     double Lx, 
-    double Ly,
-    double threshold) {
+    double Ly) {
 
     int grid_length = (int) sqrt(num_clusters); 
 
-    int empty_counter = grid_length * grid_length;
-    int* grid_contains = (int*) calloc(sizeof(int),empty_counter);
+    int grid_size = grid_length * grid_length;
+    int* grid_contains = (int*) calloc(sizeof(int), grid_size);
 
     double center_width = Lx * 0.5;
     double center_height = Ly * 0.5;
@@ -100,16 +121,108 @@ int grid_clustering(
 
             labels[i] = grid_j * grid_length + grid_i;
 
-            if ( grid_contains[labels[i]] == 0 ) {
-                grid_contains[labels[i]] = 1;
-                --empty_counter;
-            }
+            grid_contains[labels[i]] += 1;
+        }
+    }
+
+    grid_list = (SpatialCell) malloc(sizeof(struct spatialCell) * grid_size);
+    for (int i = 0; i < grid_size; ++i) {
+        grid_list[i]->nodes = (int*) malloc(sizeof(int) * grid_contains[i]);
+        grid_list[i]->size = grid_contains[i];
+    }
+
+    for (int i = 0; i < num_points; ++i) {
+        if ( vertices[i].deleted == 0 ) {
+            grid_contains[labels[i]] -= 1;
+            grid_list[labels[i]]->nodes[grid_contains[i]] = i;
         }
     }
 
     free(grid_contains);
+}
 
-    return empty_counter > threshold;
+void apply_noverlap(void * args) {
+
+
+
+}
+
+void noverlap_sequential(double (*forces)[2], int node_index, int grid_index) {
+
+    for (int i = 0; i < grid_list[grid_index]->size; ++i) {
+
+        int grid_node = grid_list[grid_index]->nodes[i];
+
+        double node_size = compute_node_size(node_index);
+        double grid_node_size = compute_node_size(grid_node);
+
+        double x = vertices[grid_node].x - vertices[node_index].x;
+        double y = vertices[grid_node].y - vertices[node_index].y;
+        double dist = sqrt(x * x + y * y); 
+
+        // border_to_border distance
+        double btb_dist = dist - node_size - grid_node_size;
+
+        // overlaping
+        if ( btb_dist < 0 ) {
+            forces[grid_index][0] += x / dist * (1. + node_size);
+            forces[grid_index][1] += y / dist * (1. + node_size);
+        } 
+    }
+
+}
+
+void noverlap_force(double (*forces)[2], int * labels) {
+
+    int grid_length = (int) sqrt(n_clusters);
+    int grid_size = grid_length * grid_length;
+
+    for (int i = 0; i < num_nodes; ++i) {
+
+        if ( vertices[i].deleted == 0 ) {
+            int grid_index = labels[i];
+          
+            int u_y = (grid_index - grid_length) < 0 ? -1 : (grid_index - grid_length);
+            int d_y = (grid_index + grid_length) >= grid_size ? -1 : (grid_index + grid_length); 
+            int l_x = grid_index - 1 < 0 : -1 : (grid_index - 1);
+            int r_x = grid_index + 1 > : grid_index : (grid_index + 1);
+            int lu  = u_y == -1 || l_x == -1 ? -1 : u_y - 1;
+            int ru  = u_y == -1 || r_x == -1 ? -1 : u_y + 1;
+            int ld  = d_y == -1 || l_x == -1 ? -1 : d_y - 1;
+            int rd  = d_y == -1 || r_x == -1 ? -1 : d_y + 1;
+
+            if ( lu != -1 ) noverlap_sequential(forces, i, lu);
+            if ( u_y != -1 ) noverlap_sequential(forces, i, u_y);
+            if ( ru != -1 ) noverlap_sequential(forces, i, ru);
+            if ( l_x != -1 ) noverlap_sequential(forces, i, l_x);
+            if ( r_x != -1 ) noverlap_sequential(forces, i, r_x);
+            if ( ld != -1 ) noverlap_sequential(forces, i, ld);
+            if ( d_y != -1 ) noverlap_sequential(forces, i, d_y);
+            if ( rd != -1 ) noverlap_sequential(forces, i, rd);
+            noverlap_sequential(forces, i, grid_index);
+
+        }
+
+    }
+
+    for (int i = 0; i < grid_size; ++i) {
+        
+        int u_y = (i - grid_length) < 0 ? -1 : (i - grid_length);
+        int d_y = (i + grid_length) >= grid_size ? -1 : (i + grid_length); 
+        int l_x = i - 1 < 0 : i : (i - 1);
+        int r_x = i + 1 > : i : (i + 1);
+        int lu  = u_y == -1 || l_x == -1 ? -1 : u_y - 1;
+        int ru  = u_y == -1 || r_x == -1 ? -1 : u_y + 1;
+        int ld  = d_y == -1 || l_x == -1 ? -1 : d_y - 1;
+        int rd  = d_y == -1 || r_x == -1 ? -1 : d_y + 1;
+
+        for (int j = 0; j < grid_list[i]->size; ++i) {
+
+
+
+        }
+    }
+
 }
 
 struct map_arguments {
@@ -344,9 +457,9 @@ void repulsion_intra_clusters(double(*forces)[2], double FMaxX, double FMaxY)
                         
                         double rep_force;
                         if ( mode == 1 ) { 
-                            rep_force = repulsion_coeff/ (dist_squared*dist_squared);
+                            rep_force = repulsion_coeff / (dist_squared*dist_squared);
                         } else if (mode == 2 && communities[i] != communities[j]) {//printf("extra repulsion %d, %d \n",i,j);
-                            rep_force = 100000*repulsion_coeff*(node_degrees[i]+1)*(node_degrees[j]+1) / dist_squared;
+                            rep_force = 100000 * repulsion_coeff * (node_degrees[i]+1) * (node_degrees[j]+1) / dist_squared;
                         } else { // mode == 0 est le mode par defaut
                             rep_force = repulsion_coeff * (node_degrees[i]+1) * (node_degrees[j]+1) / dist_squared;
                         } 

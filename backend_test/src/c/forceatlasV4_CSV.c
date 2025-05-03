@@ -93,14 +93,6 @@ JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
    return 1;
 }
 
-void update_forces(Point* forces, double FMaxX, double FMaxY) {
-
-  struct barrier bar;
-  new_barrier(&bar, 3);
-
-  destroy_barrier(&bar);
-}
-
 JNIEXPORT void JNICALL Java_graph_Graph_testUpdatePosition
   (JNIEnv * env, jobject obj, jint iteration_number)
 {
@@ -399,7 +391,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
   return res;
 }
 
-JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
+JNIEXPORT jobject JNICALL Java_graph_Graph_initializeGraph
   (JNIEnv *env, jobject obj, jint md, jdouble thresh, jdouble anti_thresh)
 {
 
@@ -444,8 +436,12 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
         printf("Option invalide\n");
     }
     initialize_community_colors();
-
     compute_average_vectors();
+
+    for (int i = 0; i < num_rows; i++) {
+      free(data[i]);
+    }
+    free(data);
 
     for (int i = 0; i < num_nodes; i++) {
         random_point_in_center(i);
@@ -482,6 +478,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
 
   num_nodes = 0;
   num_edges = 0;
+  live_nodes = 0;
 }
 
 JNIEXPORT void JNICALL Java_graph_Graph_setSaut
