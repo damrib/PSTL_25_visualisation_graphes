@@ -369,5 +369,4 @@ void calculate_similitude_and_edges(int md, double threshold, double antiseuil) 
     }
     // main thread wait for the thread to finish processing the previous calculation
     wait_barrier(&bar);
-    printf("\n\nHELP\n\n");
 }

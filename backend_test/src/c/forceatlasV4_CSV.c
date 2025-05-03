@@ -235,7 +235,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
 
     jboolean b = JNI_FALSE;
     const char* str = (*env)->GetStringUTFChars(env, filepath, &b); 
-
+    init_S(num_nodes);
     load_csv_data(str);
 
     (*env)->ReleaseStringUTFChars(env, filepath, str);
@@ -375,7 +375,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
     }
     free(similarity_matrix);
 
-    printf("\n\nHELP\n\n");
 
     modeA=0;
     if (md == 0) {
@@ -394,7 +393,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
         // Demander le chemin du fichier à l'utilisateur
         lireColonneCSV(S, &nbValeurs);
         // Afficher les valeurs lues
-        printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
+        //printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
         modeA =1;
         compute_ratio_S(S);
     } else {
@@ -402,7 +401,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
     }
     initialize_community_colors();
 
-    printf("\n\nHELP\n\n");
 
     #ifdef _DEBUG_
         printf("Fin Calcul Communaute");
@@ -429,7 +427,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDIII)V");
     jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, thresh, anti_thresh, num_edges, num_antiedges, n_clusters);
 
-    printf("\n\nHelp\n\n");
 
     return res;   
 
@@ -449,7 +446,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
         }
     }
     free_clusters();
-
+    free_S();
     FreePool(&pool);
 
 }

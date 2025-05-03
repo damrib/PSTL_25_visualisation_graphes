@@ -5,9 +5,25 @@ int nbValeurs;
 double **data = NULL;
 int num_rows = 0, num_columns = 0;
 char delimiter[1] = "\0";
-int S[MAX_NODES]={0};
+int *S = NULL;
+
 char *node_names[MAX_NODES];
 
+void init_S(int num_nodes) {
+    int size = (num_nodes * 2 < MAX_NODES) ? num_nodes * 2 : MAX_NODES;
+    S = (int *)malloc(sizeof(int) * size);
+    if (!S) {
+        fprintf(stderr, "Error d'allocation mémoire: init_S\n");
+        exit(1);
+    }
+}
+
+void free_S() {
+    if (S) {
+        free(S);
+        S = NULL;
+    }
+}
 short str_is_number(char* line)
 {
     if ( *line == '-' ) {
@@ -111,16 +127,16 @@ void load_csv_data(const char *filename) {
     fclose(file);
     free(line);  // Libérer la mémoire allouée par getline
 
-    printf("Loaded CSV with %d rows and %d columns.\n", num_rows, num_columns);
+    //printf("Loaded CSV with %d rows and %d columns.\n", num_rows, num_columns);
     
         // Afficher les trois premières lignes
-    printf("Les 3 premières lignes des données :\n");
-    for (int i = 0; i < 5 && i < num_rows; i++) {
-        for (int j = 0; j < num_columns; j++) {
-            printf("%f ", data[i][j]);
-        }
-        printf("\n");
-    }
+    // printf("Les 3 premières lignes des données :\n");
+    // for (int i = 0; i < 5 && i < num_rows; i++) {
+    //     for (int j = 0; j < num_columns; j++) {
+    //         printf("%f ", data[i][j]);
+    //     }
+    //     printf("\n");
+    // }
 
     // On ne garde pas la première ligne dans les données
     num_rows = num_rows - 1;
