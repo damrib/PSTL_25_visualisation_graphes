@@ -668,13 +668,12 @@ public class Graph implements GLEventListener, GraphSettings {
         this.projectionMatrix = FloatBuffer.wrap(orthoMatrix);
     }
 
-    // @Override
-    // public void stop() {
-    // if (animator != null) {
-    // animator.stop();
-    // }
-    // freeAllocatedMemory();
-    // }
+     public void stop() {
+     if (animator != null) {
+     animator.stop();
+     }
+     freeAllocatedMemory();
+     }
 
     // -------------------------------------------------------------------------
     // Exemples d'initialisation et d'actions sur le graphe

@@ -16,14 +16,11 @@ import com.mongraphe.graphui.GraphData.SimilitudeMode;
 
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Group;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
@@ -64,6 +61,16 @@ public class GraphVue {
 	private ToggleGroup viewToggleGroup;
 	@FXML
 	private ToggleGroup graphModeToggleGroup;
+	
+	@FXML
+	private Label recommendedTreshold;
+	@FXML
+	private Label recommendedAntiTreshold;
+	@FXML
+	private Label treshold;
+	@FXML
+	private Label antiTreshold;
+	
 
 	///////////////////////
 
@@ -85,6 +92,7 @@ public class GraphVue {
 	private Graph graph;
 
 	public void handleQuit(ActionEvent event) {
+		graph.stop();
 		Platform.exit();
 	}
 
@@ -243,8 +251,17 @@ public class GraphVue {
 		graph.animator = new FPSAnimator(graph.glWindow, 60);
 		graph.animator.start();
 		System.out.println("Animation démarrée");
+		
+	    minimumDegree.setText(graph.getMinimumDegree()+"");
+	    recommendedTreshold.setText(graph.getRecommendedThreshold()+"");
+	    recommendedAntiTreshold.setText(graph.getRecommendedAntiThreshold()+"");
+	    treshold.setText(String.valueOf(graph.getThreshold()));
+	    antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
+	    
+
 
 	}
+	
 
 	private void testInit() {
 
@@ -254,7 +271,7 @@ public class GraphVue {
 
 		graph.setScreenSize(graphContainer.getWidth(), graphContainer.getHeight()); // Taille de l'écran du
 																					// graphe
-		graph.setBackgroundColor(1.0f, 1.0f, 1.0f); // blue
+		graph.setBackgroundColor(1.0f, 1.0f, 1.0f); 
 		// Couleur de fond du graphe (au format hexadécimal)
 		graph.setUpscale(5); // Facteur d'agrandissement pour le graphe
 		graph.setInitialNodeSize(3); // Taille initiale d'un sommet
@@ -263,33 +280,109 @@ public class GraphVue {
 
 	//////// options contollers
 	@FXML
-	private TextField InitNodeSize;
+	private TextField initNodeSize;
 	@FXML
 	private TextField degreeFactor;
 	@FXML
 	private TextField upScale;
+	@FXML
+	private TextField stabilizedTreshold;
+	@FXML
+	private TextField attractionTreshold;
+	@FXML
+	private TextField updatedFrequence;
+	@FXML
+	private TextField newFriction;
+	@FXML
+	private TextField attractionCoefficient;
+	@FXML
+	private TextField repulsionTreshold;
+	@FXML
+	private TextField newAmortissement;
+	@FXML
+	private TextField nbClusters;
+	@FXML
+	private TextField minimumDegree;
+	@FXML
+	private ComboBox<GraphData.RepulsionMode> repulsionModeComboBox;
+	@FXML
+	private ComboBox<GraphData.SimilitudeMode> mesureChamp;
+	@FXML
+	private ComboBox<GraphData.NodeCommunity> clusteringChamp;
+
+	@FXML
+	private void initialize() {
+	    repulsionModeComboBox.getItems().setAll(GraphData.RepulsionMode.values());
+	    mesureChamp.getItems().setAll(GraphData.SimilitudeMode.values());
+	    mesureChamp.setValue(measureCode);
+	    clusteringChamp.getItems().setAll(GraphData.NodeCommunity.values());
+	    clusteringChamp.setValue(methodCode);
+	}
 
 	@FXML
 	private void applyOptions() {
-		int newDegreeMin = (int) degreeMinSlider.getValue();
-		minimumDegree.set(newDegreeMin);
-		degreeMinValue.setText(String.valueOf(newDegreeMin));
-		System.out.println("Nouveau degré minimum : " + newDegreeMin);
-		System.out.println("Nouveau Factor degré m : " + Double.parseDouble(degreeFactor.getText()));
-		System.out.println("Nouveau facteur d'agrandissement : " + Double.parseDouble(InitNodeSize.getText()));
-		System.out.println("Nouveau degré initial : " + Integer.parseInt(upScale.getText()));
+		try {
+			if (!degreeFactor.getText().isEmpty()) {
+				graph.setDegreeScaleFactor(Double.parseDouble(degreeFactor.getText()));
+			}
+			if (!initNodeSize.getText().isEmpty()) {
+				graph.setInitialNodeSize(Double.parseDouble(initNodeSize.getText()));
+			}
+			if (!upScale.getText().isEmpty()) {
+				graph.setUpscale(Integer.parseInt(upScale.getText()));
+			}
+			if (!stabilizedTreshold.getText().isEmpty()) {
+				graph.setStabilizedThreshold(Double.parseDouble(stabilizedTreshold.getText()));
+			}
+			if (!attractionTreshold.getText().isEmpty()) {
+				graph.setAttractionThreshold(Double.parseDouble(attractionTreshold.getText()));
+			}
+			if (!updatedFrequence.getText().isEmpty()) {
+				graph.setUpdatedFrequence(Integer.parseInt(updatedFrequence.getText()));
+			}
+			if (!newFriction.getText().isEmpty()) {
+				graph.setNewFriction(Double.parseDouble(newFriction.getText()));
+			}
+			if (!attractionCoefficient.getText().isEmpty()) {
+				graph.setAttractionCoefficient(Double.parseDouble(attractionCoefficient.getText()));
+			}
+			if (!repulsionTreshold.getText().isEmpty()) {
+				graph.setRepulsionThreshold(Double.parseDouble(repulsionTreshold.getText()));
+			}
+			if (!newAmortissement.getText().isEmpty()) {
+				graph.setNewAmortissement(Double.parseDouble(newAmortissement.getText()));
+			}
+			if (!nbClusters.getText().isEmpty()) {
+				graph.setNbClusters(Integer.parseInt(nbClusters.getText()));
+			}
+			if (!minimumDegree.getText().isEmpty()) {
+				graph.setMiniumDegree(Integer.parseInt(minimumDegree.getText()));
+			}
+			GraphData.RepulsionMode selectedMode = repulsionModeComboBox.getValue();
+			if (selectedMode != null) {
+				graph.setRepulsionMode(selectedMode);
+			}
 
-		graph.setDegreeScaleFactor(Double.parseDouble(degreeFactor.getText()));
-		graph.setInitialNodeSize(Double.parseDouble(InitNodeSize.getText()));
-		graph.setUpscale(Integer.parseInt(upScale.getText()));
+			// Couleur de fond par défaut
+			graph.setBackgroundColor(0.0f, 0.0f, 0.0f);
 
-		graph.setBackgroundColor(0.0f, 0.0f, 0.0f); // blue
+			for (Vertex v : graph.vertices) {
+				v.updateDiameter();
+			}
+			graph.initializeArrays();
+			treshold.setText(String.valueOf(graph.getThreshold()));
+		    antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
+			graph.glWindow.display();
+			
 
-		for (Vertex v : graph.vertices) {
-			v.updateDiameter();
+		} catch (NumberFormatException e) {
+			System.err.println("Erreur de format dans un des champs : " + e.getMessage());
 		}
-		graph.initializeArrays();
-		graph.glWindow.display();
+	}
+	
+	@FXML
+	private void applyChangement() {
+		
 	}
 
 	/*
@@ -310,20 +403,12 @@ public class GraphVue {
 	// Réinitialiser les paramètres du graphe
 	@FXML
 	private void resetGraphSettings() {
-		degreeMinSlider.setValue(3);
-		degreeMinValue.setText("3");
-		minimumDegree.set(3);
-
-		sizeFilterComboBox.getSelectionModel().select("Tous");
-		showIsolatedNodesCheckbox.setSelected(true);
+		
 
 	}
 
 	public static int WIDTH = 1500; // Largeur de la fenêtre
 	public static int HEIGHT = 800; // Hauteur de la fenêtre
-
-	// Propriété pour le degré minimum des sommets
-	public static final IntegerProperty minimumDegree = new SimpleIntegerProperty(0);
 
 	// Propriété pour la fréquence de mise à jour du graphe
 	public static final DoubleProperty updateFrequency = new SimpleDoubleProperty(1.0);

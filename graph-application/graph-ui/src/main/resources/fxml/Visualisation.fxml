@@ -17,7 +17,7 @@
           fx:controller="com.mongraphe.graphui.GraphVue"
           stylesheets="@../css/visualisation.css">
     
-    <!-- Configuration des colonnes et lignes -->
+    <!-- Configuration des colonnes et lignes révisée -->
     <columnConstraints>
         <ColumnConstraints percentWidth="20" />
         <ColumnConstraints percentWidth="60" />
@@ -26,11 +26,10 @@
     <rowConstraints>
         <RowConstraints prefHeight="25" maxHeight="25" /> <!-- Barre de menus -->
         <RowConstraints prefHeight="40" maxHeight="40" /> <!-- Barre d'onglets -->
-        <RowConstraints percentHeight="100" /> <!-- Contenu principal -->
+        <RowConstraints percentHeight="100"/> <!-- Contenu principal -->
     </rowConstraints>
 
-    
-   <!-- Barre de menus (ligne 0) -->
+    <!-- Barre de menus (ligne 0) -->
     <MenuBar GridPane.columnSpan="3" GridPane.rowIndex="0">
         <Menu text="Fichier">
             <MenuItem text="Nouveau" />
@@ -59,7 +58,7 @@
         </Menu>
     </MenuBar>
 
-  <!-- Barre d'onglets -->
+    <!-- Barre d'onglets (ligne 1) -->
     <HBox GridPane.columnSpan="3" GridPane.rowIndex="1" 
           style="-fx-background-color: #f4f4f4; -fx-padding: 5;" 
           spacing="10">
@@ -150,17 +149,14 @@
 			            <Label text="Paramètres du graphe" style="-fx-font-weight: bold; -fx-padding: 10 0 0 0;" />
 			            <GridPane hgap="10" vgap="5">
 			                <Label text="Taille d'un noeud:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-			                <TextField fx:id="InitNodeSize" GridPane.rowIndex="0" GridPane.columnIndex="1" text="3" />
+			                <TextField fx:id="initNodeSize" GridPane.rowIndex="0" GridPane.columnIndex="1" text="3" />
 			
-			                <Label text="Agrandissement selon degré:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+			                <Label text="Agrandissement par degré:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
 			                <TextField fx:id="degreeFactor" GridPane.rowIndex="1" GridPane.columnIndex="1" text="0.3" />
 			
 			                <Label text="Agrandissement total:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
 			                <TextField fx:id="upScale" GridPane.rowIndex="2" GridPane.columnIndex="1" text="5" />
 							
-							<Label text="Mode de répulsion:" />
-							<ComboBox fx:id="repulsionModeComboBox" prefWidth="200" />
-
 			                <Label text="Seuil de stabilité:" GridPane.rowIndex="3" GridPane.columnIndex="0" />
 			                <TextField fx:id="stabilizedTreshold" GridPane.rowIndex="3" GridPane.columnIndex="1" />
 			
@@ -187,31 +183,28 @@
 			
 			                <Label text="Degré minimum:" GridPane.rowIndex="11" GridPane.columnIndex="0" />
 			                <TextField fx:id="minimumDegree" GridPane.rowIndex="11" GridPane.columnIndex="1" />
-			
+							
+							
+							<Label text="Mode de répulsion:" GridPane.rowIndex="12" GridPane.columnIndex="0" />
+							<ComboBox fx:id="repulsionModeComboBox" prefWidth="200" GridPane.rowIndex="12" GridPane.columnIndex="1"/>
+
 			                <Button text="Appliquer" onAction="#applyOptions" styleClass="button-8"
-			                        GridPane.rowIndex="12" GridPane.columnIndex="1" />
+			                        GridPane.rowIndex="13" GridPane.columnIndex="1" />
 			            </GridPane>
 			
 			            <!-- Changement d'algorithmes -->
 			            <Label text="Changement d'algorithmes" style="-fx-font-weight: bold; -fx-padding: 10 0 0 0;" />
 			            <GridPane hgap="10" vgap="5">
-			                <Label text="Quadtree Max Level:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-			                <TextField fx:id="quadtreeMaxLevelField" GridPane.rowIndex="0" GridPane.columnIndex="1" text="10" />
+			                <Label text="Mesure de similarité:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+			                <ComboBox fx:id="mesureChamp" prefWidth="200" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 			
-			                <Label text="Theta:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-			                <TextField fx:id="thetaField" GridPane.rowIndex="1" GridPane.columnIndex="1" text="1.2" />
+			                <Label text="Méthode de clustering:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+			                <ComboBox fx:id="clusteringChamp" prefWidth="200" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+			                
+			                <Button text="Modifier" onAction="#applyChangement" styleClass="button-8"
+			                        GridPane.rowIndex="2" GridPane.columnIndex="1" />
 			            </GridPane>
-			
-			            <!-- Paramètres généraux -->
-			            <Label text="Filtres supplémentaires" style="-fx-font-weight: bold; -fx-padding: 10 0 0 0;" />
-			
-			            <HBox spacing="5" alignment="CENTER_LEFT">
-			                <Label text="Filtrer Taille:" />
-			                <ComboBox fx:id="sizeFilterComboBox2"/>
-			            </HBox>
-			
-			            <CheckBox fx:id="showIsolatedNodesCheckbox" text="Afficher nœuds isolés" selected="true" />
-			
+									
 			            <Button text="Réinitialiser" onAction="#resetGraphSettings"
 			                    style="-fx-background-color: #d9534f; -fx-text-fill: white;" />
 			        </VBox>
@@ -260,7 +253,7 @@
             <!-- Panneau droit -->
             <!-- Panneau des statistiques en haut à droite -->
         <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px; -fx-background-color: #ffffff; -fx-padding: 10;" 
-                    GridPane.rowIndex="0" GridPane.columnIndex="2">
+                    GridPane.rowIndex="0" GridPane.columnIndex="2" GridPane.rowSpan="2">
             <!-- Section statistiques -->
             <VBox alignment="TOP_CENTER" spacing="8" style="-fx-background-color: #f9f9f9; -fx-padding: 1; -fx-border-radius: 5; -fx-border-color: #ccc; -fx-border-width: 1px;" 
                 AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
@@ -281,6 +274,22 @@
                 <HBox spacing="10">
                     <Label text="Arêtes supprimées:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
                     <Label fx:id="edgesDeletedLabel" text="0" style="-fx-text-fill: #e76f51;" />
+                </HBox>
+                <HBox spacing="10">
+                    <Label text="Seuil recommandé arêtes " style="-fx-font-weight: bold;     -fx-padding: 5px" />
+                    <Label fx:id="recommendedTreshold" text="0" style="-fx-text-fill: #e76f51;" />
+                </HBox>
+                <HBox spacing="10">
+                    <Label text="Seuil recommandé anti-arêtes:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
+                    <Label fx:id="recommendedAntiTreshold" text="0" style="-fx-text-fill: #e76f51;" />
+                </HBox>
+                <HBox spacing="10">
+                    <Label text="Seuil actuel arêtes:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
+                    <Label fx:id="treshold" text="0" style="-fx-text-fill: #e76f51;" />
+                </HBox>
+                <HBox spacing="10">
+                    <Label text="Seuil actuel anti-arêtes:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
+                    <Label fx:id="antiTreshold" text="0" style="-fx-text-fill: #e76f51;" />
                 </HBox>
                 <Separator />
                 <HBox spacing="10">
