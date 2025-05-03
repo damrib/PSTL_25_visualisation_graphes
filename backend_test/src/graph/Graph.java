@@ -443,35 +443,32 @@ public class Graph extends Application implements GraphSettings {
     @Override
     public double[][] init(String path, GraphData.SimilitudeMode mode, GraphData.NodeCommunity community) {
         // Appeler startsProgram avant d'utiliser les données natives
-        //double[][] data = startsProgram(path);
+        double[][] data = startsProgram(path);
 
         // Déterminer le mode de similitude à utiliser
-        //int modeSimilitude = getModeSimilitude(mode);
+        int modeSimilitude = getModeSimilitude(mode);
 
-        //init_metadata = computeThreshold(modeSimilitude, 10);
-        //if (init_metadata == null)
-            //throw new RuntimeException("Une erreur est survenue lors du calcul des seuils.");
+        init_metadata = computeThreshold(modeSimilitude, 10);
+        if (init_metadata == null)
+            throw new RuntimeException("Une erreur est survenue lors du calcul des seuils.");
 
-        //double recommendedThreshold = init_metadata.getEdgeThreshold();
-        //double recommendedAntiThreshold = init_metadata.getAntiThreshold();
+        double recommendedThreshold = init_metadata.getEdgeThreshold();
+        double recommendedAntiThreshold = init_metadata.getAntiThreshold();
 
-        //System.out.println("Seuil recommandé pour les arêtes : " + recommendedThreshold);
-        //System.out.println("Seuil recommandé pour les anti-arêtes : " + recommendedAntiThreshold);
+        System.out.println("Seuil recommandé pour les arêtes : " + recommendedThreshold);
+        System.out.println("Seuil recommandé pour les anti-arêtes : " + recommendedAntiThreshold);
 
         // Valeurs imposées pour le moment (à modifier)
         // recommendedThreshold = 0.966;
         // recommendedAntiThreshold = 0.6;
 
         // Déterminer le mode de détection de communautés à utiliser
-        //int modeCommunity = getModeCommunity(community);
+        int modeCommunity = getModeCommunity(community);
 
-        //metadata = initiliazeGraph(modeCommunity, init_metadata.getEdgeThreshold(), init_metadata.getAntiThreshold());
+        metadata = initiliazeGraph(modeCommunity, init_metadata.getEdgeThreshold(), init_metadata.getAntiThreshold());
         //testUpdatePosition(100);
 
-        System.out.println("start");
-        metadata = initializeDot("samples/subgraphTest.dot", 0);
-
-        return new double[0][];
+        return data;
     }
 
     /**
