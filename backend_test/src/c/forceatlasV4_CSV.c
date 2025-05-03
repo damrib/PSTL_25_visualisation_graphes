@@ -275,7 +275,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
 
     jboolean b = JNI_FALSE;
     const char* str = (*env)->GetStringUTFChars(env, filepath, &b); 
-    init_S(num_nodes);
     load_csv_data(str);
 
     (*env)->ReleaseStringUTFChars(env, filepath, str);
@@ -366,6 +365,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
       // TODO 
       //int nbValeurs;
       //int S[MAX_NODES]={0};
+      init_S(num_nodes);
       num_communities = leiden_method_CPM();
       // Demander le chemin du fichier à l'utilisateur
       lireColonneCSV(S, &nbValeurs);
@@ -373,6 +373,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
       printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
       modeA = 1;
       compute_ratio_S(S);
+      free_S();
   } else {
       printf("Option invalide\n");
   }
@@ -433,6 +434,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
         // TODO 
         //int nbValeurs;
         //int S[MAX_NODES]={0};
+        init_S(num_nodes);
         num_communities = leiden_method_CPM();
         // Demander le chemin du fichier à l'utilisateur
         lireColonneCSV(S, &nbValeurs);
@@ -440,6 +442,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initiliazeGraph
         //printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
         modeA =1;
         compute_ratio_S(S);
+        free_S();
     } else {
         printf("Option invalide\n");
     }
