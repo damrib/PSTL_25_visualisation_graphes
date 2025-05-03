@@ -396,6 +396,10 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
   (*env)->ReleaseStringUTFChars(env, filepath, str); 
 
   live_nodes = num_nodes;
+  printf("%d %d\n", num_nodes, num_edges);
+  for (int i = 0; i < num_edges; ++i) {
+    printf("%d -- %d\n", edges[i].node1, edges[i].node2);
+  }
   return res;
 }
 
