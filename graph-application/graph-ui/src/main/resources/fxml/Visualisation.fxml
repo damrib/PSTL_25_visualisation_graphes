@@ -136,43 +136,70 @@
             </BorderPane>
 
             <AnchorPane style="-fx-border-color: grey; -fx-border-width: 1px;" 
-                        GridPane.rowIndex="1" GridPane.columnIndex="0">
-                <VBox spacing="10" style="-fx-padding: 10;">
-                    <Label text="Paramètres du graphe" style="-fx-font-weight: bold; -fx-font-size: 14;" />
+            GridPane.rowIndex="1" GridPane.columnIndex="0">
 
-                    <!-- Slider pour modifier le degré minimum des nœuds -->
-                    <HBox spacing="5" alignment="CENTER_LEFT">
-                        <Label text="Degré Min:" />
-                        <Slider fx:id="degreeMinSlider" min="0" max="100" value="3" blockIncrement="1" />
-                        <Label fx:id="degreeMinValue" text="3" />
-                    </HBox>
-                    
-                    <!-- Bouton Appliquer -->
-                    <Button text="Appliquer" onAction="#applyMinDegree"
-                            styleClass="button-8" />
+                <ScrollPane fitToWidth="true" fitToHeight="true" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+                    <VBox spacing="10" style="-fx-padding: 10;">
+                        <!-- Titre et bouton Run -->
+                        <HBox spacing="5" alignment="CENTER_LEFT">
+                            <Label text="Force Atlas" style="-fx-font-weight: bold; -fx-font-size: 14;" />
+                            <Button text="▶ Démarrer" onAction="#handleStartButton"
+                                    styleClass="button-8" />
+                        </HBox>
 
-                    <!-- Filtrage par taille des nœuds -->
-<!--                     <HBox spacing="5" alignment="CENTER_LEFT">
-                        <Label text="Filtrer Taille:" />
-                        <ComboBox fx:id="sizeFilterComboBox">
-                            <items>
-                                <FXCollections fx:factory="observableArrayList">
-                                    <String fx:value="Tous" />
-                                    <String fx:value="Petits" />
-                                    <String fx:value="Moyens" />
-                                    <String fx:value="Grands" />
-                                </FXCollections>
-                            </items>
-                        </ComboBox>
-                    </HBox> -->
+                        <!-- Paramètres Force Atlas -->
+                        <GridPane hgap="10" vgap="5">
+                            <Label text="set Initial NodeSize:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                            <TextField fx:id="InitNodeSize" GridPane.rowIndex="0" GridPane.columnIndex="1" text="3" />
 
-                    <!-- Affichage des nœuds isolés -->
-<!--                     <CheckBox fx:id="showIsolatedNodesCheckbox" text="Afficher nœuds isolés" selected="true"/>
- -->
-                    <!-- Bouton de réinitialisation -->
-<!--                     <Button text="Réinitialiser" onAction="#resetGraphSettings"
-                            style="-fx-background-color: #d9534f; -fx-text-fill: white;" /> -->
-                </VBox>
+                            <Label text="Degree Scale Factor:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                            <TextField fx:id="degreeFactor" GridPane.rowIndex="1" GridPane.columnIndex="1" text="0.3" />
+
+                            <Label text="set Up scale:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                            <TextField fx:id="upScale" GridPane.rowIndex="2" GridPane.columnIndex="1" text="5" />
+
+                            <Label text="Step Ratio:" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+                            <TextField fx:id="stepRatioField" GridPane.rowIndex="3" GridPane.columnIndex="1" text="0.95" />
+
+                            <Label text="Adaptive Cooling:" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                            <CheckBox fx:id="adaptiveCoolingCheckbox" GridPane.rowIndex="4" GridPane.columnIndex="1" selected="true" />
+
+                            <Label text="Convergence Threshold:" GridPane.rowIndex="5" GridPane.columnIndex="0" />
+                            <TextField fx:id="convergenceField" GridPane.rowIndex="5" GridPane.columnIndex="1" text="1.0E-4" />
+                        </GridPane>
+
+                        <!-- Paramètres Barnes-Hut -->
+                        <Label text="Barnes-Hut's properties" style="-fx-font-weight: bold; -fx-padding: 10 0 0 0;" />
+                        <GridPane hgap="10" vgap="5">
+                            <Label text="Quadtree Max Level:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                            <TextField fx:id="quadtreeMaxLevelField" GridPane.rowIndex="0" GridPane.columnIndex="1" text="10" />
+
+                            <Label text="Theta:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                            <TextField fx:id="thetaField" GridPane.rowIndex="1" GridPane.columnIndex="1" text="1.2" />
+                        </GridPane>
+
+                        <!-- Paramètres généraux -->
+                        <Label text="Filtres supplémentaires" style="-fx-font-weight: bold; -fx-padding: 10 0 0 0;" />
+
+                        <HBox spacing="5" alignment="CENTER_LEFT">
+                            <Label text="Degré Min:" />
+                            <Slider fx:id="degreeMinSlider" min="0" max="100" value="3" blockIncrement="1" />
+                            <Label fx:id="degreeMinValue" text="3" />
+                        </HBox>
+
+                        <Button text="Appliquer" onAction="#applyOptions" styleClass="button-8" />
+
+                        <HBox spacing="5" alignment="CENTER_LEFT">
+                            <Label text="Filtrer Taille:" />
+                            <ComboBox fx:id="sizeFilterComboBox2"/>
+                        </HBox>
+
+                        <CheckBox fx:id="showIsolatedNodesCheckbox" text="Afficher nœuds isolés" selected="true" />
+
+                        <Button text="Réinitialiser" onAction="#resetGraphSettings"
+                                style="-fx-background-color: #d9534f; -fx-text-fill: white;" />
+                    </VBox>
+                </ScrollPane>
             </AnchorPane>
 
             <!-- Panneau central -->
@@ -208,7 +235,7 @@
             <center>
                 <ScrollPane fx:id="graphScrollPane" fitToWidth="true" fitToHeight="true" 
                         hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED">
-                    <AnchorPane fx:id="graphContainer" />
+                        <StackPane fx:id="graphContainer" />
                 </ScrollPane>
             </center>
         </BorderPane>

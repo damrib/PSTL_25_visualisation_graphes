@@ -23,12 +23,14 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Group;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
@@ -47,7 +49,7 @@ public class GraphVue {
 	@FXML
 	private AnchorPane previewPane;
 	@FXML
-	private AnchorPane graphContainer;
+	private StackPane graphContainer;
 	@FXML
 	private Label nodesDeletedLabel;
 	@FXML
@@ -149,6 +151,7 @@ public class GraphVue {
 		System.out.println("Bouton démarrer cliqué !");
 		graphContainer.getChildren().clear();
 		graphInit();
+		graphContainer.getChildren().add(root);
 		/*
 		 * graphContainer.getChildren().clear(); // Nettoyer le conteneur
 		 * graphContainer.getChildren().add(root);
@@ -162,8 +165,10 @@ public class GraphVue {
 
 		root = new Pane();
 		root.setId("dynamicPane");
-		root.setLayoutX(0);
-		root.setLayoutY(0);
+		/*
+		 * root.setLayoutX(0);
+		 * root.setLayoutY(0);
+		 */
 
 		Graph.isRunMode.addListener((obs, oldValue, newValue) -> {
 			if (newValue) {
@@ -215,31 +220,29 @@ public class GraphVue {
 		GLCapabilities capabilities = new GLCapabilities(glProfile);
 		capabilities.setDoubleBuffered(true);
 		capabilities.setHardwareAccelerated(true);
-
 		// Créer un GLWindow (OpenGL)
 		graph.glWindow = GLWindow.create(capabilities);
 
 		graph.glWindow.addGLEventListener(graph);
 
-		// Créer un NewtCanvasJFX pour intégrer OpenGL dans JavaFX
 		NewtCanvasJFX newtCanvas = new NewtCanvasJFX(graph.glWindow);
-		newtCanvas.setWidth(WIDTH);
-		newtCanvas.setHeight(HEIGHT);
+
+		// Et au départ, assure une taille de base
+		newtCanvas.setWidth(graphContainer.getWidth());
+		newtCanvas.setHeight(graphContainer.getHeight());
 
 		// Ajouter les listeners pour la souris
 		graph.addMouseListeners();
 
-		// Créer la scène JavaFX avec le SwingNode
-		/* root.getChildren().add(newtCanvas); */
-		AnchorPane.setTopAnchor(newtCanvas, 0.0);
-		AnchorPane.setBottomAnchor(newtCanvas, 0.0);
-		AnchorPane.setLeftAnchor(newtCanvas, 0.0);
-		AnchorPane.setRightAnchor(newtCanvas, 0.0);
-		graphContainer.getChildren().add(newtCanvas);
+		// S'assurer que le canvas est bien visible
+		newtCanvas.setVisible(true);
 
-		// Démarrer l'animation
+		root.getChildren().add(newtCanvas);
+
+		// Démarrer l'animation OpenGL
 		graph.animator = new FPSAnimator(graph.glWindow, 60);
 		graph.animator.start();
+		System.out.println("Animation démarrée");
 
 	}
 
@@ -249,14 +252,44 @@ public class GraphVue {
 		// et la méthode de détection de communautés
 		graph.initGraph(fichier.getAbsolutePath(), measureCode, methodCode);
 
-		graph.setScreenSize(WIDTH, HEIGHT);
-
-		graph.setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
-		graph.setBackgroundColor(0.0f, 0.0f, 0.0f);
-		; // Couleur de fond du graphe (au format hexadécimal)
+		graph.setScreenSize(graphContainer.getWidth(), graphContainer.getHeight()); // Taille de l'écran du
+																					// graphe
+		graph.setBackgroundColor(1.0f, 1.0f, 1.0f); // blue
+		// Couleur de fond du graphe (au format hexadécimal)
 		graph.setUpscale(5); // Facteur d'agrandissement pour le graphe
 		graph.setInitialNodeSize(3); // Taille initiale d'un sommet
-		graph.setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un sommet
+		graph.setDegreeScaleFactor(0.9); // Facteur d'agrandissement selon le degré d'un sommet
+	}
+
+	//////// options contollers
+	@FXML
+	private TextField InitNodeSize;
+	@FXML
+	private TextField degreeFactor;
+	@FXML
+	private TextField upScale;
+
+	@FXML
+	private void applyOptions() {
+		int newDegreeMin = (int) degreeMinSlider.getValue();
+		minimumDegree.set(newDegreeMin);
+		degreeMinValue.setText(String.valueOf(newDegreeMin));
+		System.out.println("Nouveau degré minimum : " + newDegreeMin);
+		System.out.println("Nouveau Factor degré m : " + Double.parseDouble(degreeFactor.getText()));
+		System.out.println("Nouveau facteur d'agrandissement : " + Double.parseDouble(InitNodeSize.getText()));
+		System.out.println("Nouveau degré initial : " + Integer.parseInt(upScale.getText()));
+
+		graph.setDegreeScaleFactor(Double.parseDouble(degreeFactor.getText()));
+		graph.setInitialNodeSize(Double.parseDouble(InitNodeSize.getText()));
+		graph.setUpscale(Integer.parseInt(upScale.getText()));
+
+		graph.setBackgroundColor(0.0f, 0.0f, 0.0f); // blue
+
+		for (Vertex v : graph.vertices) {
+			v.updateDiameter();
+		}
+		graph.initializeArrays();
+		graph.glWindow.display();
 	}
 
 	/*
@@ -273,14 +306,6 @@ public class GraphVue {
 	private ComboBox<String> sizeFilterComboBox;
 	@FXML
 	private CheckBox showIsolatedNodesCheckbox;
-
-	@FXML
-	private void applyMinDegree() {
-		int newDegreeMin = (int) degreeMinSlider.getValue();
-		minimumDegree.set(newDegreeMin);
-		degreeMinValue.setText(String.valueOf(newDegreeMin));
-		System.out.println("Nouveau degré minimum : " + newDegreeMin);
-	}
 
 	// Réinitialiser les paramètres du graphe
 	@FXML

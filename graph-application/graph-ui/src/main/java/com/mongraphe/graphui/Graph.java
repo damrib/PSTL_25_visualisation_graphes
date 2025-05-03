@@ -132,8 +132,8 @@ public class Graph implements GLEventListener, GraphSettings {
     public float bg_color_g = 1.0f;
     public float bg_color_b = 1.0f;
 
-    public static int WIDTH = 1500; // Largeur de la fenêtre
-    public static int HEIGHT = 800; // Hauteur de la fenêtre
+    public static double WIDTH = 1500; // Largeur de la fenêtre
+    public static double HEIGHT = 800; // Hauteur de la fenêtre
 
     // Propriétés pour les différents modes du graphe
     public static final BooleanProperty isRunMode = new SimpleBooleanProperty(true);
@@ -757,7 +757,7 @@ public class Graph implements GLEventListener, GraphSettings {
      * @param height Hauteur de l'écran (en px)
      */
     @Override
-    public void setScreenSize(int width, int height) {
+    public void setScreenSize(double width, double height) {
         if (width <= 0 || height <= 0)
             throw new RuntimeException("setScreenSize : Taille de l'écran (" + width + "x" + height + ") non valide.");
         WIDTH = width;
