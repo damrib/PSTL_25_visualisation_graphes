@@ -438,11 +438,6 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeGraph
     initialize_community_colors();
     compute_average_vectors();
 
-    for (int i = 0; i < num_rows; i++) {
-      free(data[i]);
-    }
-    free(data);
-
     for (int i = 0; i < num_nodes; i++) {
         random_point_in_center(i);
         velocities[i].x = velocities[i].y = 0.0;
