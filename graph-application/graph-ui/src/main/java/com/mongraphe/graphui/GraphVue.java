@@ -16,7 +16,9 @@ import com.mongraphe.graphui.GraphData.SimilitudeMode;
 
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
@@ -25,8 +27,11 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
@@ -80,6 +85,27 @@ public class GraphVue {
 	private Label XHovredVertexLabel;
 	@FXML
 	private Label YHovredVertexLabel;
+
+
+	@FXML private TableView<Vertex> vertexTable;
+	@FXML private TableColumn<Vertex, Integer> vertexIdCol;
+	@FXML private TableColumn<Vertex, Integer> vertexCommunityCol;
+	@FXML private TableColumn<Vertex, Integer> vertexDegreeCol;
+	@FXML private TableColumn<Vertex, Double> vertexXCol;
+	@FXML private TableColumn<Vertex, Double> vertexYCol;
+	@FXML private TableColumn<Vertex, Double> vertexDiameterCol;
+	@FXML private TableColumn<Vertex, Boolean> vertexDeletedCol;
+
+	@FXML private TableView<Edge> edgeTable;
+	@FXML private TableColumn<Edge, Integer> edgeStartCol;
+	@FXML private TableColumn<Edge, Integer> edgeEndCol;
+	@FXML private TableColumn<Edge, Double> edgeWeightCol;
+
+	@FXML 
+	 private ProgressIndicator loadingIndicator;
+
+
+	private NewtCanvasJFX newtCanvas;
 
 	///////////////////////
 
@@ -137,6 +163,23 @@ public class GraphVue {
 			case "preview":
 				previewPane.setVisible(true);
 				break;
+		}
+		if (newtCanvas != null && root != null) {
+			boolean isOverview = "overview".equals(viewType);
+			
+			if (isOverview) {
+				if (!root.getChildren().contains(newtCanvas)) {
+					root.getChildren().add(newtCanvas);
+				}
+				if (graph.animator != null && !graph.animator.isAnimating()) {
+					graph.animator.resume();
+				}
+			} else {
+				root.getChildren().remove(newtCanvas); // enlever physiquement le canvas
+				if (graph.animator != null && graph.animator.isAnimating()) {
+					graph.animator.pause();
+				}
+			}
 		}
 	}
 
@@ -201,15 +244,21 @@ public class GraphVue {
 	 */
 	@FXML
 	private void handleStartButton() {
-		graph = new Graph(this, graphContainer.getWidth(), graphContainer.getHeight());
-		System.out.println("Bouton démarrer cliqué !");
-		graphContainer.getChildren().clear();
-		graphInit();
-		graphContainer.getChildren().add(root);
-		/*
-		 * graphContainer.getChildren().clear(); // Nettoyer le conteneur
-		 * graphContainer.getChildren().add(root);
-		 */
+
+		loadingIndicator.setVisible(true);
+	
+		new Thread(() -> {
+			// Création du graphe et traitement lourd (thread secondaire)
+			graph = new Graph(this, graphContainer.getWidth(), graphContainer.getHeight());
+			testInit(); // charge les fichiers, initialise les données
+	
+			Platform.runLater(() -> {
+				// ⚠️ Toute modification de l’interface doit être ici
+				graphInit(); // version modifiée qui NE contient QUE les appels UI
+				graphContainer.getChildren().add(root);
+				loadingIndicator.setVisible(false);
+			});
+		}).start();
 	}
 
 	/**
@@ -293,7 +342,7 @@ public class GraphVue {
 
 		graph.glWindow.addGLEventListener(graph);
 
-		NewtCanvasJFX newtCanvas = new NewtCanvasJFX(graph.glWindow);
+		newtCanvas = new NewtCanvasJFX(graph.glWindow);
 
 		// Et au départ, assure une taille de base
 		newtCanvas.setWidth(graphContainer.getWidth());
@@ -321,6 +370,11 @@ public class GraphVue {
 		recommendedAntiTreshold.setText(graph.getRecommendedAntiThreshold() + "");
 		treshold.setText(String.valueOf(graph.getThreshold()));
 		antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
+
+		Platform.runLater(() -> {
+			vertexTable.getItems().setAll(graph.vertices);
+    		edgeTable.getItems().setAll(graph.edges);
+		});
 
 	}
 
@@ -401,6 +455,22 @@ public class GraphVue {
 		mesureChamp.setValue(measureCode);
 		clusteringChamp.getItems().setAll(GraphData.NodeCommunity.values());
 		clusteringChamp.setValue(methodCode);
+
+		  // Colonnes des sommets
+		vertexIdCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getId()).asObject());
+		vertexCommunityCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getCommunity().getId()).asObject());
+		vertexDegreeCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getDegree()).asObject());
+		vertexXCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getX()).asObject());
+		vertexYCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getY()).asObject());
+		vertexDiameterCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getDiameter()).asObject());
+		vertexDeletedCol.setCellValueFactory(data -> new SimpleBooleanProperty(data.getValue().isDeleted()).asObject());
+
+
+
+		// Colonnes des arêtes
+		edgeStartCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getStart().getId()).asObject());
+		edgeEndCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getEnd().getId()).asObject());
+		edgeWeightCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getWeight()).asObject());
 	}
 
 	@FXML
