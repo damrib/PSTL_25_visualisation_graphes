@@ -35,6 +35,8 @@
 *.i*86
 *.x86_64
 *.hex
+**/out/
+**/*.class
 
 # Debug files
 *.dSYM/
@@ -45,9 +47,12 @@
 # Kernel Module Compile Results
 *.mod*
 *.cmd
+*.class
 .tmp_versions/
 modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
 /.metadata/
+/graph-application/graph-ui/windows/com/mongraphe/graphui/.class
+/graph-application/graph-ui/linux/com/mongraphe/graphui/.class
