@@ -369,15 +369,10 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
   } else if (md == 3) {
       num_communities = leiden_method_CPM();
   } else if (md == 4) {
-      // TODO 
-      //int nbValeurs;
-      //int S[MAX_NODES]={0};
       init_S(num_nodes);
       num_communities = leiden_method_CPM();
       // Demander le chemin du fichier à l'utilisateur
       lireColonneCSV(S, &nbValeurs);
-      // Afficher les valeurs lues
-      printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
       modeA = 1;
       compute_ratio_S(S);
       free_S();
@@ -497,7 +492,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
     adjacency_list[i].head = NULL;
   }
   free_clusters();
-  freeNodeNames();    free_S();
+  freeNodeNames();
   FreePool(&pool);
 }
 
