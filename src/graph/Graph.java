@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +14,8 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
 
+import com.jogamp.newt.event.KeyEvent;
+import com.jogamp.newt.event.KeyListener;
 import com.jogamp.newt.event.MouseEvent;
 import com.jogamp.newt.event.MouseListener;
 import com.jogamp.newt.event.WindowAdapter;
@@ -24,7 +25,6 @@ import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.GL4;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
-import com.jogamp.opengl.GLContext;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLJPanel;
@@ -35,8 +35,19 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.*;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -51,57 +62,48 @@ public class Graph extends Application implements GLEventListener, GraphSettings
     }
 
     // Méthodes JNI
-    public native double[][] startsProgram(String filename);
-    public native Metadata initiliazeGraph(int modeCommunity, double threshold, double anti_threshold);
-    public native boolean updatePositions();
-    public native Vertex[] getPositions();
-    public native void setNodePosition(int index, double x, double y);
-    public native EdgeC[] getEdges();
-    public native int[] getCommunities();
-    public native float[][] getClusterColors();
-    public native Metadata computeThreshold(int modeSimilitude);
+    private native double[][] startsProgram(String filename);
+	private native Metadata computeThreshold(int modeSimilitude, int edge_factor);
+	private native Metadata initiliazeGraph(int modeCommunity, double threshold, double anti_threshold);
+	private native Metadata initializeDot(String filepath, int modeCommunity);
 
-    // A modifier quand le graphe est en pause
-    /** Set the frequence at which the clusters are updated
-     */
-    public native void setSaut(int saut);
-    /** Threshold indicating when the graph should be stopped
-     * (if movement is less than threshold and it has been long enough then the graph stops moving)
-     */
-    public native void setThresholdS(double thresholdS);
-    /** Set new friction *
-     */
-    public native void setFriction(double friction);
+	/** the calculation depends on how big the window is
+	 * @param width positive real number
+	 * @param height positive real number
+	 */
+	private native void setDimension(double width, double height); // TODO
 
-    // Modifiable pendant l'execution (avant prochain updatePositions)
-    /** sets the repulsion mode to be used by updatePositions
-     * @param mode : repulsion by degree (0), repulsion by edges (1), repulsion by communities (2)
-      */
-    public native void setModeRepulsion(int mode);
-    /** sets force of anti-edges
+	private native boolean updatePositions();
+	private native Vertex[] getPositions();
+	private native void setNodePosition(int index, double x, double y);
+	private native EdgeC[] getEdges();
+	private native int[] getCommunities();
+	private native float[][] getClusterColors();
+	private native void setSaut(int saut);
+	private native void setThresholdS(double thresholdS);
+	private native void setFriction(double friction);
+	private native void setModeRepulsion(int mode);
+	private native void setAntiRepulsion(double antiedge_repulsion);
+	private native void setAttractionCoeff(double attraction_coeff);
+	private native void setThresholdA(double thresholdA);
+	private native void setSeuilRep(double seuilrep);
+	private native void setAmortissement(double amortissement);
+	private native void SetNumberClusters(int new_number_of_clusters);
+    /**
+     * ignores node for the algorithm
+     * @param index index of node to delete
      */
-    public native void setAntiRepulsion(double antiedge_repulsion);
-    /** sets attraction force
+	private native void deleteNode(int index);
+    /**
+     * restores deleted node for the algorithm
+     * @param index index of node to restore
      */
-    public native void setAttractionCoeff(double attraction_coeff);
-    /** sets attraction threshold
-     */
-    public native void setThresholdA(double thresholdA);
-    /** sets new repulsion threshold
-     */
-    public native void setSeuilRep(double seuilrep);
-    /** the calculation depends on how big the window is
-     * @param width positive real number
-     * @param height positive real number
-     */
-    public native void setDimension(double width, double height);
-    /** Set amortissement, factor dictating how the friction evolves after each update of the graph
-    */
-    public native void setAmortissement(double amortissement);
-
-    public native void SetNumberClusters(int new_number_of_clusters);
-
-    public native void freeAllocatedMemory();
+	private native void restoreNode(int index);
+	private native void setKmeansMode(boolean md);
+	private native int[] getHistogram();
+	private native void freeAllocatedMemory();
+    // freeAllocatedMemory but also frees the data
+    private native void freeProgramMemory();
 
 
 
@@ -120,6 +122,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 
     public static int WIDTH = 1500; // Largeur de la fenêtre
     public static int HEIGHT = 800; // Hauteur de la fenêtre
+    public static int GRAPH_UPSCALE = 5; // Facteur d'agrandissment du graphe
 
     // Propriétés pour les différents modes du graphe
     public static final BooleanProperty isRunMode = new SimpleBooleanProperty(true);
@@ -135,7 +138,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 
     // Variables pour le déplacement des sommets et de la vue
     private boolean isDraggingVertex = false;
-    private Vertex draggedVertex = null;
+    private Vertex selectedVertex = null;
     private double dragStartX = 0;
     private double dragStartY = 0;
     private double viewOffsetX = 0;
@@ -167,6 +170,8 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 	private float[] vertexPoints;
 	private float[] vertexSizes;
 	private float[] vertexColors;
+	private float[] edgeVisibility;
+	private int edgeVisibilityBuffer;
 
 	// Variables pour le déplacement
 	private double dragOffsetX = 0;
@@ -191,17 +196,26 @@ public class Graph extends Application implements GLEventListener, GraphSettings
     public void start(Stage primaryStage) {
 
         // Ajouter les listeners pour les différents modes du graphe
-        isRunMode.addListener((obs, oldValue, newValue) -> {
-            if (newValue) {
-                animator.resume();
-                System.out.println("Reprise de l'animation");
-            } else {
-                animator.pause();
-                System.out.println("Pause de l'animation");
-            }
-        });
+    	isRunMode.addListener((obs, oldValue, newValue) -> {
+    	    Platform.runLater(() -> {
+    	        if (newValue) {
+    	            System.out.println("Tentative de reprise de l'animation...");
+    	            // Forcer l'état de l'animateur si nécessaire
+    	            if (!animator.isAnimating()) {
+    	                animator.resume();
+    	                System.out.println("Reprise de l'animation réussie");
+    	            }
+    	        } else {
+    	            System.out.println("Tentative de pause de l'animation...");
+    	            if (animator.isAnimating()) {
+    	                animator.pause();
+    	                System.out.println("Pause de l'animation réussie");
+    	            }
+    	        }
+    	    });
+    	});
 
-
+    	
         // Initialisation (provisoire, devra être appelé par l'interface graphique)
         testInit();
 
@@ -246,13 +260,13 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         
         // Initialisation des buffers pour les sommets et arêtes
         initializeArrays();
-
+        
         // Initialisation de OpenGL avec JOGL
         GLProfile glProfile = GLProfile.get(GLProfile.GL4);
         GLCapabilities capabilities = new GLCapabilities(glProfile);
         capabilities.setDoubleBuffered(true);
         capabilities.setHardwareAccelerated(true);
-        
+
         // Créer un GLWindow (OpenGL)
         glWindow = GLWindow.create(capabilities);
 
@@ -261,12 +275,12 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 
         // Ajouter un WindowListener pour fermer proprement la fenêtre
         glWindow.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowDestroyed(WindowEvent e) {
-                System.exit(0);  // Quitter l'application lorsque la fenêtre est fermée
-            }
+        @Override
+        public void windowDestroyed(WindowEvent e) {
+        System.exit(0); // Quitter l'application lorsque la fenêtre est fermée
+        }
         });
-        
+
         // Créer un NewtCanvasJFX pour intégrer OpenGL dans JavaFX
         NewtCanvasJFX newtCanvas = new NewtCanvasJFX(glWindow);
         newtCanvas.setWidth(WIDTH);
@@ -275,44 +289,29 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         // Ajouter les listeners pour la souris
         addMouseListeners();
 
+        // Ajouter les listeners pour le clavier
+        addKeyListeners();
+
         // Créer la scène JavaFX avec le SwingNode
         Pane root = new Pane();
         root.getChildren().add(newtCanvas);
         Scene scene = new Scene(root, WIDTH, HEIGHT);
+        newtCanvas.requestFocus();
 
         // Démarrer l'animation
         animator = new FPSAnimator(glWindow, 60);
+        animator.setExclusiveContext(false);
         animator.start();
-
+        
         // Tests d'actions sur le graphe (en attendant l'interface graphique)
-        testActions();
-
-//        Timeline tl1 = new Timeline(
-//                new KeyFrame(Duration.seconds(7), e -> {
-//                    setMode(GraphData.GraphMode.MOVE);
-//                    System.out.print("Switch to " + getMode());
-//                    System.out.println(" - Vous pouvez vous déplacer dans le graphe");
-//                    
-//                    glWindow.invoke(true, drawable -> {
-//                        exportToPng(drawable.getGL().getGL4(), "capture/graph.png");
-//                        return true;
-//                    });
-//
-//                })
-//        );
-//        tl1.setCycleCount(1);
-//        tl1.play();
-
-
-
-
+//        testActions();
+        
         primaryStage.setTitle("Graphique avec JOGL et JavaFX");
         primaryStage.setScene(scene);
         //primaryStage.setMaximized(true);
         primaryStage.setOnCloseRequest(event -> Platform.exit());
         primaryStage.show();
     }
-
 
     /**
      * Trouve le sommet à la position (x, y)
@@ -321,16 +320,20 @@ public class Graph extends Application implements GLEventListener, GraphSettings
      * @return le sommet trouvé, ou null s'il n'y en a pas
      */
     private Vertex findVertexAt(double x, double y) {
+        // Ajuster les coordonnées en fonction du zoom
+        double adjustedX = (x - viewOffsetX) / zoomFactor;
+        double adjustedY = (y - viewOffsetY) / zoomFactor;
+
         for (Vertex v : vertices) {
-            double dx = x - v.getX();
-            double dy = y - v.getY();
+            double dx = adjustedX - v.getX();
+            double dy = adjustedY - v.getY();
             double distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance <= (v.getDiameter()/2) + 5) // Ajouter une marge pour faciliter la sélection
+            if (distance <= (v.getDiameter() / 2) + 5) // Ajouter une marge pour faciliter la sélection
                 return v;
         }
         return null;
     }
-
+    
     /**
      * Ajoute les listeners pour la souris
      */
@@ -345,38 +348,71 @@ public class Graph extends Application implements GLEventListener, GraphSettings
                 double y = HEIGHT / 2.0 - e.getY() + viewOffsetY;
 
                 // Vérifier si un sommet est cliqué
-                draggedVertex = findVertexAt(x, y);
+                selectedVertex = findVertexAt(x, y);
 
                 // Déplacer un sommet
-                if (isSelectionMode.get() && draggedVertex != null) {
+                if (isSelectionMode.get() && selectedVertex != null) {
                     isDraggingVertex = true;
-	                dragOffsetX = draggedVertex.getX() - x;
-	                dragOffsetY = draggedVertex.getY() - y;
+	                dragOffsetX = selectedVertex.getX() - x;
+	                dragOffsetY = selectedVertex.getY() - y;
                 }
-                
+
                 // Se déplacer dans le graphe
                 else if (isMoveMode.get()) {
                     isDraggingGraph = true;
                     dragStartX = e.getX();
                     dragStartY = e.getY();
                 }
+                
+				// Supprimer un sommet
+				else if (isDeleteMode.get() && selectedVertex != null) {
+					selectedVertex.delete();
+					System.out.println("Sommet supprimé : " + selectedVertex);
+					deleteNode(selectedVertex.getId());
+					SwingUtilities.invokeLater(() -> glWindow.display());
+				}
             }
 
             // Gère le relâchement du clic de la souris
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (isSelectionMode.get() && isDraggingVertex && draggedVertex != null) {
+
+				// Déplacer un sommet
+                if (isSelectionMode.get() && isDraggingVertex && selectedVertex != null) {
                     isDraggingVertex = false;
-                    setNodePosition(draggedVertex.getId(), draggedVertex.getX(), draggedVertex.getY());
-                    vertexPoints[draggedVertex.getId() * 2] = (float) draggedVertex.getX();
-                    vertexPoints[draggedVertex.getId() * 2 + 1] = (float) draggedVertex.getY();
-                    draggedVertex = null;
+					System.out.println("Déplacement du sommet vers (" + selectedVertex.getX() + ", " + selectedVertex.getY() + ")");
+                    setNodePosition(selectedVertex.getId(), selectedVertex.getX() / GRAPH_UPSCALE, selectedVertex.getY() / GRAPH_UPSCALE);
+                    vertexPoints[selectedVertex.getId() * 2] = (float) selectedVertex.getX();
+                    vertexPoints[selectedVertex.getId() * 2 + 1] = (float) selectedVertex.getY();
+                    selectedVertex = null;
                 }
                 isDraggingGraph = false;
+
             }
 
             @Override
-            public void mouseClicked(MouseEvent e) {}
+            public void mouseClicked(MouseEvent e) {
+//				double x = e.getX() - WIDTH / 2.0 + viewOffsetX;
+//				double y = HEIGHT / 2.0 - e.getY() + viewOffsetY;
+//
+//				// Vérifier si un sommet est cliqué
+//				selectedVertex = findVertexAt(x, y);
+//
+//				// Obtenir les informations sur un sommet
+//				if (isSelectionMode.get() && selectedVertex != null) {
+//					System.out.println("Sommet sélectionné : " + selectedVertex);
+//				}
+//
+//				// Supprimer un sommet
+//				else if (isDeleteMode.get() && selectedVertex != null) {
+//					selectedVertex.delete();
+//					System.out.println("Sommet supprimé : " + selectedVertex);
+////					for (Edge edge : selectedVertex.getEdges())
+////						edge.delete();
+//					//setdeleteNode(selectedVertex.getId()); // TODO retourne une erreur
+//					SwingUtilities.invokeLater(() -> glWindow.display());
+//				}
+			}
 
             @Override
             public void mouseEntered(MouseEvent e) {}
@@ -390,12 +426,12 @@ public class Graph extends Application implements GLEventListener, GraphSettings
             public void mouseDragged(MouseEvent e) {
             	boolean updated = false;
                 // Déplacer un sommet
-                if (isSelectionMode.get() && isDraggingVertex && draggedVertex != null) {
+                if (isSelectionMode.get() && isDraggingVertex && selectedVertex != null) {
                     double newX = e.getX() - WIDTH / 2.0 + viewOffsetX + dragOffsetX;
                     double newY = HEIGHT / 2.0 - e.getY() + viewOffsetY + dragOffsetY;
-                    draggedVertex.updatePosition(newX, newY);
-                    vertexPoints[draggedVertex.getId() * 2] = (float) draggedVertex.getX();
-                    vertexPoints[draggedVertex.getId() * 2 + 1] = (float) draggedVertex.getY();
+                    selectedVertex.updatePosition(newX, newY);
+                    vertexPoints[selectedVertex.getId() * 2] = (float) selectedVertex.getX();
+                    vertexPoints[selectedVertex.getId() * 2 + 1] = (float) selectedVertex.getY();
                     updated = true;
                 }
 
@@ -404,7 +440,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
                     double deltaX = e.getX() - dragStartX;
                     double deltaY = e.getY() - dragStartY;
 
-                    double speedFactor = 0.8;
+                    double speedFactor = 0.8 * 1/zoomFactor;
 
                     viewOffsetX -= deltaX * speedFactor;
                     viewOffsetY += deltaY * speedFactor;
@@ -415,8 +451,6 @@ public class Graph extends Application implements GLEventListener, GraphSettings
                 
 	            // Forcer l'affichage sur le thread UI pour éviter les lags visuels pendant le drag
 	            if (updated) SwingUtilities.invokeLater(() -> glWindow.display());
-
-
             }
 
             @Override
@@ -424,36 +458,82 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 
             @Override
             public void mouseWheelMoved(MouseEvent e) {
-                float[] rotation = e.getRotation(); // [x, y]
-                float scrollY = rotation[1];
-                double zoomAmount = 1.1;
+				if (isMoveMode.get()) {
+					float[] rotation = e.getRotation(); // [x, y]
+					float scrollY = rotation[1];
+					double zoomAmount = 1.1;
 
-                if (scrollY == 0) return;
+					if (scrollY == 0) return;
 
-                double mouseXBefore = (e.getX() - WIDTH / 2.0) + viewOffsetX;
-                double mouseYBefore = (HEIGHT / 2.0 - e.getY()) + viewOffsetY;
+					double mouseXBefore = (e.getX() - WIDTH / 2.0) + viewOffsetX;
+					double mouseYBefore = (HEIGHT / 2.0 - e.getY()) + viewOffsetY;
 
-                if (scrollY > 0) {
-                    zoomFactor *= zoomAmount;
-                } else {
-                    zoomFactor /= zoomAmount;
-                }
-                
-                // Limite du facteur de zoom pour éviter les zooms extrêmes
-                zoomFactor = Math.max(0.1, Math.min(zoomFactor, 10.0));
+					if (scrollY > 0) {
+						zoomFactor *= zoomAmount;
+					} else {
+						zoomFactor /= zoomAmount;
+					}
 
-                double mouseXAfter = (e.getX() - WIDTH / 2.0) + viewOffsetX;
-                double mouseYAfter = (HEIGHT / 2.0 - e.getY()) + viewOffsetY;
+					// Limite du facteur de zoom pour éviter les zooms extrêmes
+					zoomFactor = Math.max(0.1, Math.min(zoomFactor, 10.0));
 
-                viewOffsetX += (mouseXBefore - mouseXAfter);
-                viewOffsetY += (mouseYBefore - mouseYAfter);
+					double mouseXAfter = (e.getX() - WIDTH / 2.0) + viewOffsetX;
+					double mouseYAfter = (HEIGHT / 2.0 - e.getY()) + viewOffsetY;
 
-                updateProjectionMatrix();
-                SwingUtilities.invokeLater(() -> glWindow.display());
+					viewOffsetX += (mouseXBefore - mouseXAfter);
+					viewOffsetY += (mouseYBefore - mouseYAfter);
+
+					updateProjectionMatrix();
+					SwingUtilities.invokeLater(() -> glWindow.display());
+				}
             }
 
         });
     }
+    
+    private void addKeyListeners() {
+        glWindow.addKeyListener(new KeyListener() {
+
+        	@Override
+        	public void keyPressed(KeyEvent e) {
+        	    char keyChar = e.getKeyChar(); // Récupère le caractère associé à la touche pressée
+
+        	    // Afficher le caractère pour le débogage
+        	    System.out.println("Touche pressée : " + keyChar);
+        	    
+        	    // Vérifier si la touche pressée est un chiffre entre 1 et 9
+        	    if (keyChar >= '1' && keyChar <= '9') {
+        	        int keyNumber = keyChar - '0';  // Convertit le caractère en un nombre entier
+        	        System.out.println("Touche " + keyNumber + " pressée");
+
+        	        // Switch en fonction de la touche pressée
+        	        switch (keyNumber) {
+        	            case 1:
+        	                setMode(GraphData.GraphMode.SELECTION);
+        	                System.out.println("Switch to " + getMode() + " - Vous pouvez sélectionner et déplacer des sommets");
+        	                break;
+        	            case 2:
+        	                setMode(GraphData.GraphMode.DELETE);
+        	                System.out.println("Switch to " + getMode() + " - Vous pouvez supprimer des sommets");
+        	                break;
+        	            case 3:
+        	                setMode(GraphData.GraphMode.RUN);
+        	                System.out.println("Back to " + getMode() + " - Exécution du graphe (en mouvement)");
+        	                break;
+        	            case 4:
+        	                setMode(GraphData.GraphMode.MOVE);
+        	                System.out.println("Back to " + getMode() + " - Vous pouvez vous déplacer dans le graphe");
+        	                break;
+        	        }
+        	    }
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {}
+        });
+    }
+
 
 
     /**
@@ -466,59 +546,76 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         gl.glClearColor(bg_color_r, bg_color_g, bg_color_b, 1.0f); // Couleur de fond de l'écran
         gl.glEnable(GL4.GL_DEPTH_TEST); // Activer le test de profondeur pour les objets 3D
 	    gl.glEnable(GL4.GL_PROGRAM_POINT_SIZE);
-	    
+	    gl.glEnable(GL4.GL_BLEND);
+	    gl.glBlendFunc(GL4.GL_SRC_ALPHA, GL4.GL_ONE_MINUS_SRC_ALPHA);
+
 	    // Créer des buffers pour les positions, tailles et couleurs
 	    createBuffers(gl);
-	    
-	    String vertexShaderSourcePoints = 
-	    	    "#version 400 core\n" +
-	    	    "in vec2 position;\n" +
-	    	    "in float size;\n" +
-	    	    "in vec3 color;\n" +
-	    	    "uniform mat4 u_transform;\n" +
-	    	    "out vec3 fragColor;\n" +
-	    	    "void main() {\n" +
-	    	    "   vec4 pos = vec4(position, 0.0, 1.0);\n" +
-	    	    "   gl_Position = u_transform * pos;\n" +
-	    	    "   gl_PointSize = size;\n" +
-	    	    "   fragColor = color;\n" +
-	    	    "}\n";
 
-	    String fragmentShaderSourcePoints = 
-	    	    "#version 400 core\n" +
-	    	    "in vec3 fragColor;\n" +
-	    	    "out vec4 color;\n" +
-	    	    "void main() {\n" +
-	    	    "   float dist = length(gl_PointCoord - vec2(0.5, 0.5));\n" +
-	    	    "   if (dist < 0.5) {\n" +
-	    	    "       color = vec4(fragColor, 1.0);\n" +
-	    	    "   } else {\n" +
-	    	    "       discard;\n" +
-	    	    "   }\n" +
-	    	    "}\n";
-	    
+	    String vertexShaderSourcePoints =
+				"""
+				#version 400 core
+				layout(location = 0) in vec2 position;
+				layout(location = 1) in float size;
+				layout(location = 2) in vec3 color;
+				uniform mat4 u_transform;
+				out vec3 fragColor;
+				void main() {
+				   vec4 pos = vec4(position, 0.0, 1.0);
+				   gl_Position = u_transform * pos;
+				   gl_PointSize = size;
+				   fragColor = color;
+				}
+						""";
+
+	    String fragmentShaderSourcePoints =
+				"""
+				#version 400 core
+				in vec3 fragColor;
+				out vec4 color;
+				void main() {
+				   float dist = length(gl_PointCoord - vec2(0.5, 0.5));
+				   if (dist < 0.5) {
+				       color = vec4(fragColor, 1.0);
+				   } else {
+				       discard;
+				   }
+				}
+				""";
+
 	    createEdgeBuffers(gl);
-	    
-	    String vertexShaderSourceEdges = 
-	    	    "#version 400 core\n" +
-	    	    "in vec2 position;\n" +
-	    	    "in vec3 color;\n" +
-	    	    "uniform mat4 u_transform;\n" +
-	    	    "out vec3 fragColor;\n" +
-	    	    "void main() {\n" +
-	    	    "   vec4 pos = vec4(position, 0.0, 1.0);\n" +
-	    	    "   gl_Position = u_transform * pos;\n" +
-	    	    "   fragColor = color;\n" + // Couleur de l'arête
-	    	    "}\n";
 
-	    
-	    String fragmentShaderSourceEdges = 
-	    	    "#version 400 core\n" +
-	    	    "in vec3 fragColor;\n" +
-	    	    "out vec4 color;\n" +
-	    	    "void main() {\n" +
-	    	    "   color = vec4(fragColor, 1.0);\n" +
-	    	    "}\n";
+	    String vertexShaderSourceEdges =
+	    		"""
+				#version 400 core
+				layout(location = 0) in vec2 position;
+				layout(location = 1) in vec3 color;
+				layout(location = 2) in float size;
+				layout(location = 3) in float visibility;
+				uniform mat4 u_transform;
+				out vec3 fragColor;
+				out float fragVisibility;
+				void main() {
+				    vec4 pos = vec4(position, 0.0, 1.0);
+				    gl_Position = u_transform * pos;
+				    fragColor = color;
+				    fragVisibility = visibility;
+				}
+	    		""";
+
+	    String fragmentShaderSourceEdges =
+				"""
+				#version 400 core
+				in vec3 fragColor;
+				in float fragVisibility;
+				out vec4 color;
+				void main() {
+				    if (fragVisibility == 0.0) {
+				        discard;
+				    }
+				    color = vec4(fragColor, 1.0);
+				}
+				""";
 
 	    pointsShaderProgram = createShaderProgram(gl, vertexShaderSourcePoints, fragmentShaderSourcePoints);
 	    edgesShaderProgram = createShaderProgram(gl, vertexShaderSourceEdges, fragmentShaderSourceEdges);
@@ -541,12 +638,12 @@ public class Graph extends Application implements GLEventListener, GraphSettings
     public void display(GLAutoDrawable drawable) {
 	    GL4 gl = drawable.getGL().getGL4();
 	    System.out.println("display");
-	    
+
 	    // Met à jour la matrice de transformation avec les offsets actuels
 	    updateProjectionMatrix();
-	    
+
 	    gl.glClear(GL4.GL_COLOR_BUFFER_BIT | GL4.GL_DEPTH_BUFFER_BIT);
-	    
+
         if (isRunMode.get()) {
             boolean is_running = updatePositions();
             List<Vertex> updatedVertices = List.of(getPositions());
@@ -563,23 +660,26 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 	    // === Envoi des données GPU ===
 	    // Sommets
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexBuffer);
-	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, vertexPoints.length * Float.BYTES, FloatBuffer.wrap(vertexPoints));
+	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) vertexPoints.length * Float.BYTES, FloatBuffer.wrap(vertexPoints));
 
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexSizeBuffer);
-	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, vertexSizes.length * Float.BYTES, FloatBuffer.wrap(vertexSizes));
+	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) vertexSizes.length * Float.BYTES, FloatBuffer.wrap(vertexSizes));
 
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexColorBuffer);
-	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, vertexColors.length * Float.BYTES, FloatBuffer.wrap(vertexColors));
+	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) vertexColors.length * Float.BYTES, FloatBuffer.wrap(vertexColors));
 
 	    // Arêtes
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeBuffer);
-	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, edgePoints.length * Float.BYTES, FloatBuffer.wrap(edgePoints));
+	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) edgePoints.length * Float.BYTES, FloatBuffer.wrap(edgePoints));
 
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeColorBuffer);
-	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, edgeColors.length * Float.BYTES, FloatBuffer.wrap(edgeColors));
+	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) edgeColors.length * Float.BYTES, FloatBuffer.wrap(edgeColors));
 
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeSizeBuffer);
-	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, edgeSizes.length * Float.BYTES, FloatBuffer.wrap(edgeSizes));
+	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) edgeSizes.length * Float.BYTES, FloatBuffer.wrap(edgeSizes));
+	    
+	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeVisibilityBuffer);
+	    gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) edgeVisibility.length * Float.BYTES, FloatBuffer.wrap(edgeVisibility));
 
 	    // === Affichage des sommets ===
 	    gl.glUseProgram(pointsShaderProgram);
@@ -617,6 +717,10 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 	    gl.glEnableVertexAttribArray(2); // size
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeSizeBuffer);
 	    gl.glVertexAttribPointer(2, 1, GL4.GL_FLOAT, false, 0, 0);
+	    
+	    gl.glEnableVertexAttribArray(3); // visibility
+	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeVisibilityBuffer);
+	    gl.glVertexAttribPointer(3, 1, GL4.GL_FLOAT, false, 0, 0);
 
 	    int transformLocEdges = gl.glGetUniformLocation(edgesShaderProgram, "u_transform");
 	    gl.glUniformMatrix4fv(transformLocEdges, 1, false, projectionMatrix);
@@ -663,18 +767,20 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 
     /**
      * Exemple d'initialisation du graphe (à remplacer par l'interface graphique)
+	 * @see GraphData.SimilitudeMode
+	 * @see GraphData.NodeCommunity
      */
     private void testInit() {
         // Initialisation du graphe avec le fichier à charger, la méthode de similitude et la méthode de détection de communautés
         String sample1 = "samples/iris.csv";
         String sample2 = "samples/predicancerNUadd9239.csv";
-        initGraph(sample2, GraphData.SimilitudeMode.CORRELATION, GraphData.NodeCommunity.LOUVAIN);
+        initGraphCsv(sample2, GraphData.SimilitudeMode.CORRELATION, GraphData.NodeCommunity.LOUVAIN);
 
         setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
         setBackgroundColor(0.0f, 0.0f, 0.0f); // Couleur de fond du graphe
-        setUpscale(5); // Facteur d'agrandissement pour le graphe
-        setInitialNodeSize(3); // Taille initiale d'un sommet
-        setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un sommet
+        setUpscale(GRAPH_UPSCALE); // Facteur d'agrandissement pour le graphe
+        setInitialNodeSize(15); // Taille initiale d'un sommet
+        setDegreeScaleFactor(0.15); // Facteur d'agrandissement selon le degré d'un sommet
     }
 
 
@@ -695,38 +801,18 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         tl1.setCycleCount(1);
         tl1.play();
 
-        Timeline tl2 = new Timeline(
-                new KeyFrame(Duration.seconds(25), e -> {
-                    setMode(GraphData.GraphMode.RUN);
-                    System.out.print("Switch to " + getMode());
-                    System.out.println(" - Exécution du graphe (en mouvement)");
-                })
-        );
-        tl2.setCycleCount(1);
-        tl2.play();
-
-        Timeline tl3 = new Timeline(
-                new KeyFrame(Duration.seconds(30), e -> {
-                    setMode(GraphData.GraphMode.MOVE);
-                    System.out.print("Switch to " + getMode());
-                    System.out.println(" - Vous pouvez vous déplacer dans le graphe");
-                })
-        );
-        tl3.setCycleCount(1);
-        tl3.play();
-
-        Timeline tl4 = new Timeline(
-                new KeyFrame(Duration.seconds(40), e -> {
-                    setMode(GraphData.GraphMode.SELECTION);
-                    System.out.print("Switch to " + getMode());
-                    System.out.println(" - Vous pouvez sélectionner et déplacer des sommets");
-                })
-        );
-        tl4.setCycleCount(1);
-        tl4.play();
+		Timeline tl2 = new Timeline(
+				new KeyFrame(Duration.seconds(20), e -> {
+					setMode(GraphData.GraphMode.DELETE);
+					System.out.print("Switch to " + getMode());
+					System.out.println(" - Vous pouvez supprimer des sommets");
+				})
+		);
+		tl2.setCycleCount(1);
+		tl2.play();
 
         Timeline tl5 = new Timeline(
-                new KeyFrame(Duration.seconds(50), e -> {
+                new KeyFrame(Duration.seconds(30), e -> {
                     setMode(GraphData.GraphMode.RUN);
                     System.out.print("Back to " + getMode());
                     System.out.println(" - Exécution du graphe (en mouvement)");
@@ -772,21 +858,21 @@ public class Graph extends Application implements GLEventListener, GraphSettings
      * @see GraphData.NodeCommunity
      */
     @Override
-    public double[][] initGraph(String path, GraphData.SimilitudeMode mode, GraphData.NodeCommunity community) {
+    public double[][] initGraphCsv(String path, GraphData.SimilitudeMode mode, GraphData.NodeCommunity community) {
         if (path == null || path.isEmpty())
-            throw new RuntimeException("initGraph : Chemin du fichier non spécifié.");
+            throw new RuntimeException("initGraphCsv : Chemin du fichier non spécifié.");
 
         // Appeler startsProgram avant d'utiliser les données natives
         double[][] data = startsProgram(path);
 
         // Déterminer le mode de similitude à utiliser
         if (mode == null)
-            throw new RuntimeException("initGraph : Mode de similitude non spécifié.");
+            throw new RuntimeException("initGraphCsv : Mode de similitude non spécifié.");
         int modeSimilitude = getModeSimilitude(mode);
 
-        init_metadata = computeThreshold(modeSimilitude);
+        init_metadata = computeThreshold(modeSimilitude, 5);
         if (init_metadata == null)
-            throw new RuntimeException("initGraph : Une erreur est survenue lors du calcul des seuils.");
+            throw new RuntimeException("initGraphCsv : Une erreur est survenue lors du calcul des seuils.");
 
         double recommendedThreshold = init_metadata.getEdgeThreshold();
         double recommendedAntiThreshold = init_metadata.getAntiThreshold();
@@ -795,18 +881,38 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         System.out.println("Seuil recommandé pour les anti-arêtes : " + recommendedAntiThreshold);
 
         // Valeurs imposées pour le moment (à modifier)
-        recommendedThreshold = 0.966;
-        recommendedAntiThreshold = 0.6;
+        //recommendedThreshold = 0.966;
+        //recommendedAntiThreshold = 0.6;
 
         // Déterminer le mode de détection de communautés à utiliser
         if (community == null)
-            throw new RuntimeException("initGraph : Mode de détection de communautés non spécifié.");
+            throw new RuntimeException("initGraphCsv : Mode de détection de communautés non spécifié.");
         int modeCommunity = getModeCommunity(community);
 
         metadata = initiliazeGraph(modeCommunity, recommendedThreshold, recommendedAntiThreshold);
 
         return data;
     }
+
+	/**
+	 * Initialise le graphe avec les données du fichier .dot
+	 * @param path Chemin du fichier .dot à charger
+	 * @param community Mode de détection de communautés à utiliser
+	 * @see GraphData.SimilitudeMode
+	 * @see GraphData.NodeCommunity
+	 */
+	@Override
+	public void initGraphDot(String path, GraphData.NodeCommunity community) {
+		if (path == null || path.isEmpty())
+			throw new RuntimeException("initGraphDot : Chemin du fichier non spécifié.");
+
+		// Déterminer le mode de détection de communautés à utiliser
+		if (community == null)
+			throw new RuntimeException("initGraphDot : Mode de détection de communautés non spécifié.");
+		int modeCommunity = getModeCommunity(community);
+
+		metadata = initializeDot(path, modeCommunity);
+	}
 
     /**
      * Initialise la taille de l'écran du graphe
@@ -819,8 +925,23 @@ public class Graph extends Application implements GLEventListener, GraphSettings
             throw new RuntimeException("setScreenSize : Taille de l'écran (" + width + "x" + height + ") non valide.");
         WIDTH = width;
         HEIGHT = height;
-        //setDimension(WIDTH, HEIGHT); // TODO
+        //setDimension(WIDTH, HEIGHT); // TODO (toujours compliqué côté C)
     }
+
+	/**
+	 * Modifie la couleur de fond du graphe
+	 * @param color_r Composante rouge de la couleur
+	 * @param color_g Composante verte de la couleur
+	 * @param color_b Composante bleue de la couleur
+	 */
+	@Override
+	public void setBackgroundColor(float color_r, float color_g, float color_b) {
+		if (color_r < 0 || color_r > 1 || color_g < 0 || color_g > 1 || color_b < 0 || color_b > 1)
+			throw new RuntimeException("setBackgroundColor : Couleur (" + color_r + ", " + color_g + ", " + color_b + ") non valide.");
+		this.bg_color_r = color_r;
+		this.bg_color_g = color_g;
+		this.bg_color_b = color_b;
+	}
 
     /**
      * @param upscale Facteur d'agrandissement pour le graphe
@@ -837,6 +958,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
      */
     @Override
     public void setInitialNodeSize(double size) {
+		System.out.println("setInitialNodeSize : " + size);
         if (size <= 0)
             throw new RuntimeException("setInitialNodeSize : Taille initiale d'un sommet (" + size + ") non valide.");
         Vertex.initial_node_size = size;
@@ -886,10 +1008,29 @@ public class Graph extends Application implements GLEventListener, GraphSettings
     public void setMode(GraphData.GraphMode mode) {
         if (mode == null)
             throw new RuntimeException("setMode : Mode non spécifié.");
-        isRunMode.set(mode == GraphData.GraphMode.RUN);
-        isSelectionMode.set(mode == GraphData.GraphMode.SELECTION);
-        isMoveMode.set(mode == GraphData.GraphMode.MOVE);
-        isDeleteMode.set(mode == GraphData.GraphMode.DELETE);
+        
+        // Utiliser Platform.runLater pour s'assurer que les modifications
+        // des propriétés JavaFX sont faites sur le thread JavaFX
+        Platform.runLater(() -> {
+            System.out.println("Changement de mode vers: " + mode);
+            
+            // Définir le nouveau mode
+            isRunMode.set(mode == GraphData.GraphMode.RUN);
+            isSelectionMode.set(mode == GraphData.GraphMode.SELECTION);
+            isMoveMode.set(mode == GraphData.GraphMode.MOVE);
+            isDeleteMode.set(mode == GraphData.GraphMode.DELETE);
+            
+            // Afficher un message selon le mode activé
+            if (mode == GraphData.GraphMode.RUN) {
+                System.out.println("Back to RUN - Exécution du graphe (en mouvement)");
+            } else if (mode == GraphData.GraphMode.SELECTION) {
+                System.out.println("Switch to SELECTION - Vous pouvez sélectionner et déplacer des sommets");
+            } else if (mode == GraphData.GraphMode.MOVE) {
+                System.out.println("Switch to MOVE - Vous pouvez vous déplacer dans le graphe");
+            } else if (mode == GraphData.GraphMode.DELETE) {
+                System.out.println("Switch to DELETE - Vous pouvez supprimer des sommets");
+            }
+        });
     }
 
 
@@ -910,16 +1051,6 @@ public class Graph extends Application implements GLEventListener, GraphSettings
     }
 
     /**
-     * @return le seuil recommandé pour les anti-arêtes
-     */
-    @Override
-    public double getRecommendedAntiThreshold() {
-        if (init_metadata == null)
-            throw new RuntimeException("getRecommendedAntiThreshold : Métadonnées non initialisées. Veuillez appeler initGraph() avant.");
-        return init_metadata.getAntiThreshold();
-    }
-
-    /**
      * @return le seuil actuel pour les arêtes
      */
     @Override
@@ -928,6 +1059,16 @@ public class Graph extends Application implements GLEventListener, GraphSettings
             throw new RuntimeException("getThreshold : Métadonnées non initialisées. Veuillez appeler initGraph() avant.");
         return metadata.getEdgeThreshold();
     }
+
+	/**
+	 * @return le seuil recommandé pour les anti-arêtes
+	 */
+	@Override
+	public double getRecommendedAntiThreshold() {
+		if (init_metadata == null)
+			throw new RuntimeException("getRecommendedAntiThreshold : Métadonnées non initialisées. Veuillez appeler initGraph() avant.");
+		return init_metadata.getAntiThreshold();
+	}
 
     /**
      * @return le seuil actuel pour les anti-arêtes
@@ -939,49 +1080,131 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         return metadata.getAntiThreshold();
     }
 
-    /**
-     * Change le seuil pour les arêtes
-     * @param threshold Nouveau seuil pour les arêtes
-     */
-    @Override
-    public void setThreshold(double threshold) {
-        // TODO
-    }
+	/**
+	 * Le seuil de stabilité indique quand le graphe doit s'arrêter (si le mouvement est inférieur au seuil et que suffisamment de temps s'est écoulé, alors le graphe s'arrête de bouger)
+	 * @param threshold Nouveau seuil à appliquer
+	 */
+	@Override
+	public void setStabilizedThreshold(double threshold) {
+		setThresholdS(threshold);
+	}
 
-    /**
-     * Change le seuil pour les anti-arêtes
-     * @param antiThreshold Nouveau seuil pour les anti-arêtes
-     */
-    @Override
-    public void setAntiThreshold(double antiThreshold) {
-        // TODO
-    }
+	/**
+	 * Le seuil d'attraction correspond à la distance minimum pour appliquer une force d'attraction entre deux points
+	 * @param threshold Seuil d'attraction entre les sommets
+	 */
+	@Override
+	public void setAttractionThreshold(double threshold) {
+		setThresholdA(threshold);
+	}
 
-    /**
-     * Affiche les sommets dont le degré est supérieur ou égal à degree
-     * @param degree Degré minimum des sommets à afficher
-     */
-    @Override
-    public void setMiniumDegree(int degree) {
-        if (degree < 0)
-            throw new RuntimeException("setMiniumDegree : Degré minimum (" + degree + ") non valide.");
-        minimumDegree.set(degree);
-    }
+	/**
+	 * @param freq Fréquence à laquelle les clusters sont mis à jour
+	 */
+	@Override
+	public void setUpdatedFrequence(int freq) {
+		setSaut(freq);
+	}
 
-    /**
-     * Modifie la couleur de fond du graphe
-     * @param color_r Composante rouge de la couleur
-     * @param color_g Composante verte de la couleur
-     * @param color_b Composante bleue de la couleur
-     */
-    @Override
-    public void setBackgroundColor(float color_r, float color_g, float color_b) {
-        if (color_r < 0 || color_r > 1 || color_g < 0 || color_g > 1 || color_b < 0 || color_b > 1)
-            throw new RuntimeException("setBackgroundColor : Couleur (" + color_r + ", " + color_g + ", " + color_b + ") non valide.");
-        this.bg_color_r = color_r;
-        this.bg_color_g = color_g;
-        this.bg_color_b = color_b;
-    }
+	/**
+	 * @param friction Friction à appliquer
+	 */
+	@Override
+	public void setNewFriction(double friction) {
+		setFriction(friction);
+	}
+
+	/**
+	 * Choisir le mode de répulsion à utiliser pour mettre à jour les positions
+	 * @param mode Mode de répulsion à utiliser
+	 * @see GraphData.RepulsionMode
+	 */
+	@Override
+	public void setRepulsionMode(GraphData.RepulsionMode mode) {
+		setModeRepulsion(getModeRepulsion(mode));
+	}
+
+	/**
+	 * @param antiedge_repulsion Force de répulsion des anti-arêtes
+	 */
+	@Override
+	public void setAntiEdgesRepulsion(double antiedge_repulsion) {
+		setAntiRepulsion(antiedge_repulsion);
+	}
+
+	/**
+	 * @param attraction_coeff Force d'attraction entre les sommets
+	 */
+	@Override
+	public void setAttractionCoefficient(double attraction_coeff) {
+		setAttractionCoeff(attraction_coeff);
+	}
+
+	/**
+	 * @param threshold Seuil de répulsion entre les sommets
+	 */
+	@Override
+	public void setRepulsionThreshold(double threshold) {
+		setSeuilRep(threshold);
+	}
+
+	/**
+	 * @param amortissement Amortissement à appliquer (facteur dictant comment la friction évolue après chaque mise à jour du graphe)
+	 */
+	@Override
+	public void setNewAmortissement(double amortissement) {
+		setAmortissement(amortissement);
+	}
+
+	/**
+	 * @param new_number_of_clusters Nombre de clusters à considérer
+	 */
+	@Override
+	public void setNbClusters(int new_number_of_clusters) {
+		SetNumberClusters(new_number_of_clusters);
+	}
+
+	/**
+	 * @param isEnabled <code>true</code> pour utiliser les Kmeans, <code>false</code> pour utiliser le grid clustering
+	 */
+	@Override
+	public void enableKmeans(boolean isEnabled) {
+		setKmeansMode(isEnabled);
+	}
+
+	/**
+	 * @return l'histogramme // TODO
+	 */
+	@Override
+	public int[] getHistogramme() {
+		return getHistogram();
+	}
+
+	/**
+	 * @return le degré minimum des sommets à afficher
+	 */
+	@Override
+	public int getMinimumDegree() {
+		return minimumDegree.get();
+	}
+
+	/**
+	 * Affiche les sommets dont le degré est supérieur ou égal à degree
+	 * @param degree Degré minimum des sommets à afficher
+	 */
+	@Override
+	public void setMiniumDegree(int degree) {
+		if (degree < 0)
+			throw new RuntimeException("setMiniumDegree : Degré minimum (" + degree + ") non valide.");
+		minimumDegree.set(degree);
+	}
+
+	/**
+	 * @param vertex_id Identifiant du sommet à supprimer
+	 */
+	public void removeVertex(int vertex_id) {
+		// TODO
+	}
 
 
 
@@ -1189,12 +1412,14 @@ public class Graph extends Application implements GLEventListener, GraphSettings
             "    gl_Position = vec4(correctedPos, 0.0, 1.0);\n" +
             "}\n";
         
-        String fragmentShaderSource = 
-            "#version 400\n" +
-            "out vec4 FragColor;\n" +
-            "void main() {\n" +
-            "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n" +
-            "}\n";
+        String fragmentShaderSource =
+				"""
+						#version 400
+						out vec4 FragColor;
+						void main() {
+						    FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+						}
+						""";
 
         // Compiler les shaders
         int vertexShader = compileShader(gl, GL4.GL_VERTEX_SHADER, vertexShaderSource);
@@ -1232,7 +1457,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         int[] exportVBO = new int[1];
         gl.glGenBuffers(1, exportVBO, 0);
         gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, exportVBO[0]);
-        gl.glBufferData(GL4.GL_ARRAY_BUFFER, circles.limit() * Float.BYTES, circles, GL4.GL_STATIC_DRAW);
+        gl.glBufferData(GL4.GL_ARRAY_BUFFER, (long) circles.limit() * Float.BYTES, circles, GL4.GL_STATIC_DRAW);
 
         // Configurer les attributs de vertex
         gl.glVertexAttribPointer(0, 2, GL4.GL_FLOAT, false, 0, 0);
@@ -1257,22 +1482,22 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         
         // Recharger les données dans les buffers GPU
         gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexBuffer);
-        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, vertexPoints.length * Float.BYTES, FloatBuffer.wrap(vertexPoints));
+        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) vertexPoints.length * Float.BYTES, FloatBuffer.wrap(vertexPoints));
         
         gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexSizeBuffer);
-        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, vertexSizes.length * Float.BYTES, FloatBuffer.wrap(vertexSizes));
+        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) vertexSizes.length * Float.BYTES, FloatBuffer.wrap(vertexSizes));
         
         gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexColorBuffer);
-        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, vertexColors.length * Float.BYTES, FloatBuffer.wrap(vertexColors));
+        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) vertexColors.length * Float.BYTES, FloatBuffer.wrap(vertexColors));
         
         gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeBuffer);
-        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, edgePoints.length * Float.BYTES, FloatBuffer.wrap(edgePoints));
+        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) edgePoints.length * Float.BYTES, FloatBuffer.wrap(edgePoints));
         
         gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeColorBuffer);
-        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, edgeColors.length * Float.BYTES, FloatBuffer.wrap(edgeColors));
+        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) edgeColors.length * Float.BYTES, FloatBuffer.wrap(edgeColors));
         
         gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeSizeBuffer);
-        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, edgeSizes.length * Float.BYTES, FloatBuffer.wrap(edgeSizes));
+        gl.glBufferSubData(GL4.GL_ARRAY_BUFFER, 0, (long) edgeSizes.length * Float.BYTES, FloatBuffer.wrap(edgeSizes));
     }
 
 
@@ -1285,6 +1510,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
     /**
      * @param mode Mode de similitude
      * @return l'identifiant du mode de similitude
+	 * @see GraphData.SimilitudeMode
      */
     private static int getModeSimilitude(GraphData.SimilitudeMode mode) {
         int modeSimilitude = -1;
@@ -1304,6 +1530,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
     /**
      * @param community Mode de détection de communautés
      * @return l'identifiant du mode de détection de communautés
+	 * @see GraphData.NodeCommunity
      */
     private static int getModeCommunity(GraphData.NodeCommunity community) {
         int modeCommunity = -1;
@@ -1318,6 +1545,22 @@ public class Graph extends Application implements GLEventListener, GraphSettings
             throw new RuntimeException("Mode de détection de communautés non reconnu.");
         return modeCommunity;
     }
+
+	/**
+	 * @param mode Mode de répulsion
+	 * @return l'identifiant du mode de répulsion
+	 */
+	private static int getModeRepulsion(GraphData.RepulsionMode mode) {
+		int modeRepulsion = -1;
+		switch (mode) {
+			case GraphData.RepulsionMode.REPULSION_BY_DEGREE -> modeRepulsion = 0;
+			case GraphData.RepulsionMode.REPULSION_BY_EDGES -> modeRepulsion = 1;
+			case GraphData.RepulsionMode.REPULSION_BY_COMMUNITIES -> modeRepulsion = 2;
+		}
+		if (modeRepulsion == -1)
+			throw new RuntimeException("Mode de répulsion non reconnu.");
+		return modeRepulsion;
+	}
 
     
     
@@ -1338,41 +1581,47 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 	    // Buffer pour les positions des sommets
 	    FloatBuffer vertexData = FloatBuffer.wrap(vertexPoints);
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexBuffer);
-	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, vertexData.limit() * Float.BYTES, vertexData, GL4.GL_STATIC_DRAW);
+	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, (long) vertexData.limit() * Float.BYTES, vertexData, GL4.GL_STATIC_DRAW);
 
 	    // Buffer pour les tailles des sommets
 	    FloatBuffer sizeData = FloatBuffer.wrap(vertexSizes);
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexSizeBuffer);
-	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, sizeData.limit() * Float.BYTES, sizeData, GL4.GL_STATIC_DRAW);
+	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, (long) sizeData.limit() * Float.BYTES, sizeData, GL4.GL_STATIC_DRAW);
 
 	    // Buffer pour les couleurs des sommets
 	    FloatBuffer colorData = FloatBuffer.wrap(vertexColors);
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, vertexColorBuffer);
-	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, colorData.limit() * Float.BYTES, colorData, GL4.GL_STATIC_DRAW);
+	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, (long) colorData.limit() * Float.BYTES, colorData, GL4.GL_STATIC_DRAW);
 	}
 	
 	private void createEdgeBuffers(GL4 gl) {
-	    int[] buffers = new int[3]; // Pour edge points, edge color, edge size
-	    gl.glGenBuffers(3, buffers, 0);  // Génère 3 buffers
+	    int[] buffers = new int[4]; // Pour edge points, edge color, edge size, et edge visibility
+	    gl.glGenBuffers(4, buffers, 0); // Génère 4 buffers
 
 	    edgeBuffer = buffers[0];
 	    edgeColorBuffer = buffers[1];
 	    edgeSizeBuffer = buffers[2];
+	    edgeVisibilityBuffer = buffers[3];
 
 	    // Buffer pour les positions des arêtes
 	    FloatBuffer edgeData = FloatBuffer.wrap(edgePoints);
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeBuffer);
-	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, edgeData.limit() * Float.BYTES, edgeData, GL4.GL_STATIC_DRAW);
+	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, (long) edgeData.limit() * Float.BYTES, edgeData, GL4.GL_STATIC_DRAW);
 
 	    // Buffer pour les couleurs des arêtes
 	    FloatBuffer edgeColorData = FloatBuffer.wrap(edgeColors);
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeColorBuffer);
-	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, edgeColorData.limit() * Float.BYTES, edgeColorData, GL4.GL_STATIC_DRAW);
+	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, (long) edgeColorData.limit() * Float.BYTES, edgeColorData, GL4.GL_STATIC_DRAW);
 
 	    // Buffer pour les tailles des arêtes
 	    FloatBuffer edgeSizeData = FloatBuffer.wrap(edgeSizes);
 	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeSizeBuffer);
-	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, edgeSizeData.limit() * Float.BYTES, edgeSizeData, GL4.GL_STATIC_DRAW);
+	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, (long) edgeSizeData.limit() * Float.BYTES, edgeSizeData, GL4.GL_STATIC_DRAW);
+
+	    // Buffer pour la visibilité des arêtes
+	    FloatBuffer edgeVisibilityData = FloatBuffer.wrap(edgeVisibility);
+	    gl.glBindBuffer(GL4.GL_ARRAY_BUFFER, edgeVisibilityBuffer);
+	    gl.glBufferData(GL4.GL_ARRAY_BUFFER, (long) edgeVisibilityData.limit() * Float.BYTES, edgeVisibilityData, GL4.GL_STATIC_DRAW);
 	}
 	
 	private void initializeArrays() {
@@ -1386,8 +1635,19 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 	    vertexColors = new float[vertexCount * 3]; // 3 composantes par sommet (R, G, B)
 	    edgeSizes = new float[edgeCount]; // taille des arêtes
 	    edgeColors = new float[edgeCount * 3]; // couleur des arêtes (R, G, B pour chaque arête)
+	    edgeVisibility = new float[edgeCount * 2]; // 2 points par arête
+
+        // Par défaut, toutes les arêtes sont visibles
+        for (int i = 0; i < edges.size(); i++) {
+            edgeVisibility[i * 2] = 1f;
+            edgeVisibility[i * 2 + 1] = 1f;
+        }
+	    
 	}
 
+	/**
+	 * Prépare les données de rendu pour les sommets
+	 */
 	private void prepareVertexRenderData() {
 		Vertex currentVertex;
 		Community currentCommunity;
@@ -1404,7 +1664,10 @@ public class Graph extends Application implements GLEventListener, GraphSettings
             vertexColors[i * 3 + 2] = currentCommunity.getB();
 	    }
 	}
-	
+
+	/**
+	 * Prépare les données de rendu pour les arêtes
+	 */
 	private void prepareEdgeRenderData() {
 		Edge currentEdge;
 		Community startCommunity, endCommunity;
@@ -1415,24 +1678,29 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 	        endVertex = currentEdge.getEnd();
 	        startCommunity = startVertex.getCommunity();
 	        endCommunity = endVertex.getCommunity();
-	        
+
 	        // Mise à jour des buffers
             edgePoints[i * 4] = (float) startVertex.getX();
             edgePoints[i * 4 + 1] = (float) startVertex.getY();
             edgePoints[i * 4 + 2] = (float) endVertex.getX();
             edgePoints[i * 4 + 3] = (float) endVertex.getY();
+			edgeSizes[i] = (float) (currentEdge.getWeight());
             edgeColors[i * 3] = (startCommunity.getR() + endCommunity.getR()) / 2;
             edgeColors[i * 3 + 1] = (startCommunity.getG() + endCommunity.getG()) / 2;
             edgeColors[i * 3 + 2] = (startCommunity.getB() + endCommunity.getB()) / 2;
-            edgeSizes[i] = 1.0f;
+            float visValue = (startVertex.isDeleted() || endVertex.isDeleted()) ? 0.0f : 1.0f;
+            edgeVisibility[i * 2] = visValue;
+            edgeVisibility[i * 2 + 1] = visValue;
 	    }
 	}
 	
-	
+
+
+
     // -------------------------------------------------------------------------
     // Shader utilities
     // -------------------------------------------------------------------------
-	
+
 	private int createShaderProgram(GL4 gl, String vertexSource, String fragmentSource) {
 	    // Compiler les shaders
 	    int vertexShader = compileShader(gl, GL4.GL_VERTEX_SHADER, vertexSource);
@@ -1443,7 +1711,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 	    gl.glAttachShader(program, vertexShader);
 	    gl.glAttachShader(program, fragmentShader);
 	    gl.glLinkProgram(program);
-	    
+
 	    // Vérifier si le programme a bien été lié
 	    IntBuffer linkStatus = IntBuffer.allocate(1);
 	    gl.glGetProgramiv(program, GL4.GL_LINK_STATUS, linkStatus);

@@ -11,7 +11,7 @@ extern Edge edges[MAX_EDGES]; // Pour les arêtes normales
 extern char **node_names; // Array to store node names as strings      
 extern int *S;
 extern Point vertices[MAX_NODES];
-extern Point velocities[MAX_NODES];
+extern double velocities[MAX_NODES][2];
 extern int node_degrees[MAX_NODES];
 
 extern _Atomic int num_edges;
@@ -50,6 +50,11 @@ extern int espacement;
 extern double repulsion_coeff;
 extern int saut;
 extern int mode;
+
+extern int no_overlap;
+extern double initial_node_size;
+extern double degree_scale_factor;
+
 
 #include "c_graph/communities.h"
 

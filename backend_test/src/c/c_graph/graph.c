@@ -4,7 +4,7 @@
 Point vertices[MAX_NODES];
 
 Edge edges[MAX_EDGES]; // Pour les arêtes normales     
-Point velocities[MAX_NODES];
+double velocities[MAX_NODES][2];
 int node_degrees[MAX_NODES];
 
 _Atomic int num_edges = 0;
@@ -58,6 +58,8 @@ void calculate_node_degrees(void) {
             node_degrees[node2]++;
         }
     }
+
+    modified_graph = 0;
 
 }
 
@@ -274,24 +276,24 @@ double update_position_forces(double(*forces)[2], double PasMaxX, double PasMaxY
     double new_max_movement = 0.0;
     for (int i = 0; i < num_nodes; i++) {
         if ( vertices[i].deleted == 0 ) {
-            velocities[i].x = (velocities[i].x + forces[i][0]) * friction;
-            velocities[i].y = (velocities[i].y + forces[i][1]) * friction;
-            velocities[i].x = fmin(fmax(velocities[i].x, -PasMaxX), PasMaxX); // Capper la force en x à 1
-            velocities[i].y = fmin(fmax(velocities[i].y, -PasMaxY), PasMaxY); // Capper la force en y à 1
+            velocities[i][0] = (velocities[i][0] + forces[i][0]) * friction;
+            velocities[i][1] = (velocities[i][1] + forces[i][1]) * friction;
+            velocities[i][0] = fmin(fmax(velocities[i][0], -PasMaxX), PasMaxX); // Capper la force en x à 1
+            velocities[i][1] = fmin(fmax(velocities[i][1], -PasMaxY), PasMaxY); // Capper la force en y à 1
 
-            double x = vertices[i].x + velocities[i].x;
-            double y = vertices[i].y + velocities[i].y;
+            double x = vertices[i].x + velocities[i][0];
+            double y = vertices[i].y + velocities[i][1];
             // Appliquer les conditions aux limites toroïdales
 
-            while ( x < -half_Lx) { x += Lx; }
-            while ( x > half_Lx)  { x -= Lx; }
-            while ( y < -half_Ly) { y += Ly; }
-            while ( y > half_Ly)  { y -= Ly; }
+            if ( x < -half_Lx) { x = -half_Lx; }
+            if ( x > half_Lx)  { x = half_Lx; }
+            if ( y < -half_Ly) { y = -half_Ly; }
+            if ( y > half_Ly)  { y = half_Ly; }
 
             vertices[i].x = x;
             vertices[i].y = y;
 
-            new_max_movement = fmax(Max_movement, velocities[i].x * velocities[i].x + velocities[i].y * velocities[i].y);
+            new_max_movement = fmax(Max_movement, velocities[i][0] * velocities[i][0] + velocities[i][0] * velocities[i][0]);
         }
     }
 
@@ -368,4 +370,7 @@ void calculate_similitude_and_edges(int md, double threshold, double antiseuil) 
     }
     // main thread wait for the thread to finish processing the previous calculation
     wait_barrier(&bar);
+
+    num_antiedges = fmin(num_antiedges, MAX_EDGES);
+    num_edges = fmin(num_edges, MAX_EDGES);
 }
