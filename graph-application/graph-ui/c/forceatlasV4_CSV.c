@@ -163,6 +163,8 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_startsProgram
 
     jboolean b = JNI_FALSE;
     const char* str = (*env)->GetStringUTFChars(env, filepath, &b);
+    
+    num_rows = 0;
 
     load_csv_data(str);
 
@@ -314,11 +316,13 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
            free(neighbor);
            neighbor = next;
         }
+        adjacency_list[i].head = NULL;
     }
     free_clusters();
 
     for (int i = 0; i < num_rows; i++) {
       free(similarity_matrix[i]);
+
     }
     free(similarity_matrix);
 
