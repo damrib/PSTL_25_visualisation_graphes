@@ -154,12 +154,25 @@ public class GraphVue {
 		System.out.println("Mode changé : " + mode);
 	}
 
+	// statistique pour les noeuds
+
+	public void updateNodeStats(int displayed, int deleted, int edgesDisplayed, int edgesDeleted) {
+
+		this.nodesDisplayedLabel.setText(String.valueOf(displayed));
+		nodesDeletedLabel.setText(String.valueOf(deleted));
+		edgesDisplayedLabel.setText(String.valueOf(edgesDisplayed));
+		edgesDeletedLabel.setText(String.valueOf(edgesDeleted));
+
+		int total = displayed + deleted + edgesDisplayed + edgesDeleted;
+		totalElementsLabel.setText(String.valueOf(total));
+	}
+
 	/**
 	 * Gère l'action du bouton "Démarrer".
 	 */
 	@FXML
 	private void handleStartButton() {
-		graph = new Graph(graphContainer.getWidth(), graphContainer.getHeight());
+		graph = new Graph(this, graphContainer.getWidth(), graphContainer.getHeight());
 		System.out.println("Bouton démarrer cliqué !");
 		graphContainer.getChildren().clear();
 		graphInit();
@@ -184,17 +197,17 @@ public class GraphVue {
 
 		Graph.isRunMode.addListener((obs, oldValue, newValue) -> {
 			if (newValue) {
-	            System.out.println("Tentative de reprise de l'animation...");
-	            if (!graph.animator.isAnimating()) {
-	                graph.animator.resume();
-	                System.out.println("Reprise de l'animation réussie");
-	            }
+				System.out.println("Tentative de reprise de l'animation...");
+				if (!graph.animator.isAnimating()) {
+					graph.animator.resume();
+					System.out.println("Reprise de l'animation réussie");
+				}
 			} else {
 				System.out.println("Tentative de pause de l'animation...");
-	            if (graph.animator.isAnimating()) {
-	                graph.animator.pause();
-	                System.out.println("Pause de l'animation réussie");
-	            }
+				if (graph.animator.isAnimating()) {
+					graph.animator.pause();
+					System.out.println("Pause de l'animation réussie");
+				}
 			}
 		});
 
@@ -259,7 +272,7 @@ public class GraphVue {
 
 		// Ajouter les listeners pour la souris
 		graph.addMouseListeners();
-		
+
 		graph.addKeyListeners();
 
 		// S'assurer que le canvas est bien visible
@@ -333,11 +346,11 @@ public class GraphVue {
 
 	@FXML
 	private void handleEnableKmeans(ActionEvent event) {
-	    if (enableKmeans.isSelected()) {
-	        graph.enableKmeans(true);
-	    } else {
-	        graph.enableKmeans(false);
-	    }
+		if (enableKmeans.isSelected()) {
+			graph.enableKmeans(true);
+		} else {
+			graph.enableKmeans(false);
+		}
 	}
 
 	@FXML
@@ -396,10 +409,10 @@ public class GraphVue {
 			// Couleur de fond par défaut
 			graph.setBackgroundColor(0.0f, 0.0f, 0.0f);
 
-//			for (Vertex v : graph.vertices) {
-//				v.updateDiameter();
-//			}
-//			graph.initializeArrays();
+			// for (Vertex v : graph.vertices) {
+			// v.updateDiameter();
+			// }
+			// graph.initializeArrays();
 			treshold.setText(String.valueOf(graph.getThreshold()));
 			antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
 
@@ -427,7 +440,7 @@ public class GraphVue {
 			graph.glWindow.destroy();
 		}
 
-		graph = new Graph(graphContainer.getWidth(), graphContainer.getHeight());
+		graph = new Graph(this, graphContainer.getWidth(), graphContainer.getHeight());
 		graphContainer.getChildren().clear();
 
 		if (root != null) {
