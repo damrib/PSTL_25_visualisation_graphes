@@ -517,7 +517,7 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_deleteNode
 
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_restoreNode
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_restoreNode
 (JNIEnv * env, jobject obj, jint index)
 {
 
@@ -529,13 +529,13 @@ JNIEXPORT void JNICALL Java_graph_Graph_restoreNode
 
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setKmeansMode
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setKmeansMode
   (JNIEnv * env, jobject obj, jboolean b)
 {
   kmeans_mode = b;
 }
 
-JNIEXPORT jobject JNICALL Java_graph_Graph_getHistogram
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_getHistogram
   (JNIEnv * env, jobject obj)
 {
   jintArray result = (*env)->NewIntArray(env, NUM_BINS);
@@ -545,19 +545,19 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_getHistogram
   return result;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setInitialNodeSize
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setInitialNodeSize
   (JNIEnv * env, jobject obj, jdouble size)
 {
   initial_node_size = size;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setDegreeScaleFactor
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setDegreeScaleFactor
   (JNIEnv * env, jobject obj, jdouble factor)
 {
   degree_scale_factor = factor;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setNoOverlap
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setNoOverlap
   (JNIEnv * env, jobject obj, jboolean b)
 {
   no_overlap = b;

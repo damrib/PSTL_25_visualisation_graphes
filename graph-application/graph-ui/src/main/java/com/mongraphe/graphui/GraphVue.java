@@ -350,6 +350,7 @@ public class GraphVue {
 	@FXML
 	private void handleEnableKmeans(ActionEvent event) {
 		if (enableKmeans.isSelected()) {
+			System.out.println("ttttttttttttttttttttttttttt|\n");
 			graph.enableKmeans(true);
 		} else {
 			graph.enableKmeans(false);
