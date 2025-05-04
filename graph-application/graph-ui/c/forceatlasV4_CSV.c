@@ -254,7 +254,6 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initializeGraph
     }
 
     initialize_community_colors();
-    compute_average_vectors();
 
     for (int i = 0; i < num_nodes; i++) {
         random_point_in_center(i);
