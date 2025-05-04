@@ -52,6 +52,8 @@ public class GraphVue {
 	@FXML
 	private Label nodesDisplayedLabel;
 	@FXML
+	private Label nodesHiddenLabel;
+	@FXML
 	private Label edgesDisplayedLabel;
 	@FXML
 	private Label edgesDeletedLabel;
@@ -156,14 +158,15 @@ public class GraphVue {
 
 	// statistique pour les noeuds
 
-	public void updateNodeStats(int displayed, int deleted, int edgesDisplayed, int edgesDeleted) {
+	public void updateNodeStats(int displayed, int hidden, int edgesDisplayed, int edgesDeleted, int deleted) {
 
-		this.nodesDisplayedLabel.setText(String.valueOf(displayed));
-		nodesDeletedLabel.setText(String.valueOf(deleted));
+		nodesDisplayedLabel.setText(String.valueOf(displayed));
+		nodesHiddenLabel.setText(String.valueOf(hidden));
 		edgesDisplayedLabel.setText(String.valueOf(edgesDisplayed));
 		edgesDeletedLabel.setText(String.valueOf(edgesDeleted));
+		nodesDeletedLabel.setText(String.valueOf(deleted));
 
-		int total = displayed + deleted + edgesDisplayed + edgesDeleted;
+		int total = displayed + deleted + edgesDisplayed + edgesDeleted + hidden;
 		totalElementsLabel.setText(String.valueOf(total));
 	}
 

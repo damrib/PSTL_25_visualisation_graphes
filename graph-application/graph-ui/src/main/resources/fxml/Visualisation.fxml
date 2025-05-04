@@ -274,6 +274,10 @@
                     <Label fx:id="nodesDeletedLabel" text="0" style="-fx-text-fill: #e76f51;" />
                 </HBox>
                 <HBox spacing="10">
+                    <Label text="Nœuds Cachés:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
+                    <Label fx:id="nodesHiddenLabel" text="0" style="-fx-text-fill: #e76f51;" />
+                </HBox>
+                <HBox spacing="10">
                     <Label text="Arêtes affichées:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
                     <Label fx:id="edgesDisplayedLabel" text="0" style="-fx-text-fill: #2a9d8f;" />
                 </HBox>

@@ -677,6 +677,7 @@ public class Graph implements GLEventListener, GraphSettings {
     private int hiddenNodes = 0;
     private int hiddenEdges = 0;
     private int minDegree = 0;
+    private int deletedNodes = 0;
 
     /**
      * Affiche le graphe avec OpenGL
@@ -697,6 +698,7 @@ public class Graph implements GLEventListener, GraphSettings {
         hiddenNodes = 0;
         visibleEdges = 0;
         hiddenEdges = 0;
+        deletedNodes = 0;
         minDegree = minimumDegree.get();
 
         if (isRunMode.get()) {
@@ -722,6 +724,11 @@ public class Graph implements GLEventListener, GraphSettings {
                      */
 
                 }
+
+                if (v.isDeleted()) {
+                    deletedNodes++;
+                    visibleNodes--;
+                }
             }
             // Deuxième passe : filtrer les arêtes
             for (Edge e : edges) {
@@ -735,7 +742,7 @@ public class Graph implements GLEventListener, GraphSettings {
 
             // Mise à jour finale
             Platform.runLater(() -> {
-                graphVue.updateNodeStats(visibleNodes, hiddenNodes, visibleEdges, hiddenEdges);
+                graphVue.updateNodeStats(visibleNodes, hiddenNodes, visibleEdges, hiddenEdges, deletedNodes);
             });
         }
 
