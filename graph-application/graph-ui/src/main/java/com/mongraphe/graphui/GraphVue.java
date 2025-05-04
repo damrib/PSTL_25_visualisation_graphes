@@ -86,24 +86,34 @@ public class GraphVue {
 	@FXML
 	private Label YHovredVertexLabel;
 
+	@FXML
+	private TableView<Vertex> vertexTable;
+	@FXML
+	private TableColumn<Vertex, Integer> vertexIdCol;
+	@FXML
+	private TableColumn<Vertex, Integer> vertexCommunityCol;
+	@FXML
+	private TableColumn<Vertex, Integer> vertexDegreeCol;
+	@FXML
+	private TableColumn<Vertex, Double> vertexXCol;
+	@FXML
+	private TableColumn<Vertex, Double> vertexYCol;
+	@FXML
+	private TableColumn<Vertex, Double> vertexDiameterCol;
+	@FXML
+	private TableColumn<Vertex, Boolean> vertexDeletedCol;
 
-	@FXML private TableView<Vertex> vertexTable;
-	@FXML private TableColumn<Vertex, Integer> vertexIdCol;
-	@FXML private TableColumn<Vertex, Integer> vertexCommunityCol;
-	@FXML private TableColumn<Vertex, Integer> vertexDegreeCol;
-	@FXML private TableColumn<Vertex, Double> vertexXCol;
-	@FXML private TableColumn<Vertex, Double> vertexYCol;
-	@FXML private TableColumn<Vertex, Double> vertexDiameterCol;
-	@FXML private TableColumn<Vertex, Boolean> vertexDeletedCol;
+	@FXML
+	private TableView<Edge> edgeTable;
+	@FXML
+	private TableColumn<Edge, Integer> edgeStartCol;
+	@FXML
+	private TableColumn<Edge, Integer> edgeEndCol;
+	@FXML
+	private TableColumn<Edge, Double> edgeWeightCol;
 
-	@FXML private TableView<Edge> edgeTable;
-	@FXML private TableColumn<Edge, Integer> edgeStartCol;
-	@FXML private TableColumn<Edge, Integer> edgeEndCol;
-	@FXML private TableColumn<Edge, Double> edgeWeightCol;
-
-	@FXML 
-	 private ProgressIndicator loadingIndicator;
-
+	@FXML
+	private ProgressIndicator loadingIndicator;
 
 	private NewtCanvasJFX newtCanvas;
 
@@ -166,9 +176,10 @@ public class GraphVue {
 		}
 		if (newtCanvas != null && root != null) {
 			boolean isOverview = "overview".equals(viewType);
-			
+
 			if (isOverview) {
 				if (!root.getChildren().contains(newtCanvas)) {
+					root.getChildren().clear(); // enlever le canvas de la vue courante
 					root.getChildren().add(newtCanvas);
 				}
 				if (graph.animator != null && !graph.animator.isAnimating()) {
@@ -246,12 +257,12 @@ public class GraphVue {
 	private void handleStartButton() {
 
 		loadingIndicator.setVisible(true);
-	
+
 		new Thread(() -> {
 			// Création du graphe et traitement lourd (thread secondaire)
 			graph = new Graph(this, graphContainer.getWidth(), graphContainer.getHeight());
 			testInit(); // charge les fichiers, initialise les données
-	
+
 			Platform.runLater(() -> {
 				// ⚠️ Toute modification de l’interface doit être ici
 				graphInit(); // version modifiée qui NE contient QUE les appels UI
@@ -351,7 +362,7 @@ public class GraphVue {
 		// Ajouter les listeners pour la souris
 		graph.addMouseListeners();
 
-		graph.addKeyListeners();
+		/* graph.addKeyListeners(); */
 
 		// S'assurer que le canvas est bien visible
 		newtCanvas.setVisible(true);
@@ -373,7 +384,7 @@ public class GraphVue {
 
 		Platform.runLater(() -> {
 			vertexTable.getItems().setAll(graph.vertices);
-    		edgeTable.getItems().setAll(graph.edges);
+			edgeTable.getItems().setAll(graph.edges);
 		});
 
 	}
@@ -456,19 +467,20 @@ public class GraphVue {
 		clusteringChamp.getItems().setAll(GraphData.NodeCommunity.values());
 		clusteringChamp.setValue(methodCode);
 
-		  // Colonnes des sommets
+		// Colonnes des sommets
 		vertexIdCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getId()).asObject());
-		vertexCommunityCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getCommunity().getId()).asObject());
+		vertexCommunityCol.setCellValueFactory(
+				data -> new SimpleIntegerProperty(data.getValue().getCommunity().getId()).asObject());
 		vertexDegreeCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getDegree()).asObject());
 		vertexXCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getX()).asObject());
 		vertexYCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getY()).asObject());
-		vertexDiameterCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getDiameter()).asObject());
+		vertexDiameterCol
+				.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getDiameter()).asObject());
 		vertexDeletedCol.setCellValueFactory(data -> new SimpleBooleanProperty(data.getValue().isDeleted()).asObject());
 
-
-
 		// Colonnes des arêtes
-		edgeStartCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getStart().getId()).asObject());
+		edgeStartCol
+				.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getStart().getId()).asObject());
 		edgeEndCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getEnd().getId()).asObject());
 		edgeWeightCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getWeight()).asObject());
 	}

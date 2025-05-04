@@ -543,50 +543,57 @@ public class Graph implements GLEventListener, GraphSettings {
     /**
      * Ajoute les listeners pour le clavier
      */
-    public void addKeyListeners() {
-        glWindow.addKeyListener(new KeyListener() {
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                char keyChar = e.getKeyChar(); // Récupère le caractère associé à la touche pressée
-
-                // Afficher le caractère pour le débogage
-                System.out.println("Touche pressée : " + keyChar);
-
-                // Vérifier si la touche pressée est un chiffre entre 1 et 9
-                if (keyChar >= '1' && keyChar <= '9') {
-                    int keyNumber = keyChar - '0'; // Convertit le caractère en un nombre entier
-                    System.out.println("Touche " + keyNumber + " pressée");
-
-                    // Switch en fonction de la touche pressée
-                    switch (keyNumber) {
-                        case 1:
-                            setMode(GraphData.GraphMode.SELECTION);
-                            System.out.println(
-                                    "Switch to " + getMode() + " - Vous pouvez sélectionner et déplacer des sommets");
-                            break;
-                        case 2:
-                            setMode(GraphData.GraphMode.DELETE);
-                            System.out.println("Switch to " + getMode() + " - Vous pouvez supprimer des sommets");
-                            break;
-                        case 3:
-                            setMode(GraphData.GraphMode.RUN);
-                            System.out.println("Back to " + getMode() + " - Exécution du graphe (en mouvement)");
-                            break;
-                        case 4:
-                            setMode(GraphData.GraphMode.MOVE);
-                            System.out.println("Back to " + getMode() + " - Vous pouvez vous déplacer dans le graphe");
-                            break;
-                    }
-                }
-
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-            }
-        });
-    }
+    /*
+     * public void addKeyListeners() {
+     * glWindow.addKeyListener(new KeyListener() {
+     * 
+     * @Override
+     * public void keyPressed(KeyEvent e) {
+     * char keyChar = e.getKeyChar(); // Récupère le caractère associé à la touche
+     * pressée
+     * 
+     * // Afficher le caractère pour le débogage
+     * System.out.println("Touche pressée : " + keyChar);
+     * 
+     * // Vérifier si la touche pressée est un chiffre entre 1 et 9
+     * if (keyChar >= '1' && keyChar <= '9') {
+     * int keyNumber = keyChar - '0'; // Convertit le caractère en un nombre entier
+     * System.out.println("Touche " + keyNumber + " pressée");
+     * 
+     * // Switch en fonction de la touche pressée
+     * switch (keyNumber) {
+     * case 1:
+     * setMode(GraphData.GraphMode.SELECTION);
+     * System.out.println(
+     * "Switch to " + getMode() +
+     * " - Vous pouvez sélectionner et déplacer des sommets");
+     * break;
+     * case 2:
+     * setMode(GraphData.GraphMode.DELETE);
+     * System.out.println("Switch to " + getMode() +
+     * " - Vous pouvez supprimer des sommets");
+     * break;
+     * case 3:
+     * setMode(GraphData.GraphMode.RUN);
+     * System.out.println("Back to " + getMode() +
+     * " - Exécution du graphe (en mouvement)");
+     * break;
+     * case 4:
+     * setMode(GraphData.GraphMode.MOVE);
+     * System.out.println("Back to " + getMode() +
+     * " - Vous pouvez vous déplacer dans le graphe");
+     * break;
+     * }
+     * }
+     * 
+     * }
+     * 
+     * @Override
+     * public void keyReleased(KeyEvent e) {
+     * }
+     * });
+     * }
+     */
 
     /**
      * Initialise OpenGL
