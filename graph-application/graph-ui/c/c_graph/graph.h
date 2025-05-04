@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <jni.h>
 
 // Structures de données pour représenter les arêtes, points, et clusters
 typedef struct {
@@ -15,6 +16,7 @@ typedef struct {
 typedef struct {
     double x;
     double y;
+    short deleted;
 } Point;
 
 // Calculer un vecteur avec un enroulement toroïdal
@@ -25,9 +27,11 @@ void translate_positions(double dx, double dy);
 double toroidal_distance(Point p1, Point p2);
 
 // Fonction update_position
-void repulsion_edges(Point* forces);
-void repulsion_anti_edges(Point* forces);
-double update_position_forces(Point* forces, double PasMaxX, double PasMaxY, double Max_movement);
+void parallel_repulsion_edges(double(*forces)[2]);
+void repulsion_edges(double(*forces)[2]);
+void parallel_repulsion_anti_edges(double(*forces)[2]);
+void repulsion_anti_edges(double(*forces)[2]);
+double update_position_forces(double(*forces)[2], double PasMaxX, double PasMaxY, double Max_movement);
 void normalize(Point *p);
 
 void calculate_similitude_and_edges(int mode_similitude, double threshold, double antiseuil);

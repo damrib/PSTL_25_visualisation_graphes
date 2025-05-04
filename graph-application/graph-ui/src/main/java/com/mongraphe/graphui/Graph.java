@@ -47,7 +47,7 @@ public class Graph implements GLEventListener, GraphSettings {
 
     public native Metadata computeThreshold(int modeSimilitude, int edge_factor);
 
-    public native Metadata initiliazeGraph(int modeCommunity, double threshold, double anti_threshold);
+    public native Metadata initializeGraph(int modeCommunity, double threshold, double anti_threshold);
 
     /**
      * the calculation depends on how big the window is
@@ -747,7 +747,7 @@ public class Graph implements GLEventListener, GraphSettings {
             throw new RuntimeException("initGraph : Mode de détection de communautés non spécifié.");
         int modeCommunity = getModeCommunity(community);
 
-        metadata = initiliazeGraph(modeCommunity, recommendedThreshold, recommendedAntiThreshold);
+        metadata = initializeGraph(modeCommunity, recommendedThreshold, recommendedAntiThreshold);
 
         return data;
     }
