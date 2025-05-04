@@ -1,6 +1,8 @@
 package com.mongraphe.graphui;
 
 import com.jogamp.opengl.GL4;
+import com.mongraphe.graphui.GraphData.NodeCommunity;
+import com.mongraphe.graphui.GraphData.SimilitudeMode;
 
 /**
  * Définit les méthodes à appeler par l'inteface graphique pour modifier les
@@ -183,5 +185,35 @@ public interface GraphSettings {
    * @param path Chemin de l'image PNG à exporter
    */
   void exportToPng(GL4 gl, String path);
+
+/**
+ * @param path
+ * @param mode
+ * @param community
+ * @return
+ */
+double[][] initGraphCsv(String path, SimilitudeMode mode, NodeCommunity community);
+
+/**
+ * @param width
+ * @param height
+ */
+void setScreenSize(int width, int height);
+
+/**
+ * @param isEnabled
+ */
+void enableKmeans(boolean isEnabled);
+
+/**
+ * @return
+ */
+int[] getHistogramme();
+
+/**
+ * @param path
+ * @param community
+ */
+void initGraphDot(String path, NodeCommunity community);
 
 }

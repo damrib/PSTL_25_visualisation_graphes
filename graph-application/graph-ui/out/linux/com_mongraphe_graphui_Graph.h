@@ -25,14 +25,6 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
 
 /*
  * Class:     com_mongraphe_graphui_Graph
- * Method:    initiliazeGraph
- * Signature: (IDD)Lcom/mongraphe/graphui/Metadata;
- */
-JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
-  (JNIEnv *, jobject, jint, jdouble, jdouble);
-
-/*
- * Class:     com_mongraphe_graphui_Graph
  * Method:    setDimension
  * Signature: (DD)V
  */
@@ -214,6 +206,14 @@ JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getHistogram
  */
 JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initializeDot
   (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    initializeGraph
+ * Signature: (IDD)Lcom/mongraphe/graphui/Metadata;
+ */
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initializeGraph
+  (JNIEnv *, jobject, jint, jdouble, jdouble);
 
 #ifdef __cplusplus
 }

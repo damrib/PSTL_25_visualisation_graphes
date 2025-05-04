@@ -184,11 +184,17 @@ public class GraphVue {
 
 		Graph.isRunMode.addListener((obs, oldValue, newValue) -> {
 			if (newValue) {
-				graph.animator.resume();
-				System.out.println("Reprise de l'animation");
+	            System.out.println("Tentative de reprise de l'animation...");
+	            if (!graph.animator.isAnimating()) {
+	                graph.animator.resume();
+	                System.out.println("Reprise de l'animation réussie");
+	            }
 			} else {
-				graph.animator.pause();
-				System.out.println("Pause de l'animation");
+				System.out.println("Tentative de pause de l'animation...");
+	            if (graph.animator.isAnimating()) {
+	                graph.animator.pause();
+	                System.out.println("Pause de l'animation réussie");
+	            }
 			}
 		});
 
@@ -253,14 +259,18 @@ public class GraphVue {
 
 		// Ajouter les listeners pour la souris
 		graph.addMouseListeners();
+		
+		graph.addKeyListeners();
 
 		// S'assurer que le canvas est bien visible
 		newtCanvas.setVisible(true);
 
 		root.getChildren().add(newtCanvas);
+		newtCanvas.requestFocus();
 
 		// Démarrer l'animation OpenGL
 		graph.animator = new FPSAnimator(graph.glWindow, 60);
+		graph.animator.setExclusiveContext(false);
 		graph.animator.start();
 		System.out.println("Animation démarrée");
 
@@ -276,7 +286,7 @@ public class GraphVue {
 
 		// Initialisation du graphe avec le fichier à charger, la méthode de similitude
 		// et la méthode de détection de communautés
-		graph.initGraph(fichier.getAbsolutePath(), measureCode, methodCode);
+		graph.initGraphCsv(fichier.getAbsolutePath(), measureCode, methodCode);
 
 		graph.setScreenSize(graphContainer.getWidth(), graphContainer.getHeight()); // Taille de l'écran du
 																					// graphe
