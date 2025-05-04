@@ -139,9 +139,9 @@ public class Graph implements GLEventListener, GraphSettings {
     public List<Vertex> vertices;
     public List<Edge> edges;
 
-    public float bg_color_r = 0.5f;
-    public float bg_color_g = 0.5f;
-    public float bg_color_b = 0.5f;
+    public float bg_color_r = 1.0f;
+    public float bg_color_g = 1.0f;
+    public float bg_color_b = 1.0f;
 
     public static double WIDTH = 1500; // Largeur de la fenêtre
     public static double HEIGHT = 800; // Hauteur de la fenêtre
@@ -489,6 +489,17 @@ public class Graph implements GLEventListener, GraphSettings {
 
             @Override
             public void mouseMoved(MouseEvent e) {
+                // Calculer les coordonnées ajustées
+                double x = (e.getX() - graphWidth / 2.0) / zoomFactor + viewOffsetX;
+                double y = (graphHeight / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
+
+                Vertex hoveredVertex = findVertexAt(x, y);
+                if (hoveredVertex != null) {
+                    System.out.println("Survol du sommet : " + hoveredVertex);
+                    Platform.runLater(() -> {
+                        graphVue.setHoveredVertex(hoveredVertex);
+                    });
+                }
             }
 
             @Override
@@ -586,6 +597,7 @@ public class Graph implements GLEventListener, GraphSettings {
     public void init(GLAutoDrawable drawable) {
         GL4 gl = drawable.getGL().getGL4(); // Utiliser GL4 au lieu de GL
         gl.glClearColor(bg_color_r, bg_color_g, bg_color_b, 1.0f); // Couleur de fond de l'écran
+        System.out.println("dans init:" + bg_color_r + " " + bg_color_g + " " + bg_color_b);
         gl.glEnable(GL4.GL_DEPTH_TEST); // Activer le test de profondeur pour les objets 3D
         gl.glEnable(GL4.GL_PROGRAM_POINT_SIZE);
         gl.glEnable(GL4.GL_BLEND);
@@ -687,7 +699,6 @@ public class Graph implements GLEventListener, GraphSettings {
     @Override
     public void display(GLAutoDrawable drawable) {
         GL4 gl = drawable.getGL().getGL4();
-        // System.out.println("display");
 
         // Met à jour la matrice de transformation avec les offsets actuels
         updateProjectionMatrix();
@@ -717,17 +728,17 @@ public class Graph implements GLEventListener, GraphSettings {
                      */
                 } else {
                     hiddenNodes++;
-                    /*
-                     * v.delete();
-                     * System.out.println("Sommet supprimé : " + selectedVertex);
-                     * SwingUtilities.invokeLater(() -> glWindow.display());
-                     */
+                    restoreNode(v.getId());
+                    System.out.println("Sommet restoré : " + v);
 
                 }
 
                 if (v.isDeleted()) {
                     deletedNodes++;
                     visibleNodes--;
+                    hiddenNodes++;
+                    restoreNode(v.getId());
+                    System.out.println("Sommet restoré : " + v);
                 }
             }
             // Deuxième passe : filtrer les arêtes
@@ -1031,6 +1042,7 @@ public class Graph implements GLEventListener, GraphSettings {
         this.bg_color_r = color_r;
         this.bg_color_g = color_g;
         this.bg_color_b = color_b;
+        System.out.println(" setBackgroundColor : " + color_r + " " + color_g + " " + color_b);
     }
 
     /**

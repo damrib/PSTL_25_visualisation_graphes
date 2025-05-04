@@ -34,6 +34,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 
 public class GraphVue {
 
@@ -73,6 +74,13 @@ public class GraphVue {
 	@FXML
 	private Label antiTreshold;
 
+	@FXML
+	private Label idHovredVertexLabel;
+	@FXML
+	private Label XHovredVertexLabel;
+	@FXML
+	private Label YHovredVertexLabel;
+
 	///////////////////////
 
 	// Nouveaux éléments FXML pour le panneau Aspect du graphe
@@ -89,6 +97,8 @@ public class GraphVue {
 	private ComboBox<String> elementRankingCombo;
 	@FXML
 	private Consumer<String> onRankingSelectedCallback;
+	@FXML
+	private ColorPicker canvasColorPicker;
 
 	private int compteurNodesReel;
 	private int compteurNodesSup;
@@ -154,6 +164,22 @@ public class GraphVue {
 		}
 
 		System.out.println("Mode changé : " + mode);
+	}
+
+	public void setHoveredVertex(Vertex vertex) {
+		if (vertex != null) {
+			// Afficher les informations du sommet sur l'interface utilisateur
+			System.out.println("Sommet survolé : " + vertex.getId());
+			idHovredVertexLabel.setText("" + vertex.getId());
+			XHovredVertexLabel.setText("" + vertex.getX());
+			YHovredVertexLabel.setText("" + vertex.getY());
+		} else {
+			// Masquer les informations du sommet
+			System.out.println("Aucun sommet survolé");
+			idHovredVertexLabel.setText("/");
+			XHovredVertexLabel.setText("/ ");
+			YHovredVertexLabel.setText("/ ");
+		}
 	}
 
 	// statistique pour les noeuds
@@ -306,7 +332,18 @@ public class GraphVue {
 
 		graph.setScreenSize(graphContainer.getWidth(), graphContainer.getHeight()); // Taille de l'écran du
 																					// graphe
-		graph.setBackgroundColor(1.0f, 1.0f, 1.0f);
+
+		Color couleur = canvasColorPicker.getValue();
+		if (couleur != null) {
+			float red = (float) couleur.getRed(); // déjà entre 0 et 1
+			float green = (float) couleur.getGreen();
+			float blue = (float) couleur.getBlue();
+
+			// Appel de ta méthode
+			graph.setBackgroundColor(red, green, blue);
+		} else {
+			System.out.println("Aucune couleur sélectionnée !");
+		}
 		// Couleur de fond du graphe (au format hexadécimal)
 		graph.setUpscale(5); // Facteur d'agrandissement pour le graphe
 		graph.setInitialNodeSize(3); // Taille initiale d'un sommet
@@ -410,9 +447,6 @@ public class GraphVue {
 				graph.setRepulsionMode(selectedMode);
 			}
 
-			// Couleur de fond par défaut
-			graph.setBackgroundColor(0.0f, 0.0f, 0.0f);
-
 			// for (Vertex v : graph.vertices) {
 			// v.updateDiameter();
 			// }
@@ -432,6 +466,18 @@ public class GraphVue {
 		graph.stop();
 
 		System.out.println("------------------------------------" + mesureChamp.getValue());
+
+		Color couleur = canvasColorPicker.getValue();
+		if (couleur != null) {
+			float red = (float) couleur.getRed(); // déjà entre 0 et 1
+			float green = (float) couleur.getGreen();
+			float blue = (float) couleur.getBlue();
+
+			// Appel de ta méthode
+			/* graph.setBackgroundColor(red, green, blue); */
+		} else {
+			System.out.println("Aucune couleur sélectionnée !");
+		}
 
 		if (mesureChamp.getValue() != null) {
 			this.measureCode = mesureChamp.getValue();

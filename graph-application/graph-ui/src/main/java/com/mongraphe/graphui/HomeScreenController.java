@@ -5,10 +5,12 @@ import java.io.IOException;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Hyperlink;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 public class HomeScreenController {
@@ -59,9 +61,20 @@ public class HomeScreenController {
 
             Parent root = loader.load();
 
-            Scene scene = new Scene(root, 1000, 700);
-            stage.setTitle("Configuration du projet");
+            // Créer une scène avec la taille de l'écran
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            Scene scene = new Scene(root, screenBounds.getWidth(), screenBounds.getHeight());
+
+            stage.setTitle("Graph");
             stage.setScene(scene);
+
+            // Désactiver le redimensionnement et maximiser
+            stage.setResizable(false);
+            stage.setX(screenBounds.getMinX());
+            stage.setY(screenBounds.getMinY());
+            stage.setWidth(screenBounds.getWidth());
+            stage.setHeight(screenBounds.getHeight());
+
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();

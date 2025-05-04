@@ -200,9 +200,16 @@
 			
 			                <Label text="Méthode de clustering:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
 			                <ComboBox fx:id="clusteringChamp" prefWidth="200" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+                            <Label text="Méthode de clustering:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+			                <ComboBox fx:id="clusteringChamp" prefWidth="200" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+                            <!-- ColorPicker pour la couleur du cluster -->
+                            <Label text="Couleur du Canvas:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                            <ColorPicker fx:id="canvasColorPicker" GridPane.rowIndex="2" GridPane.columnIndex="1" />
 			                
 			                <Button text="Modifier" onAction="#applyChangement" styleClass="button-8"
-			                        GridPane.rowIndex="2" GridPane.columnIndex="1" />
+			                        GridPane.rowIndex="3" GridPane.columnIndex="1" />
 			            </GridPane>
 			            
 			            <CheckBox fx:id="enableKmeans" text="Activer K-Means"
@@ -306,8 +313,25 @@
                     <Label text="Total éléments:" style="-fx-font-weight: bold;     -fx-padding: 5px" />
                     <Label fx:id="totalElementsLabel" text="0" style="-fx-text-fill: #264653; -fx-font-size: 14;" />
                 </HBox>
+                <Separator />
+                <Label text="🖱️ Noeud Sélectionné" style="-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #333;" />
+                <Separator />
+                <HBox spacing="10">
+                    <Label text="ID: " style="-fx-font-weight: bold;     -fx-padding: 5px" />
+                    <Label fx:id="idHovredVertexLabel" text="0" style="-fx-text-fill: #264653; -fx-font-size: 14;" />
+                </HBox>
+                <HBox>
+                    <Label text="X: " style="-fx-font-weight: bold;     -fx-padding: 5px" />
+                    <Label fx:id="XHovredVertexLabel" text="0" style="-fx-text-fill: #264653; -fx-font-size: 14;" />
+                </HBox>
+                <HBox>
+                    <Label text="Y: " style="-fx-font-weight: bold; -fx-font-size: 14;  -fx-padding: 5px" />
+                    <Label fx:id="YHovredVertexLabel" text="0" style="-fx-text-fill: #264653; -fx-font-size: 14; -fx-padding: 5px" />
+                </HBox>
+                <Separator />
             </VBox>
         </AnchorPane>
+
         </GridPane>
 
         <!-- Vue Données -->
