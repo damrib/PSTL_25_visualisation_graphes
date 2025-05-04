@@ -98,7 +98,7 @@ public class Graph implements GLEventListener, GraphSettings {
      * 
      * @param index index of node to delete
      */
-    public native void setdeleteNode(int index);
+    public native void deleteNode(int index);
 
     /**
      * restores deleted node for the algorithm
@@ -191,10 +191,17 @@ public class Graph implements GLEventListener, GraphSettings {
     public float[] vertexColors;
 	public float[] edgeVisibility;
 	public int edgeVisibilityBuffer;
-
+	
     // Variables pour le déplacement
     public double dragOffsetX = 0;
     public double dragOffsetY = 0;
+	private double graphWidth;
+	private double graphHeight;
+    
+    public Graph(double graphWidth, double graphHeight) {
+        this.graphWidth = graphWidth;
+        this.graphHeight = graphHeight;
+    }
 
     // public static void main(String[] args) {
     // launch(args);
@@ -371,8 +378,8 @@ public class Graph implements GLEventListener, GraphSettings {
          	@Override
          	public void mousePressed(MouseEvent e) {
  	        	// Calculer les coordonnées ajustées avec le décalage de vue
-         		double x = (e.getX() - WIDTH / 2.0) / zoomFactor + viewOffsetX;
-         		double y = (HEIGHT / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
+         		double x = (e.getX() - graphWidth / 2.0) / zoomFactor + viewOffsetX;
+         		double y = (graphHeight / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
 
  	        	// Vérifier si un sommet est cliqué
  	        	selectedVertex = findVertexAt(x, y);
@@ -409,8 +416,8 @@ public class Graph implements GLEventListener, GraphSettings {
 
              @Override
              public void mouseClicked(MouseEvent e) {
-             	double x = (e.getX() - WIDTH / 2.0) / zoomFactor + viewOffsetX;
-             	double y = (HEIGHT / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
+             	double x = (e.getX() - graphWidth / 2.0) / zoomFactor + viewOffsetX;
+             	double y = (graphHeight / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
 
                  // Vérifier si un sommet est cliqué
                  selectedVertex = findVertexAt(x, y);
@@ -424,7 +431,7 @@ public class Graph implements GLEventListener, GraphSettings {
                  else if (isDeleteMode.get() && selectedVertex != null) {
                      selectedVertex.delete();
                      System.out.println("Sommet supprimé : " + selectedVertex);
-                     setdeleteNode(selectedVertex.getId());
+                     deleteNode(selectedVertex.getId());
                      SwingUtilities.invokeLater(() -> glWindow.display());
                  }
              }
@@ -441,8 +448,8 @@ public class Graph implements GLEventListener, GraphSettings {
                  // Déplacer un sommet
                  if (isSelectionMode.get() && isDraggingVertex && selectedVertex != null) {
                      // Calculer les coordonnées ajustées pour le drag
-                 	double x = (e.getX() - WIDTH / 2.0) / zoomFactor + viewOffsetX;
-                 	double y = (HEIGHT / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
+                 	double x = (e.getX() - graphWidth / 2.0) / zoomFactor + viewOffsetX;
+                 	double y = (graphHeight / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
                      
                      // Appliquer l'offset du drag
                      double newX = x + dragOffsetX;
@@ -485,8 +492,8 @@ public class Graph implements GLEventListener, GraphSettings {
                      if (scrollY == 0) return;
 
                      // Calculer les coordonnées avant zoom
-                     double mouseXBefore = (e.getX() - WIDTH / 2.0) / zoomFactor + viewOffsetX;
-                     double mouseYBefore = (HEIGHT / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
+                     double mouseXBefore = (e.getX() - graphWidth / 2.0) / zoomFactor + viewOffsetX;
+                     double mouseYBefore = (graphHeight / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
 
                      if (scrollY > 0) {
                          zoomFactor *= zoomAmount;
@@ -498,8 +505,8 @@ public class Graph implements GLEventListener, GraphSettings {
                      zoomFactor = Math.max(0.1, Math.min(zoomFactor, 10.0));
 
                      // Calculer les coordonnées après zoom
-                     double mouseXAfter = (e.getX() - WIDTH / 2.0) / zoomFactor + viewOffsetX;
-                     double mouseYAfter = (HEIGHT / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
+                     double mouseXAfter = (e.getX() - graphWidth / 2.0) / zoomFactor + viewOffsetX;
+                     double mouseYAfter = (graphHeight / 2.0 - e.getY()) / zoomFactor + viewOffsetY;
 
                      // Ajuster le décalage pour maintenir le point sous la souris
                      viewOffsetX += (mouseXBefore - mouseXAfter);
@@ -761,10 +768,10 @@ public class Graph implements GLEventListener, GraphSettings {
     }
 
     @Override
-    public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
+    public void reshape(GLAutoDrawable drawable, int x, int y, int graphWidth, int height) {
 	    // Réajustement de la matrice de projection pour tenir compte de la taille de la fenêtre
-	    float left = -width / 2f;
-	    float right = width / 2f;
+	    float left = -graphWidth / 2f;
+	    float right = graphWidth / 2f;
 	    float bottom = -height / 2f;
 	    float top = height / 2f;
 	    float near = -1f;
@@ -806,7 +813,7 @@ public class Graph implements GLEventListener, GraphSettings {
     // initGraph(sample2, GraphData.SimilitudeMode.CORRELATION,
     // GraphData.NodeCommunity.LOUVAIN);
 
-    // setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
+    // setScreenSize(graphWidth, HEIGHT); // Taille de l'écran du graphe
     // setBackgroundColor(0.0f, 0.0f, 0.0f); // Couleur de fond du graphe
     // setUpscale(5); // Facteur d'agrandissement pour le graphe
     // setInitialNodeSize(3); // Taille initiale d'un sommet
@@ -933,15 +940,15 @@ public class Graph implements GLEventListener, GraphSettings {
 
     /**
      * Initialise la taille de l'écran du graphe
-     * @param width  Largeur de l'écran (en px)
+     * @param graphWidth  Largeur de l'écran (en px)
      * @param height Hauteur de l'écran (en px)
      */
     @Override
     public void setScreenSize(int width, int height) {
         if (width <= 0 || height <= 0)
             throw new RuntimeException("setScreenSize : Taille de l'écran (" + width + "x" + height + ") non valide.");
-        WIDTH = width;
-        HEIGHT = height;
+        graphWidth = width;
+        graphHeight = height;
         //setDimension(WIDTH, HEIGHT); // TODO (toujours compliqué côté C)
     }
 
@@ -1712,10 +1719,10 @@ public class Graph implements GLEventListener, GraphSettings {
 	}
 	
 	public void updateProjectionMatrix() {
-	    float left   = (float) (-WIDTH / 2.0 / zoomFactor + viewOffsetX);
-	    float right  = (float) (WIDTH / 2.0 / zoomFactor + viewOffsetX);
-	    float bottom = (float) (-HEIGHT / 2.0 / zoomFactor + viewOffsetY);
-	    float top    = (float) (HEIGHT / 2.0 / zoomFactor + viewOffsetY);
+	    float left   = (float) (-graphWidth / 2.0 / zoomFactor + viewOffsetX);
+	    float right  = (float) (graphWidth / 2.0 / zoomFactor + viewOffsetX);
+	    float bottom = (float) (-graphHeight / 2.0 / zoomFactor + viewOffsetY);
+	    float top    = (float) (graphHeight / 2.0 / zoomFactor + viewOffsetY);
 
 	    float[] mat = new float[]{
 	        2f / (right - left), 0, 0, 0,

@@ -505,7 +505,7 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_SetNumberClusters
     assign_cluster_colors();
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_deleteNode
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_deleteNode
   (JNIEnv * env, jobject obj, jint index)
 {
 

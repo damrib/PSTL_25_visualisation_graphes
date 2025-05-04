@@ -159,7 +159,7 @@ public class GraphVue {
 	 */
 	@FXML
 	private void handleStartButton() {
-		graph = new Graph();
+		graph = new Graph(graphContainer.getWidth(), graphContainer.getHeight());
 		System.out.println("Bouton démarrer cliqué !");
 		graphContainer.getChildren().clear();
 		graphInit();
@@ -417,7 +417,7 @@ public class GraphVue {
 			graph.glWindow.destroy();
 		}
 
-		graph = new Graph();
+		graph = new Graph(graphContainer.getWidth(), graphContainer.getHeight());
 		graphContainer.getChildren().clear();
 
 		if (root != null) {
@@ -449,9 +449,6 @@ public class GraphVue {
 	private void resetGraphSettings() {
 
 	}
-
-	public static int WIDTH = 1500; // Largeur de la fenêtre
-	public static int HEIGHT = 800; // Hauteur de la fenêtre
 
 	// Propriété pour la fréquence de mise à jour du graphe
 	public static final DoubleProperty updateFrequency = new SimpleDoubleProperty(1.0);

@@ -169,10 +169,10 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
 
 /*
  * Class:     com_mongraphe_graphui_Graph
- * Method:    setdeleteNode
+ * Method:    deleteNode
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setdeleteNode
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_deleteNode
   (JNIEnv *, jobject, jint);
 
 /*
