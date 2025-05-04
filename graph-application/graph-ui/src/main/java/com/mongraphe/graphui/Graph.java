@@ -679,24 +679,24 @@ public class Graph implements GLEventListener, GraphSettings {
     // Exemples d'initialisation et d'actions sur le graphe
     // -------------------------------------------------------------------------
 
-    /**
-     * Exemple d'initialisation du graphe (à remplacer par l'interface graphique)
-     * 
-     * @see GraphData.SimilitudeMode
-     * @see GraphData.NodeCommunity
-     */
-    public void testInit() {
-        // Initialisation du graphe avec le fichier à charger, la méthode de similitude
-        // et la méthode de détection de communautés
-        String sample2 = "samples/predicancerNUadd9239.csv";
-        initGraph(sample2, GraphData.SimilitudeMode.CORRELATION, GraphData.NodeCommunity.LOUVAIN);
+    // /**
+    //  * Exemple d'initialisation du graphe (à remplacer par l'interface graphique)
+    //  * 
+    //  * @see GraphData.SimilitudeMode
+    //  * @see GraphData.NodeCommunity
+    //  */
+    // public void testInit() {
+    //     // Initialisation du graphe avec le fichier à charger, la méthode de similitude
+    //     // et la méthode de détection de communautés
+    //     String sample2 = "samples/predicancerNUadd9239.csv";
+    //     initGraph(sample2, GraphData.SimilitudeMode.CORRELATION, GraphData.NodeCommunity.LOUVAIN);
 
-        setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
-        setBackgroundColor(0.0f, 0.0f, 0.0f); // Couleur de fond du graphe
-        setUpscale(5); // Facteur d'agrandissement pour le graphe
-        setInitialNodeSize(3); // Taille initiale d'un sommet
-        setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un sommet
-    }
+    //     setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
+    //     setBackgroundColor(0.0f, 0.0f, 0.0f); // Couleur de fond du graphe
+    //     setUpscale(5); // Facteur d'agrandissement pour le graphe
+    //     setInitialNodeSize(3); // Taille initiale d'un sommet
+    //     setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un sommet
+    // }
 
     // -------------------------------------------------------------------------
     // Initialisation

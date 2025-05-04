@@ -184,7 +184,7 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_startsProgram
 }
 
 JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
-  (JNIEnv * env, jobject obj, jint modeSimilitude)
+  (JNIEnv * env, jobject obj, jint modeSimilitude, jint edge_factor)
 {
 
     InitPool(&pool, 1000, 8);
@@ -302,7 +302,7 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
 
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
   (JNIEnv * env, jobject obj)
 {
 

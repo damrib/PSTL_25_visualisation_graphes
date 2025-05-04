@@ -382,7 +382,29 @@ public class GraphVue {
 	
 	@FXML
 	private void applyChangement() {
-		
+
+		graph.freeAllocatedMemory();
+
+		System.out.println("------------------------------------"+mesureChamp.getValue());
+
+		if(mesureChamp.getValue() != null){
+			this.measureCode = mesureChamp.getValue();
+		}
+
+		if(clusteringChamp.getValue() != null){
+			this.methodCode = clusteringChamp.getValue();
+		}
+
+		if (graph.glWindow != null) {
+			graph.glWindow.destroy();
+		}
+
+		graph = new Graph();
+		System.out.println("Bouton démarrer cliqué !");
+		graphContainer.getChildren().clear();
+		root.getChildren().clear();
+		graphInit();
+		graphContainer.getChildren().add(root);
 	}
 
 	/*
