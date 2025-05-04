@@ -204,9 +204,15 @@
 			                <Button text="Modifier" onAction="#applyChangement" styleClass="button-8"
 			                        GridPane.rowIndex="2" GridPane.columnIndex="1" />
 			            </GridPane>
+			            
+			            <CheckBox fx:id="enableKmeans" text="Activer K-Means"
+          					onAction="#handleEnableKmeans"
+          						GridPane.rowIndex="3" GridPane.columnIndex="1" />
 									
 			            <Button text="Réinitialiser" onAction="#resetGraphSettings"
 			                    style="-fx-background-color: #d9534f; -fx-text-fill: white;" />
+			                    
+			            
 			        </VBox>
 			    </ScrollPane>
 			</AnchorPane>

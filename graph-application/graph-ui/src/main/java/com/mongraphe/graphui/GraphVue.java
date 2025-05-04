@@ -328,6 +328,17 @@ public class GraphVue {
 	private ComboBox<GraphData.SimilitudeMode> mesureChamp;
 	@FXML
 	private ComboBox<GraphData.NodeCommunity> clusteringChamp;
+	@FXML
+	private CheckBox enableKmeans;
+
+	@FXML
+	private void handleEnableKmeans(ActionEvent event) {
+	    if (enableKmeans.isSelected()) {
+	        graph.enableKmeans(true);
+	    } else {
+	        graph.enableKmeans(false);
+	    }
+	}
 
 	@FXML
 	private void initialize() {
@@ -385,13 +396,12 @@ public class GraphVue {
 			// Couleur de fond par défaut
 			graph.setBackgroundColor(0.0f, 0.0f, 0.0f);
 
-			for (Vertex v : graph.vertices) {
-				v.updateDiameter();
-			}
-			graph.initializeArrays();
+//			for (Vertex v : graph.vertices) {
+//				v.updateDiameter();
+//			}
+//			graph.initializeArrays();
 			treshold.setText(String.valueOf(graph.getThreshold()));
 			antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
-			graph.glWindow.display();
 
 		} catch (NumberFormatException e) {
 			System.err.println("Erreur de format dans un des champs : " + e.getMessage());
