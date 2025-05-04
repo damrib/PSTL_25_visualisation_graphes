@@ -128,9 +128,9 @@ public class Graph implements GLEventListener, GraphSettings {
     public List<Vertex> vertices;
     public List<Edge> edges;
 
-    public float bg_color_r = 1.0f;
-    public float bg_color_g = 1.0f;
-    public float bg_color_b = 1.0f;
+    public float bg_color_r = 0.5f;
+    public float bg_color_g = 0.5f;
+    public float bg_color_b = 0.5f;
 
     public static double WIDTH = 1500; // Largeur de la fenêtre
     public static double HEIGHT = 800; // Hauteur de la fenêtre
@@ -668,34 +668,37 @@ public class Graph implements GLEventListener, GraphSettings {
         this.projectionMatrix = FloatBuffer.wrap(orthoMatrix);
     }
 
-     public void stop() {
-     if (animator != null) {
-     animator.stop();
-     }
-     freeAllocatedMemory();
-     }
+    public void stop() {
+        if (animator != null) {
+            animator.stop();
+        }
+        freeAllocatedMemory();
+    }
 
     // -------------------------------------------------------------------------
     // Exemples d'initialisation et d'actions sur le graphe
     // -------------------------------------------------------------------------
 
     // /**
-    //  * Exemple d'initialisation du graphe (à remplacer par l'interface graphique)
-    //  * 
-    //  * @see GraphData.SimilitudeMode
-    //  * @see GraphData.NodeCommunity
-    //  */
+    // * Exemple d'initialisation du graphe (à remplacer par l'interface graphique)
+    // *
+    // * @see GraphData.SimilitudeMode
+    // * @see GraphData.NodeCommunity
+    // */
     // public void testInit() {
-    //     // Initialisation du graphe avec le fichier à charger, la méthode de similitude
-    //     // et la méthode de détection de communautés
-    //     String sample2 = "samples/predicancerNUadd9239.csv";
-    //     initGraph(sample2, GraphData.SimilitudeMode.CORRELATION, GraphData.NodeCommunity.LOUVAIN);
+    // // Initialisation du graphe avec le fichier à charger, la méthode de
+    // similitude
+    // // et la méthode de détection de communautés
+    // String sample2 = "samples/predicancerNUadd9239.csv";
+    // initGraph(sample2, GraphData.SimilitudeMode.CORRELATION,
+    // GraphData.NodeCommunity.LOUVAIN);
 
-    //     setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
-    //     setBackgroundColor(0.0f, 0.0f, 0.0f); // Couleur de fond du graphe
-    //     setUpscale(5); // Facteur d'agrandissement pour le graphe
-    //     setInitialNodeSize(3); // Taille initiale d'un sommet
-    //     setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un sommet
+    // setScreenSize(WIDTH, HEIGHT); // Taille de l'écran du graphe
+    // setBackgroundColor(0.0f, 0.0f, 0.0f); // Couleur de fond du graphe
+    // setUpscale(5); // Facteur d'agrandissement pour le graphe
+    // setInitialNodeSize(3); // Taille initiale d'un sommet
+    // setDegreeScaleFactor(0.3); // Facteur d'agrandissement selon le degré d'un
+    // sommet
     // }
 
     // -------------------------------------------------------------------------

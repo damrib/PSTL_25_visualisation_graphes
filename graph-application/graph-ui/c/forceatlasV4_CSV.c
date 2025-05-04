@@ -89,8 +89,8 @@ JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
 
 JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getCommunities(JNIEnv *env, jobject obj) {
     jintArray result = (*env)->NewIntArray(env, MAX_NODES);
-    (*env)->SetIntArrayRegion(env, result, 0, MAX_NODES, communities);
-
+   /*  (*env)->SetIntArrayRegion(env, result, 0, MAX_NODES, communities); */
+    (*env)->SetIntArrayRegion(env, result, 0, MAX_NODES, (const jint*)communities);
     return result;
 }
 

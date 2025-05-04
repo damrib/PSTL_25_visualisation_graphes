@@ -61,7 +61,7 @@ public class GraphVue {
 	private ToggleGroup viewToggleGroup;
 	@FXML
 	private ToggleGroup graphModeToggleGroup;
-	
+
 	@FXML
 	private Label recommendedTreshold;
 	@FXML
@@ -70,7 +70,6 @@ public class GraphVue {
 	private Label treshold;
 	@FXML
 	private Label antiTreshold;
-	
 
 	///////////////////////
 
@@ -88,6 +87,11 @@ public class GraphVue {
 	private ComboBox<String> elementRankingCombo;
 	@FXML
 	private Consumer<String> onRankingSelectedCallback;
+
+	private int compteurNodesReel;
+	private int compteurNodesSup;
+	private int edgesDisplayed;
+	private int edgesDeleted;
 
 	private Graph graph;
 
@@ -189,6 +193,9 @@ public class GraphVue {
 		});
 
 		testInit();
+		System.out.println("vertices : " + graph.getPositions().length);
+		System.out.println("edges : " + graph.getEdges().length);
+		System.out.println("comminuties : " + graph.getCommunities().length);
 
 		graph.vertices = List.of(graph.getPositions());
 
@@ -215,6 +222,11 @@ public class GraphVue {
 					edgeC.getWeight());
 			graph.edges.add(e);
 		}
+
+		this.compteurNodesReel = 0;
+		this.compteurNodesSup = 0;
+		this.edgesDisplayed = 0;
+		this.edgesDeleted = 0;
 
 		// Ajuster les rayons des sommets selon leur degré
 		for (Vertex v : graph.vertices)
@@ -251,17 +263,14 @@ public class GraphVue {
 		graph.animator = new FPSAnimator(graph.glWindow, 60);
 		graph.animator.start();
 		System.out.println("Animation démarrée");
-		
-	    minimumDegree.setText(graph.getMinimumDegree()+"");
-	    recommendedTreshold.setText(graph.getRecommendedThreshold()+"");
-	    recommendedAntiTreshold.setText(graph.getRecommendedAntiThreshold()+"");
-	    treshold.setText(String.valueOf(graph.getThreshold()));
-	    antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
-	    
 
+		minimumDegree.setText(graph.getMinimumDegree() + "");
+		recommendedTreshold.setText(graph.getRecommendedThreshold() + "");
+		recommendedAntiTreshold.setText(graph.getRecommendedAntiThreshold() + "");
+		treshold.setText(String.valueOf(graph.getThreshold()));
+		antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
 
 	}
-	
 
 	private void testInit() {
 
@@ -271,7 +280,7 @@ public class GraphVue {
 
 		graph.setScreenSize(graphContainer.getWidth(), graphContainer.getHeight()); // Taille de l'écran du
 																					// graphe
-		graph.setBackgroundColor(1.0f, 1.0f, 1.0f); 
+		graph.setBackgroundColor(1.0f, 1.0f, 1.0f);
 		// Couleur de fond du graphe (au format hexadécimal)
 		graph.setUpscale(5); // Facteur d'agrandissement pour le graphe
 		graph.setInitialNodeSize(3); // Taille initiale d'un sommet
@@ -312,11 +321,11 @@ public class GraphVue {
 
 	@FXML
 	private void initialize() {
-	    repulsionModeComboBox.getItems().setAll(GraphData.RepulsionMode.values());
-	    mesureChamp.getItems().setAll(GraphData.SimilitudeMode.values());
-	    mesureChamp.setValue(measureCode);
-	    clusteringChamp.getItems().setAll(GraphData.NodeCommunity.values());
-	    clusteringChamp.setValue(methodCode);
+		repulsionModeComboBox.getItems().setAll(GraphData.RepulsionMode.values());
+		mesureChamp.getItems().setAll(GraphData.SimilitudeMode.values());
+		mesureChamp.setValue(measureCode);
+		clusteringChamp.getItems().setAll(GraphData.NodeCommunity.values());
+		clusteringChamp.setValue(methodCode);
 	}
 
 	@FXML
@@ -371,40 +380,43 @@ public class GraphVue {
 			}
 			graph.initializeArrays();
 			treshold.setText(String.valueOf(graph.getThreshold()));
-		    antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
+			antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
 			graph.glWindow.display();
-			
 
 		} catch (NumberFormatException e) {
 			System.err.println("Erreur de format dans un des champs : " + e.getMessage());
 		}
 	}
-	
+
 	@FXML
 	private void applyChangement() {
 
-		graph.freeAllocatedMemory();
+		// Vérifier si le graphe est déjà initialisé avant de le libérer
+		graph.stop();
 
-		System.out.println("------------------------------------"+mesureChamp.getValue());
+		System.out.println("------------------------------------" + mesureChamp.getValue());
 
-		if(mesureChamp.getValue() != null){
+		if (mesureChamp.getValue() != null) {
 			this.measureCode = mesureChamp.getValue();
 		}
 
-		if(clusteringChamp.getValue() != null){
+		if (clusteringChamp.getValue() != null) {
 			this.methodCode = clusteringChamp.getValue();
 		}
-
 		if (graph.glWindow != null) {
 			graph.glWindow.destroy();
 		}
 
 		graph = new Graph();
-		System.out.println("Bouton démarrer cliqué !");
 		graphContainer.getChildren().clear();
-		root.getChildren().clear();
+
+		if (root != null) {
+			root.getChildren().clear();
+		}
+
 		graphInit();
 		graphContainer.getChildren().add(root);
+
 	}
 
 	/*
@@ -425,7 +437,6 @@ public class GraphVue {
 	// Réinitialiser les paramètres du graphe
 	@FXML
 	private void resetGraphSettings() {
-		
 
 	}
 

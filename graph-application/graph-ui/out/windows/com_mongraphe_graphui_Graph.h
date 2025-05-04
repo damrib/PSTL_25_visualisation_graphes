@@ -7,18 +7,68 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef com_mongraphe_graphui_Graph_MIN_ZOOM
-#define com_mongraphe_graphui_Graph_MIN_ZOOM 0.5
-#undef com_mongraphe_graphui_Graph_MAX_ZOOM
-#define com_mongraphe_graphui_Graph_MAX_ZOOM 10.0
-#undef com_mongraphe_graphui_Graph_ZOOM_FACTOR
-#define com_mongraphe_graphui_Graph_ZOOM_FACTOR 1.1
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    startsProgram
+ * Signature: (Ljava/lang/String;)[[D
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_startsProgram
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    computeThreshold
+ * Signature: (II)Lcom/mongraphe/graphui/Metadata;
+ */
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    initiliazeGraph
+ * Signature: (IDD)Lcom/mongraphe/graphui/Metadata;
+ */
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
+  (JNIEnv *, jobject, jint, jdouble, jdouble);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    setDimension
+ * Signature: (DD)V
+ */
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setDimension
+  (JNIEnv *, jobject, jdouble, jdouble);
+
 /*
  * Class:     com_mongraphe_graphui_Graph
  * Method:    updatePositions
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    getPositions
+ * Signature: ()[Lcom/mongraphe/graphui/Vertex;
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_getPositions
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    setNodePosition
+ * Signature: (IDD)V
+ */
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setNodePosition
+  (JNIEnv *, jobject, jint, jdouble, jdouble);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    getEdges
+ * Signature: ()[Lcom/mongraphe/graphui/EdgeC;
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_getEdges
   (JNIEnv *, jobject);
 
 /*
@@ -36,46 +86,6 @@ JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getCommunities
  */
 JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_getClusterColors
   (JNIEnv *, jobject);
-
-/*
- * Class:     com_mongraphe_graphui_Graph
- * Method:    getEdges
- * Signature: ()[Lcom/mongraphe/graphui/EdgeC;
- */
-JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_getEdges
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_mongraphe_graphui_Graph
- * Method:    getPositions
- * Signature: ()[Lcom/mongraphe/graphui/Vertex;
- */
-JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_getPositions
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_mongraphe_graphui_Graph
- * Method:    startsProgram
- * Signature: (Ljava/lang/String;)[[D
- */
-JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_startsProgram
-  (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     com_mongraphe_graphui_Graph
- * Method:    computeThreshold
- * Signature: (I)Lcom/mongraphe/graphui/Metadata;
- */
-JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
-  (JNIEnv *, jobject, jint);
-
-/*
- * Class:     com_mongraphe_graphui_Graph
- * Method:    initiliazeGraph
- * Signature: (IDD)Lcom/mongraphe/graphui/Metadata;
- */
-JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
-  (JNIEnv *, jobject, jint, jdouble, jdouble);
 
 /*
  * Class:     com_mongraphe_graphui_Graph
@@ -143,27 +153,11 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setSeuilRep
 
 /*
  * Class:     com_mongraphe_graphui_Graph
- * Method:    setDimension
- * Signature: (DD)V
- */
-JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setDimension
-  (JNIEnv *, jobject, jdouble, jdouble);
-
-/*
- * Class:     com_mongraphe_graphui_Graph
  * Method:    setAmortissement
  * Signature: (D)V
  */
 JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setAmortissement
   (JNIEnv *, jobject, jdouble);
-
-/*
- * Class:     com_mongraphe_graphui_Graph
- * Method:    setNodePosition
- * Signature: (IDD)V
- */
-JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setNodePosition
-  (JNIEnv *, jobject, jint, jdouble, jdouble);
 
 /*
  * Class:     com_mongraphe_graphui_Graph
@@ -180,6 +174,46 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_SetNumberClusters
  */
 JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    setdeleteNode
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setdeleteNode
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    restoreNode
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_restoreNode
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    setKmeansMode
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setKmeansMode
+  (JNIEnv *, jobject, jboolean);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    getHistogram
+ * Signature: ()[I
+ */
+JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getHistogram
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_mongraphe_graphui_Graph
+ * Method:    initializeDot
+ * Signature: (Ljava/lang/String;I)Lcom/mongraphe/graphui/Metadata;
+ */
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initializeDot
+  (JNIEnv *, jobject, jstring, jint);
 
 #ifdef __cplusplus
 }
