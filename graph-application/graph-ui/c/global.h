@@ -4,22 +4,23 @@
 #include <jni.h>
 #include "c_graph/graph.h"
 
-#define MAX_NODES 50000
+#define MAX_NODES 100000
 #define MAX_EDGES 1000000
 
 extern Edge edges[MAX_EDGES]; // Pour les arêtes normales
-extern char *node_names[MAX_NODES]; // Array to store node names as strings      
-extern int S[MAX_NODES];
+extern char **node_names; // Array to store node names as strings      
+extern int *S;
 extern Point vertices[MAX_NODES];
-extern Point velocities[MAX_NODES];
+extern double velocities[MAX_NODES][2];
 extern int node_degrees[MAX_NODES];
 
 extern _Atomic int num_edges;
 extern _Atomic int num_antiedges;
 extern Edge antiedges[MAX_EDGES];  // Pour les anti-arêtes
 
-extern int num_nodes;
+extern int num_nodes, live_nodes;
 extern double Lx, Ly;
+extern short modified_graph;
 
 extern double friction;
 // TODO passer en argument a calculate_similitude dans la version de base
@@ -39,6 +40,7 @@ extern float cluster_colors[MAX_NODES][3];
 extern double centers[MAX_NODES][2];
 extern Cluster *cluster_nodes;  // Tableau de clusters
 extern int n_clusters;
+extern int kmeans_mode;
 
 extern double epsilon;
 
@@ -48,6 +50,11 @@ extern int espacement;
 extern double repulsion_coeff;
 extern int saut;
 extern int mode;
+
+extern int no_overlap;
+extern double initial_node_size;
+extern double degree_scale_factor;
+
 
 #include "c_graph/communities.h"
 
@@ -79,7 +86,7 @@ extern int nbValeurs;
 extern double **data;  // Stocker les données CSV
 extern int num_rows, num_columns;
 extern char delimiter[1];
-extern int S[MAX_NODES];
+
 
 #include "pretraitement/similarity.h"
 

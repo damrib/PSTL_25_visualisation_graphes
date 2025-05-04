@@ -1,7 +1,7 @@
 package com.mongraphe.graphui;
 
 public class Metadata {
-
+    
     public double edge_threshold, anti_threshold, mean_similitude;
     public int number_nodes, number_edges, number_antiedges, number_clusters;
 
@@ -18,12 +18,12 @@ public class Metadata {
     }
 
     public Metadata(
-            int number_nodes,
-            double edge_threshold,
-            double anti_threshold,
-            int number_edges,
-            int number_antiedges,
-            int number_clusters) {
+        int number_nodes, 
+        double edge_threshold, 
+        double anti_threshold, 
+        int number_edges, 
+        int number_antiedges,
+        int number_clusters) {
         this(number_nodes, edge_threshold, anti_threshold, 0.);
 
         this.number_edges = number_edges;
@@ -37,5 +37,4 @@ public class Metadata {
     public double getAntiThreshold() {
         return anti_threshold;
     }
-
 }

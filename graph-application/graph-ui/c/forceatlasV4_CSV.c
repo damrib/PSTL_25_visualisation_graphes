@@ -46,45 +46,45 @@ short pause_updates = 0;
 JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
  (JNIEnv * env, jobject obj)
 {
-   double Max_movementOld = 0.0;
-   double Max_movement = 0.0;
-   double FMaxX = Lx/(friction*1000);
-   double FMaxY = Ly/(friction*1000);
-   thresholdS = (Lx/4000)*(Ly/4000);
-   thresholdA = (Lx/4000)*(Ly/4000);
-   epsilon = (Lx/800)*(Ly/800);
-   seuilrep = (Lx/1000)*(Lx/1000);
+  double FMaxX = Lx/(friction*1000);
+  double FMaxY = Ly/(friction*1000);
 
-   double PasMaxX = Lx / 10.;
-   double PasMaxY = Ly / 10.;
+  double PasMaxX = Lx / 10.;
+  double PasMaxY = Ly / 10.;
 
-   static Point forces[MAX_NODES] = {0};
+  static double forces[MAX_NODES][2] = { {0, 0} };
 
-   if ( pause_updates == 0 ){
-        repulsion_edges(forces);
-        repulsion_intra_clusters(forces, FMaxX, FMaxY);
-        repulsion_anti_edges(forces);
-        Max_movement = update_position_forces(forces, PasMaxX, PasMaxY, Max_movement);
-        update_clusters();
+  if ( pause_updates == 0 ){
+       
+    repulsion_edges(forces);
+    repulsion_intra_clusters(forces, FMaxX, FMaxY);
+    repulsion_anti_edges(forces);
 
-        ++iteration;
+    double Max_movement = update_position_forces(forces, PasMaxX, PasMaxY, 0.);
+    update_clusters();
 
-        if (Max_movement==Max_movementOld) {
-            friction *= 0.7;
-        }
-           
-        Max_movementOld=Max_movement;
-        friction *= amortissement;
-   }
+    ++iteration;
 
-   if ((Max_movement < thresholdS && iteration > 50) || iteration > max_iterations-1 ) {
-        // end state reached
-        pause_updates = 1;
+    if (Max_movement == Max_movementOld) {
+        friction *= 0.7;
+    }
+          
+    Max_movementOld = Max_movement;
+    friction *= amortissement;
+  }
 
-        return 0;
-   }
+  if ((Max_movementOld < thresholdS && iteration > 50) || iteration >= max_iterations ) {
+    // end state reached
+    pause_updates = 1;
+    return 0;
+  }
 
-   return 1;
+  for(int i = 0; i < num_nodes; ++i) {
+   forces[i][0] = 0.;
+   forces[i][1] = 0.;
+  }
+
+  return 1;
 }
 
 JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getCommunities(JNIEnv *env, jobject obj) {
@@ -163,6 +163,8 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_startsProgram
 
     jboolean b = JNI_FALSE;
     const char* str = (*env)->GetStringUTFChars(env, filepath, &b);
+    
+    num_rows = 0;
 
     load_csv_data(str);
 
@@ -184,7 +186,7 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_startsProgram
 }
 
 JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
-  (JNIEnv * env, jobject obj, jint modeSimilitude)
+  (JNIEnv * env, jobject obj, jint modeSimilitude, jint edge_factor)
 {
 
     InitPool(&pool, 1000, 8);
@@ -198,56 +200,39 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
 
 
     num_nodes = num_rows;
+    live_nodes = num_nodes;
 
     double threshold, antiseuil;
     mode_similitude = modeSimilitude;
 
     // un tableau dont de taille nombre de paire dans un ensemble avec num_rows element = 2 parmis num_rows
     double * similarities = (double*) malloc(num_rows * (num_rows - 1) / 2 * sizeof(double));
-    #ifdef _DEBUG_
-        printf("debut log");
-        struct chrono chr;
-        chr_assign_log(&chr, "similitude.csv");
-        chr_start_clock(&chr);
-        double means_similitude = calculate_mean_similitude_parallel(modeSimilitude, similarities);
-        chr_stop(&chr);
-        chr_close_log(&chr);
-        printf("fin log");
-    #else
-        double means_similitude = calculate_mean_similitude_parallel(modeSimilitude, similarities);
-    #endif
+    double means_similitude = calculate_mean_similitude_parallel(modeSimilitude, similarities);
 
     calculate_threshold(modeSimilitude, 10*num_nodes, &threshold, &antiseuil, similarities);
-
-    printf("Seuil recommandé: %lf, %lf\n", threshold, antiseuil);
-    printf("%lf, %d", means_similitude, num_rows);
 
     jclass res_class = (*env)->FindClass(env, "Lcom/mongraphe/graphui/Metadata;");
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDD)V");
     jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, threshold, antiseuil, means_similitude);
 
     free(similarities);
+    similarities = NULL;
 
     return res;
 }
 
 
-JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initializeGraph
   (JNIEnv *env, jobject obj, jint md, jdouble thresh, jdouble anti_thresh)
 {
 
-    #ifdef _DEBUG_
-        printf("debut log");
-        struct chrono chr;
-        chr_assign_log(&chr, "edges.csv");
-        chr_start_clock(&chr);
-        calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
-        chr_stop(&chr);
-        chr_close_log(&chr);
-        printf("fin log");
-    #else
-        calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
-    #endif
+    calculate_similitude_and_edges(mode_similitude, thresh, anti_thresh);
+
+    for (int i = 0; i < num_rows; i++) {
+      free(similarity_matrix[i]);
+    }
+    free(similarity_matrix);
+    similarity_matrix = NULL;
 
     modeA=0;
     if (md == 0) {
@@ -259,34 +244,19 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
     } else if (md == 3) {
         num_communities = leiden_method_CPM();
     } else if (md == 4) {
-        // TODO 
-        //int nbValeurs;
-        //int S[MAX_NODES]={0};
-        num_communities = leiden_method_CPM();
-        // Demander le chemin du fichier à l'utilisateur
-        lireColonneCSV(S, &nbValeurs);
-        // Afficher les valeurs lues
-        printf("nombres de valeurs lues : %d pour %d données\n",nbValeurs,num_nodes);
-        modeA =1;
-        compute_ratio_S(S);
-    } else {
-        printf("Option invalide\n");
+      init_S(num_nodes);
+      num_communities = leiden_method_CPM();
+      // Demander le chemin du fichier à l'utilisateur
+      lireColonneCSV(S, &nbValeurs);
+      modeA = 1;
+      compute_ratio_S(S);
+      free_S();
     }
+
     initialize_community_colors();
-
-    #ifdef _DEBUG_
-        printf("Fin Calcul Communaute");
-    #endif
-
-    compute_average_vectors();
-
-    #ifdef _DEBUG_
-        printf("Vecteurs moyens fini \n");
-    #endif
 
     for (int i = 0; i < num_nodes; i++) {
         random_point_in_center(i);
-        velocities[i].x = velocities[i].y = 0.0;
     }
     n_clusters = (int)sqrt(num_nodes);
     init_clusters(n_clusters);
@@ -298,11 +268,86 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initiliazeGraph
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDIII)V");
     jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, thresh, anti_thresh, num_edges, num_antiedges, n_clusters);
 
+    thresholdS = (Lx/4000)*(Ly/4000);
+    thresholdA = (Lx/4000)*(Ly/4000);
+    epsilon = (Lx/800)*(Ly/800);
+    seuilrep = (Lx/1000)*(Lx/1000);
+
+    friction = 0.1;
+    Max_movementOld = 0.;
+    iteration = 0;
+    espacement = 1;
+    pause_updates = 0;
+
     return res;   
 
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
+JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
+  (JNIEnv *env, jobject obj, jstring filepath, jint md)
+{
+
+  jboolean b = JNI_FALSE;
+  const char* str = (*env)->GetStringUTFChars(env, filepath, &b);
+
+  parse_dot_file(str);
+
+  InitPool(&pool, 1000, 8);
+
+  modeA = 0;
+  if (md == 0) {
+      num_communities = louvain_method();
+  } else if (md == 1) {
+      num_communities = louvain_methodC();
+  } else if (md == 2) {
+      num_communities = leiden_method();
+  } else if (md == 3) {
+      num_communities = leiden_method_CPM();
+  } else if (md == 4) {
+      init_S(num_nodes);
+      num_communities = leiden_method_CPM();
+      // Demander le chemin du fichier à l'utilisateur
+      lireColonneCSV(S, &nbValeurs);
+      modeA = 1;
+      compute_ratio_S(S);
+      free_S();
+  } else {
+      printf("Option invalide\n");
+  }
+
+  initialize_community_colors();
+  for (int i = 0; i < num_nodes; i++) {
+    random_point_in_center(i);
+  }
+
+  n_clusters = (int) sqrt(num_nodes);
+  init_clusters(n_clusters);
+  initialize_centers();
+  assign_cluster_colors();
+  calculate_node_degrees();
+
+  jclass res_class = (*env)->FindClass(env, "graph/Metadata");
+  jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDD)V");
+  jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, 0., 0., 0.);
+
+  (*env)->ReleaseStringUTFChars(env, filepath, str); 
+
+  live_nodes = num_nodes;
+  thresholdS = (Lx/4000)*(Ly/4000);
+  thresholdA = (Lx/4000)*(Ly/4000);
+  epsilon = (Lx/800)*(Ly/800);
+  seuilrep = (Lx/1000)*(Lx/1000);
+
+  friction = 0.1;
+  Max_movementOld = 0.;
+  iteration = 0;
+  espacement = 1;
+  pause_updates = 0;
+
+  return res;
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
   (JNIEnv * env, jobject obj)
 {
 
@@ -314,16 +359,61 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
            free(neighbor);
            neighbor = next;
         }
+        adjacency_list[i].head = NULL;
     }
     free_clusters();
 
-    for (int i = 0; i < num_rows; i++) {
-      free(similarity_matrix[i]);
+    if ( similarity_matrix != NULL ) {
+      for (int i = 0; i < num_rows; i++) {
+        free(similarity_matrix[i]);
+      }
+      free(similarity_matrix);
     }
-    free(similarity_matrix);
-
+    freeNodeNames();
     FreePool(&pool);
 
+    num_nodes = 0;
+    live_nodes = 0;
+    num_edges = 0;
+    num_antiedges = 0;
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeProgramMemory
+  (JNIEnv * env, jobject obj)
+{
+
+    // Libérer la mémoire allouée pour les voisins
+    for (int i = 0; i < num_nodes; i++) {
+    	Neighbor* neighbor = adjacency_list[i].head;
+        while (neighbor != NULL) {
+           Neighbor* next = neighbor->next;
+           free(neighbor);
+           neighbor = next;
+        }
+        adjacency_list[i].head = NULL;
+    }
+    free_clusters();
+    if ( similarity_matrix != NULL ) {
+      for (int i = 0; i < num_rows; i++) {
+        free(similarity_matrix[i]);
+      }
+      free(similarity_matrix);
+    }
+
+    freeNodeNames();
+    FreePool(&pool);
+
+    if ( data != NULL ) {
+      for (int i = 0; i < num_rows; ++i) {
+        free(data[i]);
+      }
+      free(data);
+    }
+
+    num_nodes = 0;
+    live_nodes = 0;
+    num_edges = 0;
+    num_antiedges = 0;
 }
 
 JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setSaut
@@ -413,4 +503,62 @@ JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_SetNumberClusters
     init_clusters(n_clusters);
     initialize_centers();
     assign_cluster_colors();
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_deleteNode
+  (JNIEnv * env, jobject obj, jint index)
+{
+
+  if ( vertices[index].deleted == 0 ) {
+    vertices[index].deleted = 1;
+    modified_graph = 1;
+    --live_nodes;
+  }
+
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_restoreNode
+(JNIEnv * env, jobject obj, jint index)
+{
+
+  if ( vertices[index].deleted == 1 ) {
+    vertices[index].deleted = 0;
+    modified_graph = 1;
+    ++live_nodes;
+  }
+
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setKmeansMode
+  (JNIEnv * env, jobject obj, jboolean b)
+{
+  kmeans_mode = b;
+}
+
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_getHistogram
+  (JNIEnv * env, jobject obj)
+{
+  jintArray result = (*env)->NewIntArray(env, NUM_BINS);
+
+  (*env)->SetIntArrayRegion(env, result, 0, NUM_BINS, global_histogram);
+
+  return result;
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setInitialNodeSize
+  (JNIEnv * env, jobject obj, jdouble size)
+{
+  initial_node_size = size;
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setDegreeScaleFactor
+  (JNIEnv * env, jobject obj, jdouble factor)
+{
+  degree_scale_factor = factor;
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setNoOverlap
+  (JNIEnv * env, jobject obj, jboolean b)
+{
+  no_overlap = b;
 }
