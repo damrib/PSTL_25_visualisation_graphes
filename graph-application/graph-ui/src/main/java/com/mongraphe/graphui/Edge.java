@@ -5,7 +5,7 @@ package com.mongraphe.graphui;
  */
 public class Edge {
 
-    public static double initial_edge_weight = 0.3;
+    public static double initial_edge_weight = 1;
 
     private final Vertex start, end;
 
