@@ -1,9 +1,7 @@
 package com.mongraphe.graphui.render;
 
-import static com.mongraphe.graphui.Graph.minimumDegree;
-
 import com.mongraphe.graphui.Graph;
-import com.mongraphe.graphui.VisualisationController;
+import static com.mongraphe.graphui.Graph.minimumDegree;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
