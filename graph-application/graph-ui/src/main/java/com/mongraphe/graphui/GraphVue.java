@@ -531,35 +531,65 @@ public class GraphVue {
 	private void applyOptions() {
 		try {
 
-			/*
-			 * graph.setDegreeScaleFactor(Double.parseDouble(degreeFactor.getText()));
-			 * graph.setInitialNodeSize(Double.parseDouble(initNodeSize.getText()));
-			 * graph.setUpscale(Integer.parseInt(upScale.getText()));
-			 * graph.setStabilizedThreshold(Double.parseDouble(stabilizedTreshold.getText())
-			 * );
-			 * graph.setAttractionThreshold(Double.parseDouble(attractionTreshold.getText())
-			 * );
-			 * graph.setUpdatedFrequence(Integer.parseInt(updatedFrequence.getText()));
-			 * graph.setNewFriction(Double.parseDouble(newFriction.getText()));
-			 * graph.setAttractionCoefficient(Double.parseDouble(attractionCoefficient.
-			 * getText()));
-			 * graph.setRepulsionThreshold(Double.parseDouble(repulsionTreshold.getText()));
-			 * graph.setNewAmortissement(Double.parseDouble(newAmortissement.getText()));
-			 * graph.setNbClusters(Integer.parseInt(nbClusters.getText()));
-			 * graph.setMiniumDegree(Integer.parseInt(minimumDegree.getText()));
-			 * GraphData.RepulsionMode selectedMode = repulsionModeComboBox.getValue();
-			 * if (selectedMode != null) {
-			 * graph.setRepulsionMode(selectedMode);
-			 * }
-			 * 
-			 * System.out.println("modifie");
-			 * // for (Vertex v : graph.vertices) {
-			 * // v.updateDiameter();
-			 * // }
-			 * // graph.initializeArrays();
-			 * treshold.setText(String.valueOf(graph.getThreshold()));
-			 * antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
-			 */
+			if (!degreeFactor.getText().isEmpty()) {
+				graph.setDegreeScaleFactor(Double.parseDouble(degreeFactor.getText()));
+				System.out.println("degreeFactor : " + Double.parseDouble(degreeFactor.getText()));
+			}
+			if (!initNodeSize.getText().isEmpty()) {
+				graph.setInitialNodeSize(Double.parseDouble(initNodeSize.getText()));
+				System.out.println("initNodeSize : " + Double.parseDouble(initNodeSize.getText()));
+			}
+			if (!upScale.getText().isEmpty()) {
+				graph.setUpscale(Integer.parseInt(upScale.getText()));
+				System.out.println("upScale : " + Integer.parseInt(upScale.getText()));
+			}
+			if (!stabilizedTreshold.getText().isEmpty()) {
+				graph.setStabilizedThreshold(Double.parseDouble(stabilizedTreshold.getText()));
+				System.out.println("stabilizedTreshold : " + Double.parseDouble(stabilizedTreshold.getText()));
+			}
+			if (!attractionTreshold.getText().isEmpty()) {
+				graph.setAttractionThreshold(Double.parseDouble(attractionTreshold.getText()));
+				System.out.println("attractionTreshold : " + Double.parseDouble(attractionTreshold.getText()));
+			}
+			if (!updatedFrequence.getText().isEmpty()) {
+				graph.setUpdatedFrequence(Integer.parseInt(updatedFrequence.getText()));
+				System.out.println("updatedFrequence : " + Integer.parseInt(updatedFrequence.getText()));
+			}
+			if (!newFriction.getText().isEmpty()) {
+				graph.setNewFriction(Double.parseDouble(newFriction.getText()));
+				System.out.println("newFriction : " + Double.parseDouble(newFriction.getText()));
+			}
+			if (!attractionCoefficient.getText().isEmpty()) {
+				graph.setAttractionCoefficient(Double.parseDouble(attractionCoefficient.getText()));
+				System.out.println("attractionCoefficient : " + Double.parseDouble(attractionCoefficient.getText()));
+			}
+			if (!repulsionTreshold.getText().isEmpty()) {
+				graph.setRepulsionThreshold(Double.parseDouble(repulsionTreshold.getText()));
+				System.out.println("repulsionTreshold : " + Double.parseDouble(repulsionTreshold.getText()));
+			}
+			if (!newAmortissement.getText().isEmpty()) {
+				graph.setNewAmortissement(Double.parseDouble(newAmortissement.getText()));
+				System.out.println("newAmortissement : " + Double.parseDouble(newAmortissement.getText()));
+			}
+			if (!nbClusters.getText().isEmpty()) {
+				graph.setNbClusters(Integer.parseInt(nbClusters.getText()));
+			}
+			if (!minimumDegree.getText().isEmpty()) {
+				graph.setMiniumDegree(Integer.parseInt(minimumDegree.getText()));
+				System.out.println("minimumDegree : " + Integer.parseInt(minimumDegree.getText()));
+			}
+			GraphData.RepulsionMode selectedMode = repulsionModeComboBox.getValue();
+			if (selectedMode != null) {
+				graph.setRepulsionMode(selectedMode);
+			}
+
+			System.out.println("modifie");
+			// for (Vertex v : graph.vertices) {
+			// v.updateDiameter();
+			// }
+			// graph.initializeArrays();
+			treshold.setText(String.valueOf(graph.getThreshold()));
+			antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
 
 			initializeOptions();
 
