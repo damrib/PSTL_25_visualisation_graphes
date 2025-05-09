@@ -3,7 +3,8 @@
 Dependances Maven, Makefile et JavaFX:
 Pour compiler et exécuter, il faut utiliser les commandes suivantes:
 - cd graph-application
-- make all (Le makefile va installer maven et lancer le programme)
+- mvn clean install
+- mvn clean javafx:run -pl graph-ui
 
 Une fois le programme lancé, pour visualiser la fenêtre avec le graphe, il faut:
 - Appuyer sur Ouvrir un fichier de graphe

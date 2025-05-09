@@ -66,7 +66,7 @@ OBJ_FILES = $(GRAPH_C_OBJ) $(DEBUG_OBJ) $(CONCURRENT_OBJ) $(PRETRAITEMENT_OBJ) $
 $(shell mkdir -p $(OUT_DIR))
 
 # Compilation
-all: $(LIBNATIVE_OUT) java
+all: java $(LIBNATIVE_OUT) 
 
 # Compilation de la bibliothèque native
 $(LIBNATIVE_OUT): $(OBJ_FILES)
@@ -90,9 +90,6 @@ $(OUT_DIR)/forceatlas.o: $(FORCE_ATLAS_SRC)
 
 # Compilation Java
 java:
-	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) \
-	      -cp $(CLASSPATH) \
-	      -d $(OUT_DIR) $(SRC_DIR)/*.java
 	javac --module-path $(JAVAFX_DIR) --add-modules $(JAVAFX_MODULES) \
 	      -cp $(CLASSPATH) \
 	      -h $(OUT_DIR) -d $(OUT_DIR) $(SRC_DIR)/*.java
