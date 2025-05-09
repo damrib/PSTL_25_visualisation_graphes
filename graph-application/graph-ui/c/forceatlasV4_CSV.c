@@ -20,7 +20,7 @@
     #include "debug/debug_time.h"
 #endif
 
-#include "../out/linux/com_mongraphe_graphui_Graph.h"
+/* #include "../out/linux/com_mongraphe_graphui_Graph.h" */
 
 
 int modeA=0; //mode pour afficher des noeuds en fonction de classe
@@ -89,7 +89,7 @@ JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
 
 JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getCommunities(JNIEnv *env, jobject obj) {
     jintArray result = (*env)->NewIntArray(env, MAX_NODES);
-    (*env)->SetIntArrayRegion(env, result, 0, MAX_NODES, communities);
+    (*env)->SetIntArrayRegion(env, result, 0, MAX_NODES,(const jint *) communities);
 
     return result;
 }
@@ -540,7 +540,7 @@ JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_getHistogram
 {
   jintArray result = (*env)->NewIntArray(env, NUM_BINS);
 
-  (*env)->SetIntArrayRegion(env, result, 0, NUM_BINS, global_histogram);
+  (*env)->SetIntArrayRegion(env, result, 0, NUM_BINS,(const jint *) global_histogram);
 
   return result;
 }

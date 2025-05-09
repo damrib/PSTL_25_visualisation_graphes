@@ -34,7 +34,7 @@ extern double amortissement;
 #include "c_graph/cluster.h"
 
 // Structures utilisées dans la méthode de Louvain
-extern jint communities[MAX_NODES]; // Stocke les communautés détectées par Louvain
+extern int communities[MAX_NODES]; // Stocke les communautés détectées par Louvain
 extern int clusters[MAX_NODES];
 extern float cluster_colors[MAX_NODES][3];
 extern double centers[MAX_NODES][2];
