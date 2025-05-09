@@ -223,7 +223,6 @@ public class GraphVue {
 	public void setHoveredVertex(Vertex vertex) {
 		if (vertex != null) {
 			// Afficher les informations du sommet sur l'interface utilisateur
-			System.out.println("Sommet survolé : " + vertex.getId());
 			idHovredVertexLabel.setText("" + vertex.getId());
 			XHovredVertexLabel.setText("" + vertex.getX());
 			YHovredVertexLabel.setText("" + vertex.getY());
@@ -452,7 +451,6 @@ public class GraphVue {
 	@FXML
 	private void handleEnableKmeans(ActionEvent event) {
 		if (enableKmeans.isSelected()) {
-			System.out.println("ttttttttttttttttttttttttttt|\n");
 			graph.enableKmeans(true);
 		} else {
 			graph.enableKmeans(false);
@@ -485,56 +483,85 @@ public class GraphVue {
 		edgeWeightCol.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getWeight()).asObject());
 	}
 
+	private void initializeOptions() {
+		/*
+		 * // Initialiser les champs avec les valeurs actuelles du graphe
+		 * initNodeSize.setText(String.valueOf(graph.getInitialNodeSize()));
+		 * degreeFactor.setText(String.valueOf(graph.getDegreeScaleFactor()));
+		 * upScale.setText(String.valueOf(graph.getUpscale()));
+		 * stabilizedTreshold.setText(String.valueOf(graph.getStabilizedThreshold()));
+		 * attractionTreshold.setText(String.valueOf(graph.getAttractionThreshold()));
+		 * updatedFrequence.setText(String.valueOf(graph.getUpdatedFrequence()));
+		 * newFriction.setText(String.valueOf(graph.getNewFriction()));
+		 * attractionCoefficient.setText(String.valueOf(graph.getAttractionCoefficient()
+		 * ));
+		 * repulsionTreshold.setText(String.valueOf(graph.getRepulsionThreshold()));
+		 * newAmortissement.setText(String.valueOf(graph.getNewAmortissement()));
+		 * nbClusters.setText(String.valueOf(graph.getNbClusters()));
+		 * minimumDegree.setText(String.valueOf(graph.getMiniumDegree()));
+		 * 
+		 * // Initialiser le mode de répulsion
+		 * repulsionModeComboBox.setValue(graph.getRepulsionMode());
+		 */
+		/*
+		 * mesureChamp.setValue(graph.getMeasureCode());
+		 * clusteringChamp.setValue(graph.getMethodCode());
+		 */
+
+		System.err.println("graph.getModeSimilitude(measureCode):" + graph.getModeSimilitude(measureCode));
+		System.err.println("graph.getMethodCommunity(methodCode):" + graph.getModeCommunity(methodCode));
+		System.err.println("graph.getModeRepulsion(repulsionCode):" + graph.getModeCommunity(methodCode));
+
+		int mesureIndex = graph.getModeSimilitude(measureCode);
+		int clusteringIndex = graph.getModeCommunity(methodCode);
+
+		if (mesureIndex >= 0 && mesureIndex < mesureChamp.getItems().size()) {
+			mesureChamp.getSelectionModel().select(mesureIndex);
+		}
+
+		if (clusteringIndex >= 0 && clusteringIndex < clusteringChamp.getItems().size()) {
+			clusteringChamp.getSelectionModel().select(clusteringIndex);
+		}
+
+		/* repulsionModeComboBox.setValue */
+
+	}
+
 	@FXML
 	private void applyOptions() {
 		try {
-			if (!degreeFactor.getText().isEmpty()) {
-				graph.setDegreeScaleFactor(Double.parseDouble(degreeFactor.getText()));
-			}
-			if (!initNodeSize.getText().isEmpty()) {
-				graph.setInitialNodeSize(Double.parseDouble(initNodeSize.getText()));
-			}
-			if (!upScale.getText().isEmpty()) {
-				graph.setUpscale(Integer.parseInt(upScale.getText()));
-			}
-			if (!stabilizedTreshold.getText().isEmpty()) {
-				graph.setStabilizedThreshold(Double.parseDouble(stabilizedTreshold.getText()));
-			}
-			if (!attractionTreshold.getText().isEmpty()) {
-				graph.setAttractionThreshold(Double.parseDouble(attractionTreshold.getText()));
-			}
-			if (!updatedFrequence.getText().isEmpty()) {
-				graph.setUpdatedFrequence(Integer.parseInt(updatedFrequence.getText()));
-			}
-			if (!newFriction.getText().isEmpty()) {
-				graph.setNewFriction(Double.parseDouble(newFriction.getText()));
-			}
-			if (!attractionCoefficient.getText().isEmpty()) {
-				graph.setAttractionCoefficient(Double.parseDouble(attractionCoefficient.getText()));
-			}
-			if (!repulsionTreshold.getText().isEmpty()) {
-				graph.setRepulsionThreshold(Double.parseDouble(repulsionTreshold.getText()));
-			}
-			if (!newAmortissement.getText().isEmpty()) {
-				graph.setNewAmortissement(Double.parseDouble(newAmortissement.getText()));
-			}
-			if (!nbClusters.getText().isEmpty()) {
-				graph.setNbClusters(Integer.parseInt(nbClusters.getText()));
-			}
-			if (!minimumDegree.getText().isEmpty()) {
-				graph.setMiniumDegree(Integer.parseInt(minimumDegree.getText()));
-			}
-			GraphData.RepulsionMode selectedMode = repulsionModeComboBox.getValue();
-			if (selectedMode != null) {
-				graph.setRepulsionMode(selectedMode);
-			}
 
-			// for (Vertex v : graph.vertices) {
-			// v.updateDiameter();
-			// }
-			// graph.initializeArrays();
-			treshold.setText(String.valueOf(graph.getThreshold()));
-			antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
+			/*
+			 * graph.setDegreeScaleFactor(Double.parseDouble(degreeFactor.getText()));
+			 * graph.setInitialNodeSize(Double.parseDouble(initNodeSize.getText()));
+			 * graph.setUpscale(Integer.parseInt(upScale.getText()));
+			 * graph.setStabilizedThreshold(Double.parseDouble(stabilizedTreshold.getText())
+			 * );
+			 * graph.setAttractionThreshold(Double.parseDouble(attractionTreshold.getText())
+			 * );
+			 * graph.setUpdatedFrequence(Integer.parseInt(updatedFrequence.getText()));
+			 * graph.setNewFriction(Double.parseDouble(newFriction.getText()));
+			 * graph.setAttractionCoefficient(Double.parseDouble(attractionCoefficient.
+			 * getText()));
+			 * graph.setRepulsionThreshold(Double.parseDouble(repulsionTreshold.getText()));
+			 * graph.setNewAmortissement(Double.parseDouble(newAmortissement.getText()));
+			 * graph.setNbClusters(Integer.parseInt(nbClusters.getText()));
+			 * graph.setMiniumDegree(Integer.parseInt(minimumDegree.getText()));
+			 * GraphData.RepulsionMode selectedMode = repulsionModeComboBox.getValue();
+			 * if (selectedMode != null) {
+			 * graph.setRepulsionMode(selectedMode);
+			 * }
+			 * 
+			 * System.out.println("modifie");
+			 * // for (Vertex v : graph.vertices) {
+			 * // v.updateDiameter();
+			 * // }
+			 * // graph.initializeArrays();
+			 * treshold.setText(String.valueOf(graph.getThreshold()));
+			 * antiTreshold.setText(String.valueOf(graph.getAntiThreshold()));
+			 */
+
+			initializeOptions();
 
 		} catch (NumberFormatException e) {
 			System.err.println("Erreur de format dans un des champs : " + e.getMessage());
@@ -614,6 +641,7 @@ public class GraphVue {
 	private File fichier;
 	private SimilitudeMode measureCode;
 	private NodeCommunity methodCode;
+	private GraphData.RepulsionMode repulsionCode;
 	private Pane root;
 
 	public void initData(File fichier, SimilitudeMode measureCode, double upThreshold, double downThreshold,

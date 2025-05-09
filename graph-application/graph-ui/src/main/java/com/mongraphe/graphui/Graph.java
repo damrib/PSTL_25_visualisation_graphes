@@ -204,147 +204,6 @@ public class Graph implements GLEventListener, GraphSettings {
     private double graphWidth;
     private double graphHeight;
 
-    // public static void main(String[] args) {
-    // launch(args);
-    // }
-
-    // -------------------------------------------------------------------------
-    // Méthodes nécessaires à l'affichage du graphe
-    // -------------------------------------------------------------------------
-
-    /**
-     * Méthode principale de l'application
-     */
-    // @Override
-    // public void start(Stage primaryStage) {
-    //
-    // // Ajouter les listeners pour les différents modes du graphe
-    // isRunMode.addListener((obs, oldValue, newValue) -> {
-    // if (newValue) {
-    // animator.resume();
-    // System.out.println("Reprise de l'animation");
-    // } else {
-    // animator.pause();
-    // System.out.println("Pause de l'animation");
-    // }
-    // });
-    //
-    //
-    // // Initialisation (provisoire, devra être appelé par l'interface graphique)
-    // testInit();
-    //
-    //
-    // // Récupérer les sommets
-    // vertices = List.of(getPositions());
-    //
-    // // Récupérer les couleurs des clusters
-    // float[][] color = getClusterColors();
-    //
-    // // Récupérer les communautés de chaque sommet
-    // int[] communititesInterm = getCommunities();
-    // HashMap<Integer, Community> communities = new HashMap<>();
-    //
-    // for (int i = 0; i < vertices.size(); i++) {
-    // int community_id = communititesInterm[i];
-    // if (!communities.containsKey(community_id)) {
-    // // Créer une nouvelle communauté
-    // communities.put(community_id, new Community(community_id, color[i][0],
-    // color[i][1], color[i][2]));
-    // }
-    // vertices.get(i).setId(i); // Attribution d'un identifiant unique à chaque
-    // sommet
-    // vertices.get(i).setCommunity(communities.get(community_id)); // Attribution
-    // de la communauté à chaque sommet
-    // }
-    //
-    // // Debug : afficher les communautés
-    // System.out.println("\nCommunautés (" + communities.size() + ") :");
-    // for (Community c : communities.values())
-    // System.out.println("- " + c);
-    // System.out.println();
-    //
-    // // Récupérer les arêtes
-    // edges = new ArrayList<>();
-    // EdgeC[] edgesC = getEdges();
-    // for (EdgeC edgeC : edgesC) {
-    // Edge e = new Edge(vertices.get(edgeC.getStart()),
-    // vertices.get(edgeC.getEnd()), edgeC.getWeight());
-    // edges.add(e);
-    // }
-    //
-    // // Ajuster les rayons des sommets selon leur degré
-    // for (Vertex v : vertices)
-    // v.updateDiameter();
-    //
-    // // Initialisation des buffers pour les sommets et arêtes
-    // initializeArrays();
-    //
-    // // Initialisation de OpenGL avec JOGL
-    // GLProfile glProfile = GLProfile.get(GLProfile.GL4);
-    // GLCapabilities capabilities = new GLCapabilities(glProfile);
-    // capabilities.setDoubleBuffered(true);
-    // capabilities.setHardwareAccelerated(true);
-    //
-    // // Créer un GLWindow (OpenGL)
-    // glWindow = GLWindow.create(capabilities);
-    //
-    // // Ajouter un GLEventListener pour dessiner le triangle
-    // glWindow.addGLEventListener(this);
-    //
-    // // Ajouter un WindowListener pour fermer proprement la fenêtre
-    // glWindow.addWindowListener(new WindowAdapter() {
-    // @Override
-    // public void windowDestroyed(WindowEvent e) {
-    // System.exit(0); // Quitter l'application lorsque la fenêtre est fermée
-    // }
-    // });
-    //
-    // // Créer un NewtCanvasJFX pour intégrer OpenGL dans JavaFX
-    // NewtCanvasJFX newtCanvas = new NewtCanvasJFX(glWindow);
-    // newtCanvas.setWidth(WIDTH);
-    // newtCanvas.setHeight(HEIGHT);
-    //
-    // // Ajouter les listeners pour la souris
-    // addMouseListeners();
-    //
-    // // Créer la scène JavaFX avec le SwingNode
-    // Pane root = new Pane();
-    // root.getChildren().add(newtCanvas);
-    // Scene scene = new Scene(root, WIDTH, HEIGHT);
-    //
-    // // Démarrer l'animation
-    // animator = new FPSAnimator(glWindow, 60);
-    // animator.start();
-    //
-    // // Tests d'actions sur le graphe (en attendant l'interface graphique)
-    // testActions();
-    //
-    //// Timeline tl1 = new Timeline(
-    //// new KeyFrame(Duration.seconds(7), e -> {
-    //// setMode(GraphData.GraphMode.MOVE);
-    //// System.out.print("Switch to " + getMode());
-    //// System.out.println(" - Vous pouvez vous déplacer dans le graphe");
-    ////
-    //// glWindow.invoke(true, drawable -> {
-    //// exportToPng(drawable.getGL().getGL4(), "capture/graph.png");
-    //// return true;
-    //// });
-    ////
-    //// })
-    //// );
-    //// tl1.setCycleCount(1);
-    //// tl1.play();
-    //
-    //
-    //
-    //
-    // primaryStage.setTitle("Graphique avec JOGL et JavaFX");
-    // primaryStage.setScene(scene);
-    // //primaryStage.setMaximized(true);
-    // primaryStage.setOnCloseRequest(event -> Platform.exit());
-    // primaryStage.show();
-    // }
-
     /**
      * Trouve le sommet à la position (x, y)
      * 
@@ -739,7 +598,6 @@ public class Graph implements GLEventListener, GraphSettings {
                 if (v.isDeleted()) {
                     deletedNodes++;
                     visibleNodes--;
-                    hiddenNodes++;
                 }
             }
             // Deuxième passe : filtrer les arêtes
@@ -1025,7 +883,6 @@ public class Graph implements GLEventListener, GraphSettings {
             throw new RuntimeException("setScreenSize : Taille de l'écran (" + width + "x" + height + ") non valide.");
         graphWidth = width;
         graphHeight = height;
-        // setDimension(WIDTH, HEIGHT); // TODO (toujours compliqué côté C)
     }
 
     /**
@@ -1563,7 +1420,7 @@ public class Graph implements GLEventListener, GraphSettings {
      * @return l'identifiant du mode de similitude
      * @see GraphData.SimilitudeMode
      */
-    public static int getModeSimilitude(GraphData.SimilitudeMode mode) {
+    public int getModeSimilitude(GraphData.SimilitudeMode mode) {
         int modeSimilitude = -1;
         switch (mode) {
             case GraphData.SimilitudeMode.CORRELATION -> modeSimilitude = 0;
@@ -1583,7 +1440,7 @@ public class Graph implements GLEventListener, GraphSettings {
      * @return l'identifiant du mode de détection de communautés
      * @see GraphData.NodeCommunity
      */
-    public static int getModeCommunity(GraphData.NodeCommunity community) {
+    public int getModeCommunity(GraphData.NodeCommunity community) {
         int modeCommunity = -1;
         switch (community) {
             case GraphData.NodeCommunity.LOUVAIN -> modeCommunity = 0;
@@ -1601,7 +1458,7 @@ public class Graph implements GLEventListener, GraphSettings {
      * @param mode Mode de répulsion
      * @return l'identifiant du mode de répulsion
      */
-    public static int getModeRepulsion(GraphData.RepulsionMode mode) {
+    public int getModeRepulsion(GraphData.RepulsionMode mode) {
         int modeRepulsion = -1;
         switch (mode) {
             case GraphData.RepulsionMode.REPULSION_BY_DEGREE -> modeRepulsion = 0;
