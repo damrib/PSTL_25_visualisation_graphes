@@ -180,7 +180,7 @@ public interface GraphSettings {
      * Affiche les sommets dont le degré est supérieur ou égal à degree
      * @param degree Degré minimum des sommets à afficher
      */
-    void setMiniumDegree(int degree);
+    void setMinimumDegree(int degree);
 
     /**
      * @param vertex_id Identifiant du sommet à supprimer
