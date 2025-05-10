@@ -575,7 +575,7 @@ public class GraphVue {
 				graph.setNbClusters(Integer.parseInt(nbClusters.getText()));
 			}
 			if (!minimumDegree.getText().isEmpty()) {
-				graph.setMiniumDegree(Integer.parseInt(minimumDegree.getText()));
+				graph.setMinimumDegree(Integer.parseInt(minimumDegree.getText()));
 				System.out.println("minimumDegree : " + Integer.parseInt(minimumDegree.getText()));
 			}
 			GraphData.RepulsionMode selectedMode = repulsionModeComboBox.getValue();

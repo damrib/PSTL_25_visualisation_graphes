@@ -173,7 +173,7 @@ public interface GraphSettings {
    * 
    * @param degree Degré minimum des sommets à afficher
    */
-  void setMiniumDegree(int degree);
+  void setMinimumDegree(int degree);
 
   // -------------------------------------------------------------------------
   // Options supplémentaires
