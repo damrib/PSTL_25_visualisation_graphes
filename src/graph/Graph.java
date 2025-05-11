@@ -1420,7 +1420,8 @@ public class Graph extends Application implements GLEventListener, GraphSettings
 
 	        // Prepare data for rendering
 	        prepareBezierRenderData();
-	        
+
+		renderDoubleCircles(gl);
 	        
 	        renderBezierCurves(gl);
 	        
