@@ -57,7 +57,7 @@ JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
   if ( pause_updates == 0 ){
        
     repulsion_edges(forces);
-    repulsion_intra_clusters(forces, FMaxX, FMaxY);
+    parallel_intra_clusters(forces, FMaxX, FMaxY);
     repulsion_anti_edges(forces);
 
     double Max_movement = update_position_forces(forces, PasMaxX, PasMaxY, 0.);

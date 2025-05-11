@@ -39,7 +39,7 @@ double initial_node_size = 5.;
 double degree_scale_factor = 0.5;
 
 // modifiable par utilisateur
-double repulsion_coeff = 1;
+double repulsion_coeff = 10;
 int saut = 10;
 int mode = 0;
 
@@ -388,7 +388,94 @@ void kmeans_iteration(int num_points, int num_clusters, int *labels, double cent
     free(counts);
 }
 
-// probablement privé utilisée dans update_positions
+struct intra_cluster_args {
+    double(*forces)[2];
+    int cluster_id;
+    double FMaxX, FMaxY;
+    Barrier barrier;
+};
+
+void repulsion_intra_cluster_job(void * args) {
+    struct intra_cluster_args* arguments = (struct intra_cluster_args*) args;
+    double (*forces)[2] = arguments->forces;
+    double FMaxX = arguments->FMaxX;
+    double FMaxY = arguments->FMaxY;
+    int cluster_id = arguments->cluster_id;
+
+    int size = cluster_nodes[cluster_id].size;
+    for (int i = 0; i < size; ++i) {
+        int node_i = cluster_nodes[cluster_id].nodes[i];
+    
+        Point pi = vertices[node_i];
+        if ( pi.deleted == 0 ) {
+                
+            for (int j = i + 1; j < size; j++) {
+                int node_j = cluster_nodes[cluster_id].nodes[j];
+
+                if ( vertices[node_j].deleted == 0 ) {
+                    Point dir;
+                    toroidal_vector(&dir, pi, vertices[node_j]);
+            
+                    double dist_squared = dir.x * dir.x + dir.y * dir.y;
+                    if (dist_squared > seuilrep) { // Assume a minimum distance to avoid division by zero
+                        //double dist = sqrt(dist_squared);
+
+                        double rep_force;
+                        if ( mode == 1 ) { 
+                            rep_force = repulsion_coeff / (dist_squared*dist_squared);
+                        } else if (mode == 2 && communities[i] != communities[j]) {//printf("extra repulsion %d, %d \n",i,j);
+                            rep_force = 100000 * repulsion_coeff * (node_degrees[i]+1) * (node_degrees[j]+1) / dist_squared;
+                        } else { // mode == 0 est le mode par defaut
+                            rep_force = repulsion_coeff * (node_degrees[i]+1) * (node_degrees[j]+1) / dist_squared;
+                        } 
+                                                
+                        forces[node_i][0] -= dir.x * rep_force;
+                        forces[node_i][1] -= dir.y * rep_force;
+                        forces[node_j][0] += dir.x * rep_force;
+                        forces[node_j][1] += dir.y * rep_force;
+                    } else {
+                        double rep_force = repulsion_coeff / seuilrep;
+                                            
+                        forces[node_i][0] -= dir.x * rep_force;
+                        forces[node_i][1] -= dir.y * rep_force;
+                        forces[node_j][0] += dir.x * rep_force;
+                        forces[node_j][1] += dir.y * rep_force;
+                    }
+                }
+            }
+            
+            // capper les forces d'attractions
+            forces[node_i][0] = fmax(fmin(forces[node_i][0], FMaxX), -FMaxX);
+            forces[node_i][1] = fmax(fmin(forces[node_i][1], FMaxY), -FMaxY);
+        
+        }
+    }
+    decrement_barrier(arguments->barrier, 1);
+}
+
+void parallel_intra_clusters(double(*forces)[2], double FMaxX, double FMaxY) {
+    if ( modified_graph && mode != 1 ) 
+        calculate_node_degrees();
+
+
+    struct barrier bar;
+    new_barrier(&bar, n_clusters);
+    for (int i = 0; i < n_clusters; ++i) {
+        struct intra_cluster_args* arguments = (struct intra_cluster_args*) malloc(sizeof(struct intra_cluster_args));
+        arguments->forces = forces;
+        arguments->cluster_id = i;
+        arguments->FMaxX = FMaxX;
+        arguments->FMaxY = FMaxY;
+        arguments->barrier = &bar;
+
+        struct Job task;
+        task.j = repulsion_intra_cluster_job;
+        task.args = arguments;
+        submit(&pool, task);
+    }
+    wait_barrier(&bar);
+}
+
 // Étape 2 : Forces de répulsion intra-cluster
 void repulsion_intra_clusters(double(*forces)[2], double FMaxX, double FMaxY)
 {

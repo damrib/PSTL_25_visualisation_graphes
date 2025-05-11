@@ -17,7 +17,7 @@ int live_nodes = 0;
 double Lx = 300, Ly = 300;
 
 double friction = 0.1;
-double attraction_coeff = 100;
+double attraction_coeff = 10;
 double thresholdA = 1;
 double seuilrep = 0;
 double thresholdS = 1;
