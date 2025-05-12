@@ -697,6 +697,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
         setUpscale(GRAPH_UPSCALE); // Facteur d'agrandissement pour le graphe
         setInitialNodeSize(15); // Taille initiale d'un sommet
         setDegreeScaleFactor(0.15); // Facteur d'agrandissement selon le degré d'un sommet
+		setThresholdS(0.01);
     }
 
 
