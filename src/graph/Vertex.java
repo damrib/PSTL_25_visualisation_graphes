@@ -5,6 +5,7 @@ import java.util.ArrayList;
 /**
  * Représente un sommet du graphe
  */
+@SuppressWarnings("unused")
 public class Vertex {
 
     public static int upscale = 8;
