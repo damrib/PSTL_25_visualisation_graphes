@@ -21,7 +21,6 @@ typedef struct Neighbor {
 void kmeans_iteration(int num_points, int num_clusters, int *labels, double centers[][2], double Lx, double Ly, double* max_diff);
 
 // version originale de la fonction
-void update_clusters_original();
 void update_clusters();
 void repulsion_intra_clusters(double(*forces)[2], double FMaxX, double FMaxY);
 void parallel_intra_clusters(double(*forces)[2], double FMaxX, double FMaxY);

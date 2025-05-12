@@ -40,7 +40,7 @@ double degree_scale_factor = 0.5;
 
 // modifiable par utilisateur
 double repulsion_coeff = 10;
-int saut = 10;
+int saut = 1;
 int mode = 0;
 
 double compute_node_size(int node_index) {
@@ -275,9 +275,9 @@ void noverlap_force(double (*forces)[2], double FMaxX, double FMaxY) {
 struct map_arguments {
     int num_clusters;
     double Lx, Ly;
+    int first, last;
     double ** new_centers;
     int * counts, * labels;
-    int vertex_index;
 
     pthread_mutex_t *lock;
     Barrier barrier;
@@ -286,36 +286,68 @@ struct map_arguments {
 void kmeans_map(void * arg) {
 
     struct map_arguments * arguments = (struct map_arguments*) arg;
-    double min_dist = DBL_MAX;
-    int best_cluster = 0;
 
-    for ( int i = 0; i < arguments->num_clusters; ++i ) {
-        double dist = squared_distance(centers[i], vertices[arguments->vertex_index]);
+    for (int vertex_index = arguments->first; vertex_index < arguments->last; ++vertex_index) {
+        double min_dist = DBL_MAX;
+        int best_cluster = 0;
 
-        if (dist < min_dist) {
-            min_dist = dist;
-            best_cluster = i;
+        if ( vertices[vertex_index].deleted == 0 ) {
+            for ( int i = 0; i < arguments->num_clusters; ++i ) {
+                double dist = squared_distance(centers[i], vertices[vertex_index]);
+
+                if (dist < min_dist) {
+                    min_dist = dist;
+                    best_cluster = i;
+                }
+
+            }
+
+            double adjusted_x = vertices[vertex_index].x;
+            double adjusted_y = vertices[vertex_index].y;
+
+            while (adjusted_x - centers[best_cluster][0] > arguments->Lx / 2) adjusted_x -= arguments->Lx;
+            while (centers[best_cluster][0] - adjusted_x > arguments->Lx / 2) adjusted_x += arguments->Lx;
+            while (adjusted_y - centers[best_cluster][1] > arguments->Ly / 2) adjusted_y -= arguments->Ly;
+            while (centers[best_cluster][1] - adjusted_y > arguments->Ly / 2) adjusted_y += arguments->Ly;
+
+            pthread_mutex_lock(arguments->lock);
+            arguments->new_centers[best_cluster][0] += adjusted_x;
+            arguments->new_centers[best_cluster][1] += adjusted_y;
+            arguments->counts[best_cluster]++;
+            pthread_mutex_unlock(arguments->lock);
+
+            arguments->labels[vertex_index] = best_cluster;
         }
-
     }
-
-    double adjusted_x = vertices[arguments->vertex_index].x;
-    double adjusted_y = vertices[arguments->vertex_index].y;
-
-    while (adjusted_x - centers[best_cluster][0] > arguments->Lx / 2) adjusted_x -= arguments->Lx;
-    while (centers[best_cluster][0] - adjusted_x > arguments->Lx / 2) adjusted_x += arguments->Lx;
-    while (adjusted_y - centers[best_cluster][1] > arguments->Ly / 2) adjusted_y -= arguments->Ly;
-    while (centers[best_cluster][1] - adjusted_y > arguments->Ly / 2) adjusted_y += arguments->Ly;
-
-    pthread_mutex_lock(arguments->lock);
-    arguments->new_centers[best_cluster][0] += adjusted_x;
-    arguments->new_centers[best_cluster][1] += adjusted_y;
-    arguments->counts[best_cluster]++;
-    pthread_mutex_unlock(arguments->lock);
-
-    arguments->labels[arguments->vertex_index] = best_cluster;
-
     decrement_barrier(arguments->barrier, 1);
+}
+
+void submit_kmeans_job(
+    double Lx, double Ly, 
+    int first, int last, 
+    int* counts, 
+    double** new_centers, 
+    int* labels, 
+    int num_clusters, 
+    Barrier bar,
+    pthread_mutex_t* lk)
+{
+    struct map_arguments * arguments = (struct map_arguments*) malloc(sizeof(struct map_arguments));
+    arguments->Lx = Lx;
+    arguments->Ly = Ly;
+    arguments->first = first;
+    arguments->last = last;
+    arguments->counts = counts;
+    arguments->new_centers = new_centers;
+    arguments->labels = labels;
+    arguments->num_clusters = num_clusters;
+    arguments->barrier = bar;
+    arguments->lock = lk;
+
+    struct Job task;
+    task.j = kmeans_map;
+    task.args = arguments;
+    submit(&pool, task);
 }
 
 // Assigner des noeuds aux clusters et mettre à jour les centres en utilisant l'algorithme k-means
@@ -327,36 +359,22 @@ void kmeans_iteration(int num_points, int num_clusters, int *labels, double cent
 
     for (int i = 0; i < num_clusters; ++i) {
         new_centers[i] = (double*) calloc(2, sizeof(double));
+        counts[i] = 0;
     }
 
     struct barrier bar;
-    new_barrier(&bar, num_points);
+    new_barrier(&bar, pool.nb_threads);
 
     pthread_mutex_t lck;
     pthread_mutex_init(&lck, NULL);
 
-    // Assigner chaque point au cluster le plus proche et mettre à jour les centres
-    for (int i = 0; i < num_points; i++) {
-        if ( vertices[i].deleted == 0 ) {
-            struct map_arguments * arguments = (struct map_arguments*) malloc(sizeof(struct map_arguments));
-            arguments->Lx = Lx;
-            arguments->Ly = Ly;
-            arguments->vertex_index = i;
-            arguments->counts = counts;
-            arguments->new_centers = new_centers;
-            arguments->labels = labels;
-            arguments->num_clusters = num_clusters;
-            arguments->barrier = &bar;
-            arguments->lock = &lck;
+    int vertices_chunck = num_nodes / pool.nb_threads;
 
-            struct Job task;
-            task.j = kmeans_map;
-            task.args = arguments;
-            submit(&pool, task);
-        } else {
-            decrement_barrier(&bar, 1);
-        }
+    // Assigner chaque point au cluster le plus proche et mettre à jour les centres
+    for (int i = 0; i < pool.nb_threads - 1; ++i) {
+        submit_kmeans_job(Lx, Ly, i * vertices_chunck, (i + 1) * vertices_chunck, counts, new_centers, labels, num_clusters, &bar, &lck);
     }
+    submit_kmeans_job(Lx, Ly, (pool.nb_threads - 1) * vertices_chunck, num_nodes, counts, new_centers, labels, num_clusters, &bar, &lck);
 
     wait_barrier(&bar);   
     pthread_mutex_destroy(&lck);
@@ -542,14 +560,13 @@ void update_clusters()
 {
 
     int modified = 0;
-    if (kmeans_mode != 0 && iteration % (saut * (1 + espacement)) == 0) {
+    if (kmeans_mode != 0 && iteration % (saut * (1 + 0 * espacement)) == 0) {
         int centers_converged = 0;
         while (centers_converged == 0) {
             // the biggest difference between the former centers and the new ones
             double max_movement = 0;
 
             kmeans_iteration(num_nodes, n_clusters, clusters, centers, Lx, Ly, &max_movement);
-
             centers_converged = max_movement <= epsilon;
         }
         modified = 1;
