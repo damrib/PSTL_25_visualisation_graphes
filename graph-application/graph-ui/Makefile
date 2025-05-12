@@ -4,7 +4,7 @@ ifeq ($(UNAME_S),Linux)
     OS_TYPE = Linux
     OUT_DIR = out/linux
     JNI_FLAGS = -I/usr/lib/jvm/java-21-openjdk-amd64/include -I/usr/lib/jvm/java-21-openjdk-amd64/include/linux -fPIC
-    FLAGS = -Wall -g -lGL -lGLU -lglut -fPIC -lm -lc -shared
+    FLAGS = -Wall -g -fPIC -lm -lc -shared
     LIBNATIVE_OUT = $(OUT_DIR)/libnative.so
     RM = rm -rf
     CLASSPATH_SEP = :
@@ -12,7 +12,7 @@ else ifeq ($(UNAME_S),Darwin)
     OS_TYPE = macOS
     OUT_DIR = out/macos
     JNI_FLAGS = -I$(shell /usr/libexec/java_home)/include -I$(shell /usr/libexec/java_home)/include/darwin -fPIC
-    FLAGS = -Wall -g -framework OpenGL -framework GLUT -dynamiclib
+    FLAGS = -Wall -g -dynamiclib
     LIBNATIVE_OUT = $(OUT_DIR)/libnative.dylib
     RM = rm -rf
     CLASSPATH_SEP = :
@@ -20,7 +20,7 @@ else
     OS_TYPE = Windows
     OUT_DIR = out/windows
     JNI_FLAGS = -I"C:/Program Files/Java/jdk-21/include" -I"C:/Program Files/Java/jdk-21/include/win32" -fPIC
-    FLAGS = -Wall -g -fPIC -lm -shared -lfreeglut -lopengl32 -lglu32
+    FLAGS = -Wall -g -fPIC -lm -shared
     LIBNATIVE_OUT = $(OUT_DIR)/libnative.dll
     RM = cmd /C "del /F /Q
     CLASSPATH_SEP = ;

@@ -126,8 +126,6 @@ double calculate_mean_similitude_parallel(int choice, double* similarities) {
 
     
     for (int bin = 0; bin < NUM_BINS; bin++) {
-        double bin_start = (choice == 0 || choice == 1) ? -1.0 + (2.0 * bin) / NUM_BINS : (double)bin / NUM_BINS;
-        double bin_end = (choice == 0 || choice == 1) ? -1.0 + (2.0 * (bin + 1)) / NUM_BINS : (double)(bin + 1) / NUM_BINS;
         global_histogram[bin] = histogram[bin]; 
     }
 
