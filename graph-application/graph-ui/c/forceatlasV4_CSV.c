@@ -43,7 +43,7 @@ short pause_updates = 0;
  * 
  */
 
-JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
+JNIEXPORT jboolean JNICALL Java_com_mongraphe_graphui_Graph_updatePositions
  (JNIEnv * env, jobject obj)
 {
   double FMaxX = Lx/(friction*1000);
@@ -87,14 +87,14 @@ JNIEXPORT jboolean JNICALL Java_graph_Graph_updatePositions
   return 1;
 }
 
-JNIEXPORT jintArray JNICALL Java_graph_Graph_getCommunities(JNIEnv *env, jobject obj) {
+JNIEXPORT jintArray JNICALL Java_com_mongraphe_graphui_Graph_getCommunities(JNIEnv *env, jobject obj) {
     jintArray result = (*env)->NewIntArray(env, MAX_NODES);
     (*env)->SetIntArrayRegion(env, result, 0, MAX_NODES,(const jint *) communities);
 
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getClusterColors
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_getClusterColors
   (JNIEnv * env, jobject obj)
 {
     jclass obj_class = (*env)->FindClass(env, "[F");
@@ -111,11 +111,11 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getClusterColors
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getEdges
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_getEdges
   (JNIEnv * env, jobject obj)
 {
     // remplacer "backendinterface/Edge" par "[packageName]/[nomClasse]"
-    jclass obj_class = (*env)->FindClass(env, "Lgraph/EdgeC;");
+    jclass obj_class = (*env)->FindClass(env, "Lcom/mongraphe/graphui/EdgeC;");
     jmethodID edge_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(IID)V");
     jobject initial_elem = (*env)->NewObject(env, obj_class, edge_constructor, 0, 0, 0.);
     
@@ -134,10 +134,10 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getEdges
     return result;
 }
 
-JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getPositions
+JNIEXPORT jobjectArray JNICALL Java_com_mongraphe_graphui_Graph_getPositions
   (JNIEnv * env, jobject obj)
 {
-  jclass obj_class = (*env)->FindClass(env, "Lgraph/Vertex;");
+  jclass obj_class = (*env)->FindClass(env, "Lcom/mongraphe/graphui/Vertex;");
   jmethodID point_constructor = (*env)->GetMethodID(env, obj_class, "<init>", "(DD)V");
 
   jobject initial_elem = (*env)->NewObject(env, obj_class, point_constructor, 0., 0.);
@@ -156,7 +156,7 @@ JNIEXPORT jobjectArray JNICALL Java_graph_Graph_getPositions
   return result;
 }
 
-JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_startsProgram
   (JNIEnv * env, jobject obj, jstring filepath)
 {
     srand(time(NULL));
@@ -185,7 +185,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_startsProgram
 
 }
 
-JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_computeThreshold
   (JNIEnv * env, jobject obj, jint modeSimilitude, jint edge_factor)
 {
 
@@ -211,7 +211,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
 
     calculate_threshold(modeSimilitude, 10*num_nodes, &threshold, &antiseuil, similarities);
 
-    jclass res_class = (*env)->FindClass(env, "Lgraph/Metadata;");
+    jclass res_class = (*env)->FindClass(env, "Lcom/mongraphe/graphui/Metadata;");
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDD)V");
     jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, threshold, antiseuil, means_similitude);
 
@@ -222,7 +222,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_computeThreshold
 }
 
 
-JNIEXPORT jobject JNICALL Java_graph_Graph_initializeGraph
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_initializeGraph
   (JNIEnv *env, jobject obj, jint md, jdouble thresh, jdouble anti_thresh)
 {
 
@@ -264,7 +264,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeGraph
     assign_cluster_colors();
     calculate_node_degrees();
 
-    jclass res_class = (*env)->FindClass(env, "Lgraph/Metadata;");
+    jclass res_class = (*env)->FindClass(env, "Lcom/mongraphe/graphui/Metadata;");
     jmethodID constructor = (*env)->GetMethodID(env, res_class, "<init>", "(IDDIII)V");
     jobject res = (*env)->NewObject(env, res_class, constructor, num_nodes, thresh, anti_thresh, num_edges, num_antiedges, n_clusters);
 
@@ -347,7 +347,7 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_initializeDot
   return res;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeAllocatedMemory
   (JNIEnv * env, jobject obj)
 {
 
@@ -378,7 +378,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeAllocatedMemory
     num_antiedges = 0;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_freeProgramMemory
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_freeProgramMemory
   (JNIEnv * env, jobject obj)
 {
 
@@ -416,76 +416,76 @@ JNIEXPORT void JNICALL Java_graph_Graph_freeProgramMemory
     num_antiedges = 0;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setSaut
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setSaut
   (JNIEnv * env, jobject obj, jint s)
 {
     saut = s;
     espacement = 1;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setThresholdS
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setThresholdS
   (JNIEnv * env, jobject obj, jdouble thresh)
 {
     thresholdS = thresh;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setFriction
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setFriction
   (JNIEnv * env, jobject obj, jdouble f)
 {
     friction = f;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setModeRepulsion
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setModeRepulsion
   (JNIEnv * env, jobject obj, jint modeRepulsion)
 {
     mode = modeRepulsion;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setAntiRepulsion
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setAntiRepulsion
   (JNIEnv * env, jobject obj, jdouble repulsion)
 {
     coeff_antiarete = repulsion;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setAttractionCoeff
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setAttractionCoeff
   (JNIEnv * env, jobject obj, jdouble coeff)
 {
     attraction_coeff = coeff;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setThresholdA
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setThresholdA
   (JNIEnv * env, jobject obj, jdouble thresh)
 {
     thresholdA = thresh;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setSeuilRep
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setSeuilRep
   (JNIEnv * env, jobject obj, jdouble seuil)
 {
     seuilrep = seuil;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setDimension
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setDimension
   (JNIEnv * env, jobject obj, jdouble width, jdouble height)
 {
     Lx = width;
     Ly = height;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setAmortissement
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setAmortissement
   (JNIEnv * env, jobject obj, jdouble amort)
 {
     amortissement = amort;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setNodePosition
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setNodePosition
   (JNIEnv * env, jobject obj, jint index, jdouble x, jdouble y)
 {
     vertices[index].x = x;
     vertices[index].y = y;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_unpauseGraph
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_unpauseGraph
   (JNIEnv * env, jobject obj)
 {
     if ( pause_updates == 1 ) {
@@ -494,7 +494,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_unpauseGraph
     }
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_SetNumberClusters
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_SetNumberClusters
   (JNIEnv * env, jobject obj, jint new_n_clusters)
 {
     free_clusters();
@@ -505,7 +505,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_SetNumberClusters
     assign_cluster_colors();
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_deleteNode
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_deleteNode
   (JNIEnv * env, jobject obj, jint index)
 {
 
@@ -517,7 +517,7 @@ JNIEXPORT void JNICALL Java_graph_Graph_deleteNode
 
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_restoreNode
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_restoreNode
 (JNIEnv * env, jobject obj, jint index)
 {
 
@@ -529,13 +529,13 @@ JNIEXPORT void JNICALL Java_graph_Graph_restoreNode
 
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setKmeansMode
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setKmeansMode
   (JNIEnv * env, jobject obj, jboolean b)
 {
   kmeans_mode = b;
 }
 
-JNIEXPORT jobject JNICALL Java_graph_Graph_getHistogram
+JNIEXPORT jobject JNICALL Java_com_mongraphe_graphui_Graph_getHistogram
   (JNIEnv * env, jobject obj)
 {
   jintArray result = (*env)->NewIntArray(env, NUM_BINS);
@@ -545,14 +545,20 @@ JNIEXPORT jobject JNICALL Java_graph_Graph_getHistogram
   return result;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setInitialNodeSize
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setInitialNodeSize
   (JNIEnv * env, jobject obj, jdouble size)
 {
   initial_node_size = size;
 }
 
-JNIEXPORT void JNICALL Java_graph_Graph_setDegreeScaleFactor
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setDegreeScaleFactor
   (JNIEnv * env, jobject obj, jdouble factor)
 {
   degree_scale_factor = factor;
+}
+
+JNIEXPORT void JNICALL Java_com_mongraphe_graphui_Graph_setNoOverlap
+  (JNIEnv * env, jobject obj, jboolean b)
+{
+  no_overlap = b;
 }

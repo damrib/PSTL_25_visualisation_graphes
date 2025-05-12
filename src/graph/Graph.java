@@ -54,7 +54,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
     // Méthodes JNI
     private native double[][] startsProgram(String filename);
 	private native Metadata computeThreshold(int modeSimilitude, int edge_factor);
-	private native Metadata initiliazeGraph(int modeCommunity, double threshold, double anti_threshold);
+	private native Metadata initializeGraph(int modeCommunity, double threshold, double anti_threshold);
 	private native Metadata initializeDot(String filepath, int modeCommunity);
 
 	@SuppressWarnings("unused")
@@ -744,7 +744,7 @@ public class Graph extends Application implements GLEventListener, GraphSettings
             throw new RuntimeException("initGraphCsv : Mode de détection de communautés non spécifié.");
         int modeCommunity = getModeCommunity(community);
 
-        metadata = initiliazeGraph(modeCommunity, recommendedThreshold, recommendedAntiThreshold);
+        metadata = initializeGraph(modeCommunity, recommendedThreshold, recommendedAntiThreshold);
 
         return data;
     }
