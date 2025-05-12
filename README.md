@@ -10,9 +10,12 @@ Cette branche contient le code source du module graphique de l’application, à
 
 ## Installation et exécution
 
-1. Télécharger [JavaFX](https://gluonhq.com/products/javafx/) et le décompresser dans le dossier `lib` du projet.
-2. Ajouter le dossier `lib/javafx-sdk-X/lib` (avec `X` la version de JavaFX) et le contenu de `lib/jogl` dans les librairies du projet.
-3. Adapter le fichier `Makefile` en ajustant `JAVAFX_DIR` (le chemin vers le dossier de JavaFX) si nécessaire avec la version de JavaFX que vous avez téléchargée.
+1. Veuillez télécharger [JavaFX](https://gluonhq.com/products/javafx/) dans une version compatible avec votre système d'exploitation et le décompresser dans le dossier `lib` du projet.
+2. Si besoin, adaptez le fichier `Makefile` en ajustant :
+   - `JNI_FLAGS` avec l'emplacement de votre JDK
+   - `JAVAFX_DIR` (le chemin vers le dossier de JavaFX) avec la version de JavaFX que vous avez téléchargée
+   - `CLASSPATH` (le chemin vers le dossier de JOGL), si besoin, en replaçant `JOGL_NATIVE_LIBS_LINUX` par `JOGL_NATIVE_LIBS_WINDOWS` ou `JOGL_NATIVE_LIBS_MAC` selon votre système d'exploitation
+3. Vous pouvez indiquer le chemin vers le fichier CSV à considérer dans la méthode `testInit()` de la classe `graph.Graph`, ainsi que les différents paramètres, en utilisant les méthodes de l'interface `graph.GraphSettings`. Vous retrouverez deux fichiers CSV exemples dans le dossier `samples`.
 4. Compiler et exécuter le projet avec la commande `make`.
 
 ## Utilisation
