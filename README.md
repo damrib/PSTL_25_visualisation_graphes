@@ -1,9 +1,18 @@
 # PSTL_25_visualisation_graphes
 
-Dependances Maven, Makefile et JavaFX:
+Dependances Maven, Makefile, Java (openjdk-21-jdk) JavaFX:
 Pour compiler et exécuter, il faut utiliser les commandes suivantes:
 - cd graph-application
 - make all
+
+Pour installer la bonne version de Java sur linux:
+    - sudo apt update
+    - sudo apt install openjdk-21-jdk
+
+Pour installer la bonner version de Java sur MacOs voir:
+    télecharger le .dmg: https://www.oracle.com/java/technologies/downloads/#jdk21-mac
+ou avec HomeBrew:
+    brew install openjdk@21
 
 Une fois le programme lancé, pour visualiser la fenêtre avec le graphe, il faut:
 - Appuyer sur Ouvrir un fichier de graphe
